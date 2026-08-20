@@ -8,15 +8,7 @@
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
     "test": "node tests/testBot.js",
-    "ai:live": "node ai-farmer/index.js",
-    "ai-live": "node ai-farmer/index.js",
-    "live": "node ai-farmer/index.js",
-    "ai": "node ai-farmer/index.js",
-    "farmer": "node ai-farmer/index.js",
-    "ai:sim": "node ai-farmer/simulator.js",
-    "autofarm": "node scripts/aiAutoFarmer.js",
-    "livefarm": "node ai-farmer/index.js",
-    "farm": "node scripts/aiFarmSimulator.js",
+    "test:e2e": "node tests/testFullE2E.js",
     "audit": "node scripts/auditCodebase.js"
   },
   "dependencies": {
@@ -24,5 +16,8 @@
     "discord.js": "^14.16.3",
     "dotenv": "^16.4.5",
     "mongoose": "^8.7.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

@@ -31,3 +31,6 @@ Tai nguyen/
 .patch.mjs
 .ins*.mjs
 .e*.txt
+
+# Cong cu va tam thoi
+.fx*.mjs

@@ -14,7 +14,15 @@ import { createPublicGearListEmbed, createPublicGearSelectMenu, createPublicGear
 import { getPillById } from '../commands/prefix/alchemy.js';
 
 import { dokiepSessions, createDokiepEmbed, createDokiepButtons } from '../commands/prefix/dokiep.js';
-import { setCooldown } from '../utils/cooldown.js';
+
+import { COOLDOWNS, setCooldown, checkBattleReady } from '../utils/cooldown.js';
+import {
+  PVP_MIN_BET,
+  PVP_CHALLENGE_TTL_MS,
+  simulateDuel,
+  settleWager,
+  releaseChallenge
+} from '../services/pvpService.js';
 import { getFactionBuffs, getCritMultiplier, applyIncomingDamage } from '../services/factionService.js';
 import fs from 'fs';
 import path from 'path';
@@ -1314,63 +1322,122 @@ export async function handleButton(interaction) {
   }
 
   // 22. Xử lý Chấp Nhận Thách Đấu Lôi Đài (PVP)
+
   if (customId.startsWith('pvp_accept_')) {
     const parts = customId.split('_');
     const challengerId = parts[2];
     const targetUserId = parts[3];
-    const betAmount = parseInt(parts[4], 10) || 50;
+    const betAmount = parseInt(parts[4], 10) || PVP_MIN_BET;
+    const issuedAt = parseInt(parts[5], 10) || 0;
 
     if (clickerId !== targetUserId) {
       return interaction.reply({ content: `⚠️ Lời thách đấu này không dành cho bạn!`, ephemeral: true });
+    }
+
+    // Chiến thư quá hạn -> không cho bấm nút cũ để "phục kích" sau vài giờ
+    if (issuedAt && Date.now() - issuedAt > PVP_CHALLENGE_TTL_MS) {
+      releaseChallenge(challengerId, targetUserId);
+      return interaction.update({
+        embeds: [new EmbedBuilder()
+          .setTitle('⌛ [CHIẾN THƯ ĐÃ HẾT HẠN]')
+          .setColor('#757575')
+          .setDescription(`Chiến thư đã bay theo gió, không còn hiệu lực. Hãy phát chiến thư mới bằng \`!khieuchien @user <cược>\`.`)],
+        components: []
+      });
     }
 
     const challenger = await User.findOne({ userId: challengerId });
     const defender = await User.findOne({ userId: targetUserId });
 
     if (!challenger || !defender) {
+      releaseChallenge(challengerId, targetUserId);
       return interaction.reply({ content: `❌ Dữ liệu người chơi không hợp lệ!`, ephemeral: true });
     }
 
-    if (challenger.currencies.linhThach < betAmount) {
+    if ((challenger.currencies.linhThach || 0) < betAmount) {
+      releaseChallenge(challengerId, targetUserId);
       return interaction.update({
-        embeds: [new EmbedBuilder().setTitle('❌ [TỈ VÕ BỊ HỦY]').setColor('#F44336').setDescription(`Người khiêu chiến **${challenger.daoName || challenger.username}** không còn đủ **${betAmount.toLocaleString()} Linh Thạch** để tỉ võ!`)],
+        embeds: [new EmbedBuilder()
+          .setTitle('❌ [TỈ VÕ BỊ HUỶ]')
+          .setColor('#F44336')
+          .setDescription(`Người khiêu chiến **${challenger.daoName || challenger.username}** không còn đủ **${betAmount.toLocaleString()} Linh Thạch** để tỉ võ!`)],
         components: []
       });
     }
 
-    if (defender.currencies.linhThach < betAmount) {
-      return interaction.reply({ content: `❌ Bạn không đủ ${betAmount} Linh Thạch để tiếp nhận thách đấu!`, ephemeral: true });
+    if ((defender.currencies.linhThach || 0) < betAmount) {
+      return interaction.reply({ content: `❌ Bạn không đủ **${betAmount.toLocaleString()} Linh Thạch** để tiếp nhận thách đấu!`, ephemeral: true });
     }
 
-    const now = new Date();
-    // Tính lực chiến (Power = ATK*2 + DEF*2 + HP*0.5 + Crit/Dodge)
-    const challengerPower = challenger.stats.atk * 2 + challenger.stats.def * 2 + challenger.stats.hp * 0.5 + (Math.random() * 50);
-    const defenderPower = defender.stats.atk * 2 + defender.stats.def * 2 + defender.stats.hp * 0.5 + (Math.random() * 50);
+    const defenderBattle = checkBattleReady(defender);
+    if (!defenderBattle.ready) {
+      return interaction.reply({
+        content: `🩸 Đạo hữu đang trọng thương (\`${defenderBattle.hp}/${defenderBattle.maxHp}\` HP), cần tối thiểu \`${defenderBattle.need}\` HP mới lên đài được!`,
+        ephemeral: true
+      });
+    }
 
-    const challengerWins = challengerPower >= defenderPower;
-    const winner = challengerWins ? challenger : defender;
-    const loser = challengerWins ? defender : challenger;
+    releaseChallenge(challengerId, targetUserId);
 
-    winner.currencies.linhThach += betAmount;
-    loser.currencies.linhThach -= betAmount;
-    challenger.cooldowns.pvp = now;
-    defender.cooldowns.pvp = now;
+    // ── GIAO ĐẤU THEO LƯỢT (bản cũ chỉ là 1 phép so sánh lực chiến) ──
+    const duel = simulateDuel(challenger, defender);
+    const challengerWins = duel.winner === 'challenger';
+    const winnerDoc = challengerWins ? challenger : defender;
+    const loserDoc = challengerWins ? defender : challenger;
+    const winnerName = winnerDoc.daoName || winnerDoc.username;
+    const loserName = loserDoc.daoName || loserDoc.username;
 
-    await challenger.save();
-    await defender.save();
+    // ── CHUYỂN CƯỢC NGUYÊN TỬ + ĐÓNG DẤU HỒI CHIÊU CHO CẢ HAI ──
+    const settled = await settleWager(winnerDoc.userId, loserDoc.userId, betAmount, new Date());
+    if (!settled.ok) {
+      const why = settled.reason === 'INSUFFICIENT_LOSER'
+        ? `**${loserName}** đã tiêu hết Linh Thạch trước khi trận đấu ngã ngũ — kèo huỷ, không ai mất gì.`
+        : `Có trục trặc khi thanh toán tiền cược, trận đấu bị huỷ và Linh Thạch đã được hoàn lại.`;
+      return interaction.update({
+        embeds: [new EmbedBuilder().setTitle('❌ [TỈ VÕ BỊ HUỶ]').setColor('#F44336').setDescription(why)],
+        components: []
+      });
+    }
 
-    const winnerName = winner.daoName || winner.username;
-    const loserName = loser.daoName || loser.username;
+    // Chỉ hiển thị 5 hiệp cuối để embed không vượt giới hạn ký tự của Discord
+    const shownRounds = duel.log.slice(-5);
+    const battleLog = shownRounds
+      .map((r) => `**Hiệp ${r.round}**\n${r.lines.join('\n')}`)
+      .join('\n\n') || '*Hai bên chưa kịp ra chiêu.*';
+    const omitted = duel.log.length - shownRounds.length;
+
+    const endNote = duel.reason === 'timeout'
+      ? `⌛ Hết **${duel.rounds}** hiệp mà chưa phân thắng bại — trọng tài xử theo khí huyết còn lại.`
+      : duel.reason === 'doubleKo'
+        ? `💥 Lưỡng bại câu thương! Theo luật lôi đài, người thủ đài giành phần thắng.`
+        : `🏁 Kết thúc ở **hiệp ${duel.rounds}**.`;
+
+    const winnerHp = challengerWins ? duel.challengerHp : duel.defenderHp;
+    const winnerMaxHp = challengerWins ? duel.challengerMaxHp : duel.defenderMaxHp;
+    const loserHp = challengerWins ? duel.defenderHp : duel.challengerHp;
+    const loserMaxHp = challengerWins ? duel.defenderMaxHp : duel.challengerMaxHp;
 
     const resultEmbed = new EmbedBuilder()
       .setTitle(`⚔️ [KẾT QUẢ TỈ VÕ LÔI ĐÀI]`)
       .setColor(challengerWins ? '#4CAF50' : '#2196F3')
       .setDescription(
-        `Trận tỉ thí long trời lở đất giữa **${challenger.daoName || challenger.username}** và **${defender.daoName || defender.username}** đã kết thúc!\n\n` +
-        `🏆 **Bậc Thầy Chiến Thắng:** **[${winnerName}]**\n` +
-        `💀 **Bại Tướng:** **[${loserName}]**\n\n` +
-        `💰 Tiền thưởng lôi đài: **+${betAmount.toLocaleString()} Linh Thạch** cho ${winnerName}!`
-      );
+        `Trận tỉ thí giữa **${challenger.daoName || challenger.username}** và **${defender.daoName || defender.username}** đã ngã ngũ!\n\n` +
+        (omitted > 0 ? `*...(bỏ qua ${omitted} hiệp đầu)*\n\n` : '') +
+        `${battleLog}\n\n${endNote}`
+      )
+      .addFields(
+        {
+          name: `🏆 Thắng: ${winnerName}`,
+          value: `💰 **+${betAmount.toLocaleString()} Linh Thạch**\n❤️ Còn lại: ${winnerHp}/${winnerMaxHp} HP`,
+          inline: true
+        },
+        {
+          name: `💀 Thua: ${loserName}`,
+          value: `💸 **-${betAmount.toLocaleString()} Linh Thạch**\n❤️ Còn lại: ${loserHp}/${loserMaxHp} HP`,
+          inline: true
+        }
+      )
+      .setFooter({ text: `Tỉ võ điểm đáo vi chỉ — máu trên lôi đài không ảnh hưởng máu thật. Hồi chiêu ${COOLDOWNS.pvp}s.` });
 
     return interaction.update({ embeds: [resultEmbed], components: [] });
   }
@@ -1384,6 +1451,9 @@ export async function handleButton(interaction) {
     if (clickerId !== targetUserId) {
       return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
     }
+
+
+    releaseChallenge(challengerId, targetUserId);
 
     const defender = await User.findOne({ userId: targetUserId });
     const defenderName = defender ? (defender.daoName || defender.username) : 'Đối thủ';
@@ -1751,10 +1821,12 @@ export async function handleButton(interaction) {
       return interaction.reply({ content: `⚠️ Đây là lôi kiếp của tu sĩ khác, can thiệp bừa bãi sẽ bị thiên lôi tru diệt!`, ephemeral: true });
     }
 
+
     const session = dokiepSessions[targetUserId];
     if (!session) {
       return interaction.reply({ content: `❌ Phiên độ kiếp đã kết thúc hoặc không tồn tại!`, ephemeral: true });
     }
+    session.lastActionTime = Date.now(); // Giữ phiên sống chừng nào còn thao tác
 
     const user = await User.findOne({ userId: targetUserId });
     if (!user) return interaction.reply({ content: `❌ Không tìm thấy dữ liệu nhân vật!`, ephemeral: true });

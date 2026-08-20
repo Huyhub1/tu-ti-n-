@@ -126,7 +126,11 @@ export async function executeDiemdanh(message) {
   if (fortune.nguyenThach > 0) {
     user.currencies.nguyenThach = (user.currencies.nguyenThach || 0) + fortune.nguyenThach;
   }
-  user.realm.exp += fortune.exp;
+
+  // Chặn tràn EXP giống !tuluyen: tối đa 2.5 lần vạch tu vi của tầng hiện tại,
+  // nếu không thì quẻ Đại Cát ở cảnh giới thấp sẽ nhảy cóc mấy tầng liền.
+  const dailyExpCap = Math.floor((user.realm.maxExp || 150) * 2.5);
+  user.realm.exp = Math.min(dailyExpCap, (user.realm.exp || 0) + fortune.exp);
 
   // Thưởng Linh Thảo / Yêu Đan
   if (fortune.linhThao && fortune.linhThao > 0) {

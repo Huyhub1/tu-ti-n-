@@ -8,13 +8,26 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const equipmentConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/equipment.json'), 'utf8'));
 
-// Tài khoản có quyền Quản Trị Thiên Đạo (hỗ trợ cấu hình qua .env hoặc mặc định)
-export const ADMIN_ID = process.env.ADMIN_ID || '905657612928958484';
+
+// Tài khoản có quyền Quản Trị Thiên Đạo.
+// KHÔNG hardcode ID mặc định: bot phát hành công khai mà để sẵn ID thì
+// người đó thành admin trên MỌI server cài bot. Bắt buộc khai trong .env.
+export const ADMIN_ID = process.env.ADMIN_ID || '';
+
+const ADMIN_LIST = ADMIN_ID.split(',').map(id => id.trim()).filter(Boolean);
+
+if (ADMIN_LIST.length === 0) {
+  console.warn('[Admin] ⚠️ Chưa cấu hình ADMIN_ID trong .env — lệnh !admin sẽ bị khóa hoàn toàn.');
+}
 
 export function isAdmin(userId) {
-  const adminList = ADMIN_ID.split(',').map(id => id.trim());
-  return adminList.includes(userId);
+  if (ADMIN_LIST.length === 0) return false;
+  return ADMIN_LIST.includes(userId);
 }
+
+// Xác nhận cho lệnh hủy diệt: Map<adminId, { userId, expiresAt }>
+const pendingResets = new Map();
+const RESET_CONFIRM_WINDOW_MS = 60 * 1000;
 
 export function createGearListEmbed(page = 1) {
   const pageSize = 10;
@@ -106,7 +119,11 @@ export function createGearDetailEmbed(gear) {
 }
 
 export async function executeAdmin(message, args) {
+
   if (!isAdmin(message.author.id)) {
+    if (ADMIN_LIST.length === 0) {
+      return message.reply({ content: `❌ Bot chưa cấu hình \`ADMIN_ID\` trong file \`.env\` nên toàn bộ lệnh quản trị đang bị khóa.` });
+    }
     return message.reply({ content: `❌ **CẢNH BÁO THIÊN ĐẠO:** Bạn không có quyền Admin để thực thi lệnh này!` });
   }
 
@@ -117,13 +134,15 @@ export async function executeAdmin(message, args) {
       .setTitle(`👑 [BẢNG LỆNH ADMIN / QUẢN TRỊ THIÊN ĐẠO]`)
       .setColor('#FFD700')
       .setDescription(
-        `Dành riêng cho Admin <@${ADMIN_ID}> can thiệp dữ liệu tu tiên của người chơi:\n\n` +
+
+        `Dành riêng cho Admin ${ADMIN_LIST.map(id => `<@${id}>`).join(', ')} can thiệp dữ liệu tu tiên của người chơi:\n\n` +
         `• \`!admin listgear [trang]\` : Xem danh sách 60 pháp bảo có nút bấm qua lại.\n` +
         `• \`!admin viewgear <id_pháp_bảo>\` : Xem chi tiết toàn bộ chỉ số, nội tại & ảnh của pháp bảo.\n` +
         `• \`!admin addgear @user <id_pháp_bảo>\` : Tặng thẳng Pháp Bảo/Thần Binh cho mem.\n` +
         `• \`!admin addexp @user <số_exp>\` : Cộng thẳng Tu Vi EXP cho mem.\n` +
         `• \`!admin addmoney @user <linh_thạch> [nguyên_thạch]\` : Cộng tiền cho mem.\n` +
-        `• \`!admin reset @user\` : Xóa dữ liệu tu tiên của 1 người chơi.\n\n` +
+
+        `• \`!admin reset @user\` : Xóa dữ liệu tu tiên của 1 người chơi (phải gõ 2 lần để xác nhận).\n\n` +
         `*Ví dụ:* \`!admin listgear\` | \`!admin viewgear chuong_hon_don\` | \`!admin addgear @Lieu chuong_hon_don\``
       );
     return message.reply({ embeds: [embed] });
@@ -249,9 +268,39 @@ export async function executeAdmin(message, args) {
     return message.reply({ embeds: [embed] });
   }
 
-  // 6. Reset nhân vật: !admin reset @user
+
+  // 6. Reset nhân vật: !admin reset @user  (yêu cầu xác nhận 2 bước)
   if (subCommand === 'reset') {
-    await User.deleteOne({ userId: targetUserId });
+    const adminId = message.author.id;
+    const pending = pendingResets.get(adminId);
+    const now = Date.now();
+
+    if (!pending || pending.userId !== targetUserId || pending.expiresAt < now) {
+      pendingResets.set(adminId, { userId: targetUserId, expiresAt: now + RESET_CONFIRM_WINDOW_MS });
+
+      const victim = await User.findOne({ userId: targetUserId }).lean();
+      if (!victim) {
+        pendingResets.delete(adminId);
+        return message.reply({ content: `❌ <@${targetUserId}> chưa có dữ liệu tu tiên nào để xóa.` });
+      }
+
+      return message.reply({
+        content:
+          `⚠️ **XÁC NHẬN XÓA VĨNH VIỄN** — hành động này KHÔNG THỂ hoàn tác!\n` +
+          `👤 Mục tiêu: <@${targetUserId}> (\`${victim.daoName || victim.username}\`)\n` +
+          `🏵️ Cảnh giới: \`${victim.realm?.name || '?'}\` | 💎 \`${(victim.currencies?.linhThach || 0).toLocaleString()} LT\` | 🔮 \`${(victim.currencies?.nguyenThach || 0).toLocaleString()} NT\`\n` +
+          `📜 \`${(victim.skills || []).length}\` công pháp | ⚔️ \`${(victim.equipments || []).length}\` pháp bảo\n\n` +
+          `👉 Gõ lại **\`!admin reset @user\`** trong vòng **60 giây** để xác nhận.`
+      });
+    }
+
+    pendingResets.delete(adminId);
+    const result = await User.deleteOne({ userId: targetUserId });
+    if (result.deletedCount === 0) {
+      return message.reply({ content: `❌ Không tìm thấy dữ liệu của <@${targetUserId}> (có thể đã bị xóa trước đó).` });
+    }
+
+    console.warn(`[Admin] ${adminId} đã xóa dữ liệu của ${targetUserId}`);
     return message.reply({ content: `🗑️ **ĐÃ XÓA DỮ LIỆU!** Nhân vật của <@${targetUserId}> đã bị xóa khỏi hệ thống.` });
   }
 

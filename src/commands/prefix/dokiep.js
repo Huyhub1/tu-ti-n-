@@ -10,7 +10,22 @@ const __dirname = path.dirname(__filename);
 const realmsConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/realms.json'), 'utf8'));
 
 // Lưu trữ phiên độ kiếp theo thời gian thực
+
 export const dokiepSessions = {};
+
+// Dọn phiên độ kiếp bị bỏ dở (người chơi tắt máy giữa chừng). Không có bước
+// này thì mỗi phiên treo vĩnh viễn trong RAM và người chơi cũng bị kẹt luôn
+// vì lệnh !dokiep sẽ báo "đang độ kiếp" mãi mãi.
+const DOKIEP_SESSION_TTL_MS = 10 * 60 * 1000;
+setInterval(() => {
+  const now = Date.now();
+  for (const userId in dokiepSessions) {
+    const session = dokiepSessions[userId];
+    if (session && session.lastActionTime && now - session.lastActionTime > DOKIEP_SESSION_TTL_MS) {
+      delete dokiepSessions[userId];
+    }
+  }
+}, 60 * 1000);
 
 export function createDokiepEmbed(session) {
   const strikeNames = [
@@ -106,9 +121,11 @@ export async function executeDokiep(message) {
     totalHp += (g.stats.maxHp || 0);
   }
 
+
   dokiepSessions[userId] = {
     userId,
     userName: user.daoName || user.username,
+    lastActionTime: Date.now(),
     currentStrike: 1,
     currentHp: totalHp,
     maxHp: totalHp,
