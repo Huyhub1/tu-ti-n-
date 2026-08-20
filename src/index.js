@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { Client, GatewayIntentBits, REST, Routes } from 'discord.js';
+import { Client, Events, GatewayIntentBits, REST, Routes } from 'discord.js';
 import chalk from 'chalk';
 import { connectDB } from './database/connect.js';
 import { handleSlashCommand, handlePrefixCommand } from './handlers/commandHandler.js';
@@ -41,7 +41,8 @@ async function registerSlashCommands() {
   }
 }
 
-client.once('ready', async () => {
+// discord.js v15 bo ten 'ready'; dung hang so Events de khoi phai sua lai sau.
+client.once(Events.ClientReady, async () => {
   console.log(chalk.bold.magenta(`\n======================================================`));
   console.log(chalk.bold.green(`  🌌 DISCORD BOT TU TIÊN SANDBOX ĐÃ SẴN SÀNG!`));
   console.log(chalk.bold.cyan(`  🤖 Tên Bot: ${client.user.tag}`));

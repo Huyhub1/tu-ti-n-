@@ -17,15 +17,21 @@ npm install
 # 2. Tạo file cấu hình từ mẫu rồi điền giá trị thật
 cp .env.example .env      # Windows: copy .env.example .env
 
-# 3. Chạy 10 bộ test nội bộ (không cần MongoDB)
-npm test
+# 3. Chạy các bộ test nội bộ (không cần MongoDB)
+npm test                  # 10 bộ kiểm thử hệ thống
+npm run test:e2e          # 9 bộ kiểm thử luồng đầu-cuối
+npm run audit             # rà soát codebase & 12 file config
 
-# 4. Rà soát toàn bộ codebase & file config
-npm run audit
+# 4. Kiểm thử chống spam trên MongoDB thật (cần MONGODB_URI)
+npm run test:race
 
 # 5. Khởi động bot
 npm start                 # hoặc: npm run dev  (tự reload khi sửa code)
 ```
+
+> `npm run test:race` bắn hàng chục thao tác song song vào cùng một nhân vật để
+> chứng minh không thể nhân đôi phần thưởng. Nó chỉ tạo/xoá nhân vật tạm có
+> `userId` bắt đầu bằng `__racetest_`, không đụng tới dữ liệu người chơi.
 
 ### Biến môi trường (`.env`)
 
