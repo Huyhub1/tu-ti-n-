@@ -63,3 +63,44 @@ export function checkBattleReady(user) {
   if (hp >= need) return { ready: true, hp, maxHp, need };
   return { ready: false, hp, maxHp, need };
 }
+
+/**
+ * Chiếm cooldown một cách NGUYÊN TỬ (atomic).
+ *
+ * `checkCooldown` + `setCooldown` + `save()` là một chuỗi đọc-rồi-ghi: nếu người
+ * chơi gửi 3 lệnh `!lamcong` trong cùng một tích tắc thì cả 3 đều đọc được mốc
+ * cooldown cũ, cả 3 đều "hợp lệ", và người chơi ăn 3 lần thưởng cho 1 lượt.
+ * Hàm này gộp kiểm tra + ghi mốc vào đúng một câu lệnh MongoDB nên chỉ duy nhất
+ * một lượt lọt qua, y hệt cách `!dothach` đang làm.
+ *
+ * ⚠️ Luôn dùng document TRẢ VỀ cho các thao tác sau đó. Nếu tiếp tục dùng
+ * document cũ rồi `save()`, mongoose sẽ ghi đè mốc cooldown vừa đặt.
+ *
+ * @param {import('mongoose').Model} User Model User
+ * @param {string} userId
+ * @param {string} key Khóa trong COOLDOWNS
+ * @param {object} [extraFilter] Điều kiện lọc thêm (ví dụ chặn tiền âm)
+ * @param {object} [extraUpdate] Toán tử update thêm (ví dụ `{ $inc: {...} }`)
+ * @returns {Promise<object|null>} Document mới, hoặc null nếu chưa tới lượt
+ */
+export async function claimCooldown(User, userId, key, extraFilter = {}, extraUpdate = {}) {
+  const limit = COOLDOWNS[key] || 0;
+  const now = new Date();
+  const cutoff = new Date(now.getTime() - limit * 1000);
+  const field = `cooldowns.${key}`;
+
+  const filter = {
+    userId,
+    ...extraFilter,
+    $or: [
+      { [field]: null },
+      { [field]: { $exists: false } },
+      { [field]: { $lte: cutoff } }
+    ]
+  };
+
+  const update = { ...extraUpdate };
+  update.$set = { ...(extraUpdate.$set || {}), [field]: now };
+
+  return User.findOneAndUpdate(filter, update, { new: true });
+}

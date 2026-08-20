@@ -3,7 +3,8 @@ import { User } from '../../database/models/User.js';
 
 import { getAllSkills } from '../../services/skillService.js';
 import { getFactionBuffs } from '../../services/factionService.js';
-import { COOLDOWNS, formatWait } from '../../utils/cooldown.js';
+
+import { COOLDOWNS, formatWait, claimCooldown } from '../../utils/cooldown.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -16,8 +17,9 @@ const jobsConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config
 const WORK_COOLDOWN_SECONDS = COOLDOWNS.work;
 
 export async function executeLamcong(message) {
+
   const userId = message.author.id;
-  const user = await User.findOne({ userId });
+  let user = await User.findOne({ userId });
 
   if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
 
@@ -33,6 +35,14 @@ export async function executeLamcong(message) {
     }
   }
 
+  // Chiếm lượt bằng một câu lệnh nguyên tử: gửi 5 lệnh cùng lúc thì chỉ 1 lệnh
+  // đi tiếp, tránh nhân tiền công lên nhiều lần cho cùng một lượt hồi chiêu.
+  const claimed = await claimCooldown(User, userId, 'work');
+  if (!claimed) {
+    return message.reply({ content: `⏳ Đạo hữu gõ quá nhanh, thân thể chưa kịp hồi sức! Chờ thêm giây lát rồi thử lại.` });
+  }
+  user = claimed;
+
   // Lấy danh sách công việc từ config JSON
   const jobs = jobsConfig.jobs;
   const job = jobs[Math.floor(Math.random() * jobs.length)];
@@ -43,8 +53,8 @@ export async function executeLamcong(message) {
   const moneyBonus = getFactionBuffs(user.faction).moneyWorkBonus;
   if (moneyBonus > 0) moneyEarned = Math.floor(moneyEarned * (1 + moneyBonus));
 
+
   user.currencies.linhThach += moneyEarned;
-  user.cooldowns.work = now;
 
   let extraMsg = '';
 
@@ -96,7 +106,8 @@ export async function executeLamcong(message) {
       `${job.desc}\n\n` +
       `💰 Nhận được: **+${moneyEarned.toLocaleString()} Linh Thạch**\n` +
       `💎 Tổng tài sản hiện có: **${user.currencies.linhThach.toLocaleString()} Linh Thạch**${extraMsg}${herbMsg}\n\n` +
-      `⏱️ *Thời gian hồi chiêu: 30 giây*`
+
+      `⏱️ *Thời gian hồi chiêu: ${WORK_COOLDOWN_SECONDS} giây*`
     );
 
   await message.reply({ embeds: [embed] });

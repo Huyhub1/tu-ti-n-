@@ -1,8 +1,10 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { User } from '../../database/models/User.js';
-import { Sect } from '../../database/models/Sect.js';
 
-const SECT_TASK_COOLDOWN_SECONDS = 60; // 60s delay cho mỗi lần làm nhiệm vụ bang
+import { Sect } from '../../database/models/Sect.js';
+import { COOLDOWNS, claimCooldown } from '../../utils/cooldown.js';
+
+const SECT_TASK_COOLDOWN_SECONDS = COOLDOWNS.sectTask;
 const SECT_UPGRADE_COSTS = {
   1: { cost: 1000, maxMembers: 10, buffText: '+5% EXP Tu Luyện' },
   2: { cost: 3000, maxMembers: 15, buffText: '+10% EXP Tu Luyện, +5% Khí Vận' },
@@ -321,8 +323,9 @@ export async function executeConghien(message, args) {
 }
 
 // 5. Lệnh Nhiệm Vụ Môn Phái: !nhiemvubang
+
 export async function executeNhiemvubang(message) {
-  const user = await User.findOne({ userId: message.author.id });
+  let user = await User.findOne({ userId: message.author.id });
   if (!user || !user.sectId) return message.reply({ content: `❌ Bạn chưa gia nhập môn phái!` });
 
   const sect = await Sect.findById(user.sectId);
@@ -334,10 +337,19 @@ export async function executeNhiemvubang(message) {
     if (elapsedSeconds < SECT_TASK_COOLDOWN_SECONDS) {
       const waitTime = SECT_TASK_COOLDOWN_SECONDS - elapsedSeconds;
       return message.reply({
+
         content: `⏳ Đạo hữu vừa hoàn thành ủy thác môn phái! Vui lòng nghỉ ngơi thêm **${waitTime}s**.`
       });
     }
   }
+
+  // Cổng chặn nguyên tử — nếu không có, spam lệnh sẽ nhận nhiều lần phần
+  // thưởng lẫn điểm cống hiến cho cùng một lượt ủy thác.
+  const claimed = await claimCooldown(User, user.userId, 'sectTask');
+  if (!claimed) {
+    return message.reply({ content: `⏳ Đạo hữu nhận lệnh quá dồn dập, chấp sự đường chưa kịp ghi công! Chờ thêm giây lát.` });
+  }
+  user = claimed;
 
   const tasks = [
     { title: '🛡️ [TUẦN TRA SƠN MÔN]', desc: 'Quét sạch tà tu dòm ngó ngoài sơn môn, bảo vệ đại trận yên bình!', exp: 120, lt: 60, contrib: 15, rep: 8 },
@@ -349,8 +361,8 @@ export async function executeNhiemvubang(message) {
   const task = tasks[Math.floor(Math.random() * tasks.length)];
 
   user.realm.exp += task.exp;
+
   user.currencies.linhThach += task.lt;
-  user.cooldowns.sectTask = now;
 
   sect.reputation += task.rep;
   const member = sect.members.find(m => m.userId === user.userId);
@@ -370,8 +382,9 @@ export async function executeNhiemvubang(message) {
       `✨ Tu Vi: **+${task.exp} EXP**\n` +
       `💎 Linh Thạch: **+${task.lt} LT**\n` +
       `🎖️ Cống Hiến Bang: **+${task.contrib} Điểm**\n` +
+
       `🔥 Uy Danh Tông Môn: **+${task.rep} Điểm**\n\n` +
-      `⏱️ *Thời gian hồi chiêu: 60 giây*`
+      `⏱️ *Thời gian hồi chiêu: ${SECT_TASK_COOLDOWN_SECONDS} giây*`
     );
 
   await message.reply({ embeds: [embed] });

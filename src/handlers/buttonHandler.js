@@ -19,7 +19,8 @@ import { getPillById } from '../commands/prefix/alchemy.js';
 
 import { dokiepSessions, createDokiepEmbed, createDokiepButtons } from '../commands/prefix/dokiep.js';
 
-import { COOLDOWNS, setCooldown, checkBattleReady } from '../utils/cooldown.js';
+
+import { COOLDOWNS, setCooldown, checkBattleReady, claimCooldown } from '../utils/cooldown.js';
 import {
   PVP_MIN_BET,
   PVP_CHALLENGE_TTL_MS,
@@ -212,7 +213,7 @@ export async function handleButton(interaction) {
       return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về đạo hữu!`, ephemeral: true });
     }
 
-    const user = await User.findOne({ userId: targetUserId });
+    let user = await User.findOne({ userId: targetUserId });
     if (!user) {
       return interaction.reply({ content: `❌ Không tìm thấy dữ liệu nhân vật!`, ephemeral: true });
     }
@@ -284,7 +285,7 @@ export async function handleButton(interaction) {
       return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
     }
 
-    const user = await User.findOne({ userId: targetUserId });
+    let user = await User.findOne({ userId: targetUserId });
     if (!user) return interaction.reply({ content: `❌ Chưa tạo nhân vật!`, ephemeral: true });
 
     const beast = monstersConfig.beasts.find(b => b.id === beastId);
@@ -303,14 +304,21 @@ export async function handleButton(interaction) {
       });
     }
 
+
+    // Chốt lượt săn bằng một câu lệnh nguyên tử trước khi dựng phiên chiến đấu.
+    // Hai cú bấm sát nhau đều vượt qua được các kiểm tra phía trên vì giữa chúng
+    // vẫn còn khe hở await.
+    const claimedHunt = await claimCooldown(User, targetUserId, 'hunting');
+    if (!claimedHunt) {
+      return interaction.reply({ content: `⏳ Đạo hữu bấm quá nhanh, khí huyết chưa ổn định! Chờ thêm giây lát rồi săn tiếp.`, ephemeral: true });
+    }
+    user = claimedHunt;
+
     let equippedSkills = user.skills.filter(s => s.equipped);
     if (equippedSkills.length === 0) equippedSkills = user.skills;
 
 
     const equippedGears = (user.equipments || []).filter(e => e.equipped);
-
-    setCooldown(user, 'hunting');
-    await user.save();
 
 
     const huntBuffs = getFactionBuffs(user.faction);
@@ -435,7 +443,7 @@ export async function handleButton(interaction) {
 
     session.lastActionTime = Date.now();
 
-    const user = await User.findOne({ userId: targetUserId });
+    let user = await User.findOne({ userId: targetUserId });
     let skillName = 'Dẫn Khí Tuyệt Sát';
     let skillRarity = 'HOANG_GIAI';
     let skillMastery = 10;
@@ -527,7 +535,7 @@ export async function handleButton(interaction) {
 
     session.lastActionTime = Date.now();
 
-    const user = await User.findOne({ userId: targetUserId });
+    let user = await User.findOne({ userId: targetUserId });
     const gear = user ? user.equipments.find(e => e.gearId === gearId || e.id === gearId) : null;
     const gearRarity = gear ? gear.rarity : 'HOANG_GIAI';
     const gearCost = GEAR_MANA_COST[gearRarity] || 40;
@@ -625,7 +633,7 @@ export async function handleButton(interaction) {
 
     if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
 
-    const user = await User.findOne({ userId: targetUserId });
+    let user = await User.findOne({ userId: targetUserId });
     if (!user) return interaction.reply({ content: `❌ Chưa tạo nhân vật!`, ephemeral: true });
 
     const dungeon = dungeonsConfig.dungeons.find(d => d.id === dungeonId);
@@ -644,13 +652,18 @@ export async function handleButton(interaction) {
       });
     }
 
+
+    // Chốt lượt vào bí cảnh bằng một câu lệnh nguyên tử (xem ghi chú ở săn thú).
+    const claimedDungeon = await claimCooldown(User, targetUserId, 'dungeon');
+    if (!claimedDungeon) {
+      return interaction.reply({ content: `⏳ Đạo hữu bấm quá nhanh, cửa bí cảnh chưa kịp mở lại! Chờ thêm giây lát.`, ephemeral: true });
+    }
+    user = claimedDungeon;
+
     let equippedSkills = user.skills.filter(s => s.equipped);
     if (equippedSkills.length === 0) equippedSkills = user.skills;
 
     const equippedGears = (user.equipments || []).filter(e => e.equipped);
-
-    setCooldown(user, 'dungeon');
-    await user.save();
 
 
     const dgBuffs = getFactionBuffs(user.faction);
@@ -773,7 +786,7 @@ export async function handleButton(interaction) {
 
     session.lastActionTime = Date.now();
 
-    const user = await User.findOne({ userId: targetUserId });
+    let user = await User.findOne({ userId: targetUserId });
     let skillName = 'Vô Thượng Thần Thông';
     let skillRarity = 'HOANG_GIAI';
     let skillMastery = 10;
@@ -865,7 +878,7 @@ export async function handleButton(interaction) {
 
     session.lastActionTime = Date.now();
 
-    const user = await User.findOne({ userId: targetUserId });
+    let user = await User.findOne({ userId: targetUserId });
     const gear = user ? user.equipments.find(e => e.gearId === gearId || e.id === gearId) : null;
     const gearRarity = gear ? gear.rarity : 'HOANG_GIAI';
     const gearCost = DUNGEON_GEAR_MANA_COST[gearRarity] || 40;
@@ -1028,9 +1041,12 @@ export async function handleButton(interaction) {
 
 
     user.equipments = user.equipments || [];
+
     user.equipments.push(newGear);
     setCooldown(user, 'crafting');
     await user.save();
+    // Nguyên liệu đã bị trừ nguyên tử ở trên nên không thể đúc trùng; ở đây chỉ
+    // cần ghi lại mốc hồi chiêu cho lò.
 
     const embed = new EmbedBuilder()
       .setTitle(`✨ [ĐÚC THÀNH CÔNG THẦN BINH]`)
@@ -1062,7 +1078,7 @@ export async function handleButton(interaction) {
 
     if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
 
-    const user = await User.findOne({ userId: targetUserId });
+    let user = await User.findOne({ userId: targetUserId });
     if (!user || !user.equipments[idx]) return interaction.reply({ content: `❌ Trang bị không tồn tại!`, ephemeral: true });
 
     const targetGear = user.equipments[idx];
@@ -1256,7 +1272,7 @@ export async function handleButton(interaction) {
 
     if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
 
-    const user = await User.findOne({ userId: targetUserId });
+    let user = await User.findOne({ userId: targetUserId });
     if (!user || !user.inventory[itemIdx]) {
       return interaction.reply({ content: `❌ Vật phẩm không còn tồn tại trong túi đồ!`, ephemeral: true });
     }
@@ -1321,7 +1337,7 @@ export async function handleButton(interaction) {
     const targetUserId = customId.replace('btn_open_sell_menu_', '');
     if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
 
-    const user = await User.findOne({ userId: targetUserId });
+    let user = await User.findOne({ userId: targetUserId });
     if (!user || user.skills.length === 0) {
       return interaction.reply({ content: `❌ Kho của bạn chưa có bí kíp nào để đăng bán!`, ephemeral: true });
     }
@@ -1563,7 +1579,7 @@ export async function handleButton(interaction) {
       return interaction.reply({ content: `⚠️ Lời mời này không dành cho bạn!`, ephemeral: true });
     }
 
-    const user = await User.findOne({ userId: targetUserId });
+    let user = await User.findOne({ userId: targetUserId });
     if (!user) return interaction.reply({ content: `❌ Chưa tạo nhân vật!`, ephemeral: true });
 
     if (user.sectId) {
@@ -1660,7 +1676,7 @@ export async function handleButton(interaction) {
       return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
     }
 
-    const user = await User.findOne({ userId: targetUserId });
+    let user = await User.findOne({ userId: targetUserId });
     const sect = await Sect.findById(sectId);
 
     if (!user || !sect) return interaction.reply({ content: `❌ Dữ liệu không hợp lệ!`, ephemeral: true });
@@ -1704,19 +1720,33 @@ export async function handleButton(interaction) {
       return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
     }
 
-    const user = await User.findOne({ userId: targetUserId });
+
+    let user = await User.findOne({ userId: targetUserId });
     const sect = await Sect.findById(sectId);
 
     if (!user || !sect) return interaction.reply({ content: `❌ Dữ liệu không hợp lệ!`, ephemeral: true });
 
+    // sectId lấy từ customId của embed cũ nên có thể trỏ tới tông môn mà người
+    // chơi đã rời khỏi. Không chặn thì họ vẫn cày uy danh cho bang cũ.
+    if (String(user.sectId || '') !== String(sect._id)) {
+      return interaction.reply({ content: `❌ Đạo hữu không còn là đệ tử của tông môn này!`, ephemeral: true });
+    }
+
     const now = new Date();
     if (user.cooldowns.sectTask) {
       const elapsedSeconds = Math.floor((now - new Date(user.cooldowns.sectTask)) / 1000);
-      if (elapsedSeconds < 60) {
-        const waitTime = 60 - elapsedSeconds;
+      if (elapsedSeconds < COOLDOWNS.sectTask) {
+        const waitTime = COOLDOWNS.sectTask - elapsedSeconds;
         return interaction.reply({ content: `⏳ Đạo hữu vừa làm nhiệm vụ bang! Vui lòng nghỉ ngơi thêm **${waitTime}s**.`, ephemeral: true });
       }
     }
+
+    // Cổng chặn nguyên tử: bấm nút liên tục chỉ ăn đúng 1 lượt thưởng.
+    const claimedTask = await claimCooldown(User, targetUserId, 'sectTask');
+    if (!claimedTask) {
+      return interaction.reply({ content: `⏳ Đạo hữu bấm quá nhanh, chấp sự đường chưa kịp ghi công! Chờ thêm giây lát.`, ephemeral: true });
+    }
+    user = claimedTask;
 
     const tasks = [
       { title: '🛡️ [TUẦN TRA SƠN MÔN]', desc: 'Quét sạch tà tu dòm ngó, bảo vệ đại trận yên bình!', exp: 120, lt: 60, contrib: 15, rep: 8 },
@@ -1726,9 +1756,9 @@ export async function handleButton(interaction) {
     ];
 
     const task = tasks[Math.floor(Math.random() * tasks.length)];
+
     user.realm.exp += task.exp;
     user.currencies.linhThach += task.lt;
-    user.cooldowns.sectTask = now;
 
     sect.reputation += task.rep;
     const member = sect.members.find(m => m.userId === user.userId);
@@ -1781,7 +1811,7 @@ export async function handleButton(interaction) {
       return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
     }
 
-    const user = await User.findOne({ userId: targetUserId });
+    let user = await User.findOne({ userId: targetUserId });
     const sect = await Sect.findById(sectId);
 
     if (!user || !sect) return interaction.reply({ content: `❌ Dữ liệu không hợp lệ!`, ephemeral: true });
@@ -1923,7 +1953,7 @@ export async function handleButton(interaction) {
     }
     session.lastActionTime = Date.now(); // Giữ phiên sống chừng nào còn thao tác
 
-    const user = await User.findOne({ userId: targetUserId });
+    let user = await User.findOne({ userId: targetUserId });
     if (!user) return interaction.reply({ content: `❌ Không tìm thấy dữ liệu nhân vật!`, ephemeral: true });
 
     // Sát thương cơ bản từng đạo lôi kiếp

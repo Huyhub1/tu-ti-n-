@@ -2,13 +2,15 @@ import { EmbedBuilder } from 'discord.js';
 
 import { User } from '../../database/models/User.js';
 import { getFactionBuffs } from '../../services/factionService.js';
-import { COOLDOWNS, formatWait } from '../../utils/cooldown.js';
+
+import { COOLDOWNS, formatWait, claimCooldown } from '../../utils/cooldown.js';
 
 const MINING_COOLDOWN_SECONDS = COOLDOWNS.mining;
 
 export async function executeDaokhoang(message) {
+
   const userId = message.author.id;
-  const user = await User.findOne({ userId });
+  let user = await User.findOne({ userId });
 
   if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
 
@@ -19,9 +21,17 @@ export async function executeDaokhoang(message) {
 
       return message.reply({
         content: `⏳ Đạo hữu vừa khai thác mỏ cạn kiệt thể lực! Vui lòng nghỉ ngơi thêm **${formatWait(MINING_COOLDOWN_SECONDS - elapsedSeconds)}**.`
+
       });
     }
   }
+
+  // Chiếm lượt nguyên tử — chặn spam song song nhân đôi khoáng sản.
+  const claimed = await claimCooldown(User, userId, 'mining');
+  if (!claimed) {
+    return message.reply({ content: `⏳ Đạo hữu vung cuốc quá nhanh, địa mạch chưa kịp tụ khoáng! Chờ thêm giây lát.` });
+  }
+  user = claimed;
 
   // Khai thác mỏ
   const linhThachGained = Math.floor(Math.random() * 80) + 40;
@@ -45,8 +55,8 @@ export async function executeDaokhoang(message) {
   }
 
   user.currencies.linhThach += linhThachGained;
+
   user.currencies.nguyenThach = (user.currencies.nguyenThach || 0) + nguyenThachGained;
-  user.cooldowns.mining = now;
 
   await user.save();
 

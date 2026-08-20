@@ -1,5 +1,7 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } from 'discord.js';
+
 import { User } from '../../database/models/User.js';
+import { grantCurrencies } from '../../services/economyService.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -211,12 +213,18 @@ export async function executeAdmin(message, args) {
     const linhThach = parseInt(args[2], 10) || 0;
     const nguyenThach = parseInt(args[3], 10) || 0;
 
-    user.currencies.linhThach += linhThach;
-    user.currencies.nguyenThach = (user.currencies.nguyenThach || 0) + nguyenThach;
-    await user.save();
+
+    // Cộng bằng $inc thay vì save() cả document: người chơi có thể đang đi săn
+    // hay đào khoáng ngay lúc admin ban thưởng, ghi đè nguyên document sẽ nuốt
+    // mất phần thưởng họ vừa kiếm được.
+    const granted = await grantCurrencies(user.userId, { linhThach, nguyenThach });
+    if (!granted) {
+      return message.reply({ content: `❌ Không cộng được tài nguyên cho đạo hữu này (không tìm thấy nhân vật).` });
+    }
 
     return message.reply({
-      content: `✅ **THIÊN ĐẠO BAN PHƯỚC:** Đã cộng **+${linhThach.toLocaleString()} Linh Thạch** & **+${nguyenThach.toLocaleString()} Nguyên Thạch** cho đạo hữu **${user.daoName || user.username}**!`
+      content: `✅ **THIÊN ĐẠO BAN PHƯỚC:** Đã cộng **+${linhThach.toLocaleString()} Linh Thạch** & **+${nguyenThach.toLocaleString()} Nguyên Thạch** cho đạo hữu **${granted.daoName || granted.username}**! ` +
+        `(Hiện có: \`${(granted.currencies.linhThach || 0).toLocaleString()} LT\` | \`${(granted.currencies.nguyenThach || 0).toLocaleString()} NT\`)`
     });
   }
 

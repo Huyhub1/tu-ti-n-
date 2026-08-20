@@ -122,3 +122,8 @@ console.log(chalk.green(`  • Thanh hiển thị Streak 7 ngày: ${streakText}`
 console.log(chalk.green(`  ✅ Hệ thống Điểm Danh & Bói Quẻ hoạt động chuẩn xác!\n`));
 
 console.log(chalk.bold.green(`🎉 TẤT CẢ 10 BỘ TEST ĐỀU VƯỢT QUA 100% THÀNH CÔNG!\n`));
+
+// Mongoose (nạp gián tiếp qua các model) giữ event loop sống mãi nên tiến
+// trình không bao giờ tự thoát. Không có dòng này thì `npm test` treo vô hạn
+// và mọi pipeline CI đều timeout dù test đã chạy xong từ lâu.
+process.exit(0);

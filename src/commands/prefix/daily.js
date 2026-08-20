@@ -82,9 +82,10 @@ export function createStreakDisplay(currentStreak) {
   }).join(' ➜ ');
 }
 
+
 export async function executeDiemdanh(message) {
   const userId = message.author.id;
-  const user = await User.findOne({ userId });
+  let user = await User.findOne({ userId });
   if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
 
   const today = getTodayDateString();
@@ -115,8 +116,19 @@ export async function executeDiemdanh(message) {
     if (streak > 7) streak = 1; // Sau ngày 7 lặp lại chu kỳ mới
   }
 
-  user.dailyCheckIn.lastDate = today;
-  user.dailyCheckIn.streak = streak;
+
+  // Đóng dấu ngày điểm danh bằng một câu lệnh nguyên tử. Kiểm tra `lastDate`
+  // phía trên chỉ để hiển thị thông báo đẹp; gửi hai lệnh cùng lúc thì cả hai
+  // đều đọc được ngày cũ và người chơi ăn hai lần bổng lộc.
+  const claimedDaily = await User.findOneAndUpdate(
+    { userId, 'dailyCheckIn.lastDate': { $ne: today } },
+    { $set: { 'dailyCheckIn.lastDate': today, 'dailyCheckIn.streak': streak } },
+    { new: true }
+  );
+  if (!claimedDaily) {
+    return message.reply({ content: `📜 Đạo hữu đã rút quẻ hôm nay rồi! Hãy quay lại sau 00:00 ngày mai.` });
+  }
+  user = claimedDaily;
 
   // Rút Quẻ
   const fortune = rollDailyFortune();

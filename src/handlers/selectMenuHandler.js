@@ -36,12 +36,14 @@ export async function handleSelectMenu(interaction) {
           .setTitle(`🧬 [CẨM NANG] - 1. Tư Chất Bẩm Sinh & Linh Căn`)
           .setDescription(
             `Khi dùng lệnh \`/khoi-dau\`, thiên đạo sẽ ngẫu nhiên ban cho bạn 1 trong 5 bậc Tư Chất Bẩm Sinh duy nhất (không được quay lại để chống spam và giữ độ hiếm):\n\n` +
-            `• ⬜ **Phàm Phẩm (50%):** *Ngũ Hành Tạp Linh Căn, Phàm Nhân Chi Thể* ➜ Hệ số EXP x1.0, căn cơ bình phàm.\n` +
-            `• 🟩 **Lương Phẩm (30%):** *Tam Linh Căn, Cương Cốt Thể* ➜ Hệ số EXP x1.15, tăng 10% Máu.\n` +
-            `• 🟦 **Cực Phẩm (14%):** *Song Linh Căn Lôi-Hỏa, Thuần Dương Thể* ➜ Hệ số EXP x1.35, tăng 20% sát thương, giảm 15% linh thạch đột phá.\n` +
-            `• 🟪 **Thiên Phẩm (5%):** *Thiên Linh Căn, Lôi Đình Thần Thể, Kiếm Tâm Thông Minh* ➜ Hệ số EXP x1.70, học công pháp nhanh gấp đôi, giảm 30% sát thương lôi kiếp.\n` +
-            `• 🟨 **Thần Phẩm (1% - Nghịch Thiên):** *Chí Tôn Cốt, Trọng Đồng, Tiên Thiên Đạo Thai, Cửu U Ma Thể, Hỗn Độn Thể* ➜ Hệ số EXP x2.50 + Mở khóa ngay 1 **Thần Thông Bẩm Sinh Độc Quyền** (*Chí Tôn Kiếp Quang, Ma Nhãn Trừ Hồn*).\n\n` +
-            `💡 **Cơ Chế Cải Mệnh Về Sau:** Nếu tư chất thấp, về sau có thể dùng đan dược Tẩy Tủy cao cấp, Thôn Phệ Thể Chất (Ma Đạo) hoặc Công Đức Tẩy Lễ (Chính Đạo) để nghịch thiên cải mệnh!`
+
+            `• ⬜ **Phàm Phẩm (50%):** *Ngũ Hành Tạp Linh Căn, Phàm Nhân Chi Thể* ➜ EXP **x1.00**, căn cơ bình phàm.\n` +
+            `• 🟩 **Lương Phẩm (30%):** *Tam Linh Căn, Cương Cốt Thể* ➜ EXP **x1.15**, HP tối đa **+10%**.\n` +
+            `• 🟦 **Cực Phẩm (14%):** *Song Linh Căn Lôi-Hỏa, Thuần Dương Thể* ➜ EXP **x1.35**, HP **+10%**, sát thương **+20%**, vạch tu vi mỗi tầng **-15%**.\n` +
+            `• 🟪 **Thiên Phẩm (5%):** *Thiên Linh Căn, Lôi Đình Thần Thể, Kiếm Tâm* ➜ EXP **x1.70**, HP **+15%**, sát thương **+25%**, vạch tu vi **-15%**, luyện công **x2** thuần thục, chịu lôi kiếp **-30%**.\n` +
+            `• 🟨 **Thần Phẩm (1% - Nghịch Thiên):** *Chí Tôn Cốt, Trọng Đồng, Tiên Thiên Đạo Thai, Cửu U Ma Thể, Hỗn Độn Thể* ➜ EXP **x2.50**, HP **+20%**, sát thương **+35%**, vạch tu vi **-20%**, luyện công **x2.5**, chịu lôi kiếp **-45%** + 1 **Thần Thông Bẩm Sinh Độc Quyền**.\n\n` +
+            `📌 *Bậc sau luôn bao trọn ưu đãi của bậc trước — không có chuyện tư chất hiếm hơn lại yếu hơn.*\n` +
+            `👉 Gõ \`!tupan\` để xem đúng dòng đặc quyền tư chất của mình.`
           );
         break;
 
@@ -50,14 +52,15 @@ export async function handleSelectMenu(interaction) {
           .setTitle(`⚖️ [CẨM NANG] - 2. Trận Doanh & Đạo Tâm`)
           .setDescription(
             `Có 3 con đường đạo tâm để bạn tự do lựa chọn:\n\n` +
+
             `☀️ **CHÍNH ĐẠO (Danh Môn Tiên Đạo)**\n` +
-            `• **Buff nội tại:** +25% Tỉ lệ Đột phá an toàn, +15% Khí Vận ban đầu, giảm 20% sát thương nhận vào từ Ma Đạo.\n` +
+            `• **Buff nội tại:** Tỉ lệ đột phá **+25%**, khí vận **+15**, giảm **10%** mọi sát thương nhận vào, hiệu quả đan dược **+15%**.\n` +
             `• **Tài nguyên:** Thu thập **Điểm Công Đức** qua việc làm việc thiện, cứu nhân độ thế ➜ Đổi Thần Phù, Hộ Thể Kim Thân.\n\n` +
             `🌘 **MA ĐẠO (Sát Phạt Đoạt Mệnh)**\n` +
-            `• **Buff nội tại:** +20% EXP khi đánh quái/thôn phệ, +25% Sát thương Bạo kích, +15% Tỉ lệ rớt đồ hiếm khi săn Boss.\n` +
+            `• **Buff nội tại:** EXP giết quái **+20%**, EXP bế quan **+10%**, sát thương bạo kích **+25%**, tỉ lệ rớt đồ hiếm **+15%**.\n` +
             `• **Tài nguyên:** Thu thập **Điểm Tà Tâm & Thiên Mệnh** qua chèn ép kẻ khác, cấy Ma Hạt, luyện Huyết Anh ➜ Đổi Cấm Kỵ Ma Công Cửu U.\n\n` +
             `🎭 **TÁN TU (Tiêu Dao / Ngụy Quân Tử)**\n` +
-            `• **Buff nội tại:** +25% Né tránh & chạy trốn, +20% Linh Thạch từ làm việc/chợ trời.\n` +
+            `• **Buff nội tại:** Né đòn **10%**, Linh Thạch làm công **+20%**, đào khoáng **+20%**, **miễn hoàn toàn thuế chợ 5%** khi bán hàng.\n` +
             `• **Kỹ năng độc quyền:** \`!matna\` (Đổi Mặt Nạ Ẩn Danh) để làm cả việc xấu của Ma Đạo lẫn việc tốt của Chính Đạo mà không bị lộ!`
           );
         break;
@@ -92,10 +95,14 @@ export async function handleSelectMenu(interaction) {
             `  5. **Kim Đan Cố Bản Đan:** Tăng vĩnh viễn +25 ATK, +500 HP, +15 DEF và +1200 EXP.\n` +
             `  6. **Hộ Mạch Đan:** Bảo vệ kinh mạch, miễn trừ mất EXP khi độ kiếp thất bại.\n` +
             `• **Nuốt Đan Dược (\`!uongdan <tên/stt>\`):** Sử dụng đan dược trong túi.\n\n` +
+
             `🏪 **Chợ Trời Tu Chân Giới (\`!chotroi\` / \`!choden\`):**\n` +
             `• Đăng bán Công Pháp: \`!ban <stt_kỹ_năng> <giá_LT>\`\n` +
             `• Đăng bán Đan Dược: \`!bandan <tên_đan_hoặc_stt> <số_lượng> <tổng_giá_LT>\`\n` +
-            `• Mua hàng từ người chơi: \`!mua <mã_số>\``
+            `• Mua hàng từ người chơi: \`!mua <mã_số>\`\n` +
+            `• Thu hồi gian hàng: \`!huyban <mã_số>\` (nhận lại nguyên vật phẩm)\n` +
+            `• **Thuế chợ 5%:** người bán nhận 95% giá niêm yết — **Tán Tu được miễn thuế**.\n` +
+            `• Giới hạn: giá **10 ➜ 10.000.000 LT**, tối đa **10 gian hàng** mở cùng lúc mỗi người.`
           );
         break;
 
@@ -115,9 +122,12 @@ export async function handleSelectMenu(interaction) {
         embed
           .setTitle(`📜 [CẨM NANG] - 6. Tàng Kinh Các 100+ Bí Kíp & Lò Vạn Đạo`)
           .setDescription(
-            `• **Tàng Kinh Các (\`!tangkinhcac\` / \`!congphap\`):** Xem danh sách công pháp đã học, độ thuần thục (%) và chỉ số cộng thêm.\n` +
-            `• **Rèn Luyện (\`!luyencong <stt>\`):** Luyện tăng độ thuần thục của bí kíp (+15% Mastery, Delay 10s).\n` +
-            `• **Lò Luyện Vạn Đạo (\`!dunghop\`):** Nấu chảy 5 công pháp Viên Mãn (100%) cùng phẩm cấp thành 1 công pháp phẩm cấp cao hơn ngẫu nhiên!`
+
+            `• **Tàng Kinh Các (
+\`!tangkinhcac\` / \`!bikip\`):** Xem danh sách công pháp đã học, độ thuần thục (%) và chỉ số cộng thêm.\n` +
+            `• **Khay Chiến Đấu (\`!kichhoat <stt>\`):** Bật/tắt công pháp mang theo khi giao chiến, **tối đa 4 bí kíp** + 2 tuyệt kỹ pháp bảo. Chưa chọn gì thì bot tự lấy 4 bí kíp phẩm cao nhất trong kho.\n` +
+            `• **Rèn Luyện (\`!luyencong <stt>\`):** Luyện tăng độ thuần thục của bí kíp (+15% Mastery, Delay 10s). Tư chất Thiên/Thần Phẩm luyện nhanh **x2 ➜ x2.5**.\n` +
+            `• **Lò Luyện Vạn Đạo (\`!dunghop [phẩm cấp]\`):** Nấu chảy 5 công pháp Viên Mãn (100%) cùng phẩm cấp thành 1 công pháp phẩm cấp cao hơn ngẫu nhiên!`
           );
         break;
 
@@ -127,9 +137,12 @@ export async function handleSelectMenu(interaction) {
           .setDescription(
             `• **Làm Công (\`!lamcong\` - Delay 30s):** Kiếm Linh Thạch và có 50% tỉ lệ hái được **Linh Thảo** luyện đan.\n` +
             `• **Đào Khoáng (\`!daokhoang\` - Delay 45s):** Khai thác linh mạch kiếm Nguyên Thạch & Linh Thạch đúc đồ.\n` +
-            `• **Đổ Thạch (\`!dothach <cược>\` - Delay 15s):** Cắt đá may rủi tìm Nguyên Thạch quý.\n` +
+
+            `• **Đổ Thạch (\`!dothach <cược>\` - Delay 20s):** Cắt đá may rủi tìm Nguyên Thạch quý.\n` +
             `• **Săn Yêu Thú (\`!santhu\` - Delay 30s):** Giao chiến turn-based với yêu thú, nhận Yêu Đan, Linh Thạch & Nguyên Thạch.\n` +
-            `• **Phó Bản Bí Cảnh (\`!phoban\` - Delay 60s):** Trảm Boss cổ đại mở rương bí kíp & bảo vật hiếm!`
+            `• **Phó Bản Bí Cảnh (\`!phoban\` - Delay 120s):** Trảm Boss cổ đại mở rương bí kíp & bảo vật hiếm!\n` +
+            `• **Đúc Pháp Bảo (\`!ducphapbao\` - Delay 60s):** Nung đúc thần binh từ Nguyên Thạch, Linh Thạch và Yêu Đan.\n` +
+            `• **Lôi Đài PvP (\`!khieuchien @user <cược>\` - Delay 20s):** Cược **50 ➜ 20.000 LT**, chỉ đấu được với người chênh **tối đa 1 đại cảnh giới**, chiến thư hết hạn sau **90s**, trận tối đa **12 hiệp**.`
           );
         break;
 
@@ -151,37 +164,51 @@ export async function handleSelectMenu(interaction) {
         embed
           .setTitle(`⚡ [CẨM NANG] - 9. Danh Sách Đầy Đủ Tất Cả Lệnh`)
           .setDescription(
+
             `**👤 Nhân Vật & Tu Vi:**\n` +
             `• \`/khoi-dau\` : Tạo nhân vật, gacha tư chất bẩm sinh, chọn phe.\n` +
             `• \`!profile\` / \`!tupan\` : Mở Bảng Tu Chân.\n` +
-            `• \`!diemdanh\` / \`!daily\` : Bói Quẻ Thiên Cơ & Điểm Danh nhận lộc ngày (Streak 7 ngày).\n` +
+            `• \`!tuido\` / \`!cankhon\` : Mở Túi Càn Khôn, dùng vật phẩm.\n` +
+            `• \`!diemdanh\` / \`!daily\` : Điểm danh nhận lộc ngày (Streak 7 ngày).\n` +
+            `• \`!boique\` / \`!que\` : Bói Quẻ Thiên Cơ đổi vận khí.\n` +
             `• \`!tuluyen\` : Bế quan nhận EXP (Delay 10s).\n` +
             `• \`!dotpha\` : Đột phá cảnh giới / nén khí Từ Dương.\n` +
-            `• \`!dokiep\` : Nghênh chiến Thiên Lôi Kiếp sinh tử (Kim Đan ➜ Nguyên Anh).\n\n` +
+            `• \`!dokiep\` : Nghênh chiến Thiên Lôi Kiếp (Kim Đan ➜ Nguyên Anh).\n` +
+            `• \`!matna\` : *(Tán Tu)* Đeo mặt nạ ẩn danh.\n\n` +
+            `**📜 Công Pháp:**\n` +
+            `• \`!tangkinhcac\` : Xem kho bí kíp & độ thuần thục.\n` +
+            `• \`!kichhoat <stt>\` : Bật/tắt bí kíp cho khay chiến đấu (tối đa 4).\n` +
+            `• \`!luyencong <stt>\` : Luyện tăng thuần thục (Delay 10s).\n` +
+            `• \`!dunghop [phẩm cấp]\` : Nấu 5 bí kíp Viên Mãn thành 1 bí kíp cao hơn.\n\n` +
             `**🔮 Luyện Đan & Chợ Trời:**\n` +
             `• \`!luyendan\` : Mở Lò Luyện Đan Vạn Cổ.\n` +
             `• \`!uongdan <tên/stt>\` : Nuốt linh đan tăng HP, EXP & chỉ số vĩnh viễn.\n` +
             `• \`!chotroi\` : Mở Chợ Trời giao thương Công Pháp & Đan Dược.\n` +
-            `• \`!bandan <tên> <số_lượng> <giá>\` : Đăng bán đan dược.\n` +
             `• \`!ban <stt_kỹ_năng> <giá>\` : Đăng bán công pháp.\n` +
-            `• \`!mua <mã_số>\` : Mua hàng từ người chơi khác.\n\n` +
+            `• \`!bandan <tên> <số_lượng> <giá>\` : Đăng bán đan dược.\n` +
+            `• \`!mua <mã_số>\` : Mua hàng *(thuế chợ 5%, Tán Tu miễn thuế)*.\n` +
+            `• \`!huyban <mã_số>\` : Thu hồi gian hàng, lấy lại vật phẩm.\n\n` +
             `**🛡️ Pháp Bảo & Trang Bị:**\n` +
             `• \`!baovat\` : Tàng Bảo Các tra cứu 60 pháp bảo.\n` +
             `• \`!xemphapbao <tên/id>\` : Xem chi tiết bảo vật & Tuyệt Kỹ.\n` +
-            `• \`!ducphapbao\` : Lò đúc vũ khí & pháp bảo.\n` +
+            `• \`!ducphapbao\` : Lò đúc vũ khí & pháp bảo (Delay 60s).\n` +
             `• \`!phapbao\` : Mặc trang bị và đập búa cường hóa.\n\n` +
             `**⚔️ Chiến Đấu & Khai Thác:**\n` +
             `• \`!lamcong\` : Kiếm Linh Thạch & hái Linh Thảo (Delay 30s).\n` +
             `• \`!daokhoang\` : Đào mỏ kiếm Nguyên Thạch (Delay 45s).\n` +
-            `• \`!dothach <cược>\` : Đổ thạch tìm ngọc quý (Delay 15s).\n` +
+            `• \`!dothach <cược>\` : Đổ thạch tìm ngọc quý (Delay 20s).\n` +
             `• \`!santhu\` : Săn quái turn-based lấy Yêu Đan (Delay 30s).\n` +
-            `• \`!phoban\` : Vượt ải chiến Boss Bí Cảnh (Delay 60s).\n` +
-            `• \`!khieuchien @user <cược>\` : Lôi đài tỉ thí PvP (Delay 20s).\n\n` +
+            `• \`!phoban\` : Vượt ải chiến Boss Bí Cảnh (Delay 120s).\n` +
+            `• \`!khieuchien @user <cược>\` : Lôi đài PvP, cược 50–20.000 LT (Delay 20s).\n\n` +
             `**🏛️ Tông Môn & Xếp Hạng:**\n` +
-            `• \`!tongmon\` : Bảng điều khiển Tông Môn & Cống hiến quỹ bang.\n` +
-            `• \`!laptongmon <tên>\` : Sáng lập môn phái riêng.\n` +
-            `• \`!nhiemvubang\` : Làm nhiệm vụ tông môn.\n` +
-            `• \`!top\` / \`!bxh\` : Mở Bảng Xếp Hạng Vạn Giới (5 bảng).`
+            `• \`!laptongmon <tên>\` : Sáng lập môn phái riêng (500 LT).\n` +
+            `• \`!tongmon\` : Bảng điều khiển Tông Môn & cống hiến quỹ bang.\n` +
+            `• \`!moivaobang @user\` : Chiêu mộ đệ tử.\n` +
+            `• \`!conghien <số_LT>\` : Nạp Linh Thạch vào ngân khố.\n` +
+            `• \`!nhiemvubang\` : Làm nhiệm vụ tông môn (Delay 60s).\n` +
+            `• \`!phongchuc @user <chức>\` / \`!khuctruc @user\` : Quản lý nhân sự.\n` +
+            `• \`!top\` / \`!bxh\` : Bảng Xếp Hạng Vạn Giới (5 bảng).\n` +
+            `• \`!bxhtongmon\` : Bảng xếp hạng các tông môn.`
           );
         break;
     }

@@ -106,3 +106,6 @@ if (passed === total) {
   console.log(chalk.bold.red(`❌ KẾT QUẢ: ${passed}/${total} BỘ KIỂM THỬ THÀNH CÔNG.`));
 }
 console.log(chalk.bold.magenta(`======================================================\n`));
+
+// Thoát tường minh kèm mã lỗi để CI đọc được kết quả (mongoose giữ event loop).
+process.exit(passed === total ? 0 : 1);

@@ -3,10 +3,12 @@ import { User } from '../../database/models/User.js';
 
 
 import { fuseSkills, RARITY_ORDER, findBestFusableRarity, getRarityName } from '../../services/skillService.js';
+
 import { getUserTalentPerks } from '../../services/talentService.js';
+import { COOLDOWNS, claimCooldown } from '../../utils/cooldown.js';
 
 
-const TRAIN_COOLDOWN_SECONDS = 10;
+const TRAIN_COOLDOWN_SECONDS = COOLDOWNS.skillTrain;
 
 // Trùng với MAX_COMBAT_SKILL_BUTTONS bên hunting.js: Discord chỉ còn 4 chỗ
 // trống trên hàng nút đầu tiên sau nút "Đánh Thường".
@@ -127,8 +129,9 @@ export async function executeTangkinhcac(message) {
   await message.reply({ embeds: [embed], components: [row] });
 }
 
+
 export async function executeLuyencong(message, args) {
-  const user = await User.findOne({ userId: message.author.id });
+  let user = await User.findOne({ userId: message.author.id });
   if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
 
   if (user.skills.length === 0) {
@@ -141,10 +144,19 @@ export async function executeLuyencong(message, args) {
     if (elapsedSeconds < TRAIN_COOLDOWN_SECONDS) {
       const waitTime = TRAIN_COOLDOWN_SECONDS - elapsedSeconds;
       return message.reply({
+
         content: `⏳ Đạo hữu đang điều tức kinh mạch sau khi luyện võ! Vui lòng chờ thêm **${waitTime}s**.`
       });
     }
   }
+
+  // Cổng chặn nguyên tử: spam nhiều lệnh cùng lúc chỉ được tính đúng 1 lượt
+  // thuần thục, không thể nhồi mastery lên 100% trong một nhịp.
+  const claimed = await claimCooldown(User, user.userId, 'skillTrain');
+  if (!claimed) {
+    return message.reply({ content: `⏳ Đạo hữu diễn chiêu quá gấp, kinh mạch chưa kịp điều hòa! Chờ thêm giây lát.` });
+  }
+  user = claimed;
 
   let skillIndex = 0;
   if (args.length > 0) {
@@ -166,8 +178,8 @@ export async function executeLuyencong(message, args) {
   // trong talents.json nhưng không được đọc nên mọi linh căn học bài như nhau.
   const masteryGain = Math.max(1, Math.round(15 * (getUserTalentPerks(user).skillMasterySpeed || 1)));
   const masteryBefore = skill.mastery;
+
   skill.mastery = Math.min(100, skill.mastery + masteryGain);
-  user.cooldowns.skillTrain = now;
   await user.save();
 
   const embed = new EmbedBuilder()

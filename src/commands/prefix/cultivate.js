@@ -12,9 +12,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const factionsConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/factions.json'), 'utf8'));
-import { getFactionBuffs } from '../../services/factionService.js';
 
-const CULTIVATE_COOLDOWN_SECONDS = 10; // Đặt đúng 10s delay cho mỗi lần tu luyện
+import { getFactionBuffs } from '../../services/factionService.js';
+import { COOLDOWNS, claimCooldown } from '../../utils/cooldown.js';
+
+const CULTIVATE_COOLDOWN_SECONDS = COOLDOWNS.cultivate;
 
 export async function cultivate(user) {
   const now = new Date();
@@ -24,9 +26,21 @@ export async function cultivate(user) {
       const waitTime = CULTIVATE_COOLDOWN_SECONDS - elapsedSeconds;
       return {
         success: false,
+
         message: `⏳ Đạo hữu đang trong trạng thái bế quan điều tức! Vui lòng tĩnh tâm chờ thêm **${waitTime}s**.`
       };
     }
+  }
+
+  // Chốt lượt bằng một câu lệnh nguyên tử. Kiểm tra ở trên chỉ để báo lỗi cho
+  // đẹp; nếu người chơi gửi nhiều lệnh cùng lúc thì tất cả đều vượt qua nó, nên
+  // phải có thêm cổng chặn dưới đây mới không nhân đôi EXP cho một lượt.
+  const claimed = await claimCooldown(User, user.userId, 'cultivate');
+  if (!claimed) {
+    return {
+      success: false,
+      message: `⏳ Đạo hữu vận công quá gấp, chân khí chưa kịp quy nguyên! Chờ thêm giây lát rồi tu luyện tiếp.`
+    };
   }
 
 
@@ -128,7 +142,8 @@ export async function executeTuluyen(message) {
       `Đạo hữu ngồi xếp bằng vận chuyển chu thiên, hấp thu linh khí đất trời:\n\n` +
       `✨ Nhận được: **+${result.expGained} EXP** Tu Vi${coreMsg}\n` +
       `📊 Tiến độ: \`${result.displayExp}/${result.maxExp} EXP\` (${percent}%)\n` +
-      `⏱️ *Thời gian hồi chiêu: 10 giây*`
+
+      `⏱️ *Thời gian hồi chiêu: ${CULTIVATE_COOLDOWN_SECONDS} giây*`
     );
 
   if (result.isReadyToBreak) {
