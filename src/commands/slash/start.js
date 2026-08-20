@@ -1,6 +1,7 @@
 import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { User } from '../../database/models/User.js';
-import { rollInnateTalent } from '../../services/talentService.js';
+
+import { rollInnateTalent, getTalentPerks, getTalentPerkText } from '../../services/talentService.js';
 
 export const data = new SlashCommandBuilder()
   .setName('khoi-dau')
@@ -22,7 +23,13 @@ export async function execute(interaction) {
   // Quay tư chất bẩm sinh (Duy nhất 1 lần khi sinh ra)
   const talent = rollInnateTalent();
 
-  // Tạo tài khoản sơ khởi
+
+  // Tạo tài khoản sơ khởi. HP khởi điểm đã tính ưu đãi hpBonus của linh căn
+  // (Lương Phẩm +10%...) để phần thưởng tư chất có hiệu lực ngay từ hiệp đầu,
+  // chứ không phải đợi tới lần đột phá đầu tiên.
+  const startPerks = getTalentPerks(talent.tier);
+  const startHp = Math.floor(100 * (1 + startPerks.hpBonus));
+
   const newUser = new User({
     userId,
     username,
@@ -35,6 +42,7 @@ export async function execute(interaction) {
       expMultiplier: talent.expMultiplier,
       specialSkill: talent.specialSkill
     },
+    stats: { hp: startHp, maxHp: startHp },
     rerollsLeft: 0
   });
 
@@ -48,7 +56,9 @@ export async function execute(interaction) {
     .addFields(
       { name: `🔮 Phẩm Cấp Tư Chất`, value: `**${talent.tierName}** (Hệ số EXP: **x${talent.expMultiplier}**)`, inline: true },
       { name: `🧬 Linh Căn / Thể Chất`, value: `**${talent.name}**`, inline: true },
-      { name: `📜 Miêu Tả`, value: `${talent.desc}`, inline: false }
+
+      { name: `📜 Miêu Tả`, value: `${talent.desc}`, inline: false },
+      { name: `🎁 Đặc Quyền Bẩm Sinh`, value: getTalentPerkText(talent.tier), inline: false }
     );
 
   if (talent.specialSkill) {

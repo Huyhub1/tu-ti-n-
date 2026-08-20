@@ -149,7 +149,7 @@ export async function handlePrefixCommand(message, prefix = '!') {
 
       case 'dunghop':
       case 'fuse':
-        return executeDunghop(message);
+        return executeDunghop(message, args);
 
       case 'lamcong':
       case 'work':

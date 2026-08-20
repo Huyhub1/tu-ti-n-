@@ -2,7 +2,9 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+
 import { getFactionBuffs } from './factionService.js';
+import { getUserTalentPerks } from './talentService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -105,12 +107,26 @@ export function calculateMaxExp(realmId, layer, isLuyenKhiVanTang = false) {
   return Math.floor(baseExp * Math.pow(expGrowth, layer - 1));
 }
 
+
+/**
+ * Vạch tu vi thực tế của một nhân vật = công thức config trừ đi ưu đãi
+ * `breakDiscount` của linh căn (Cực Phẩm giảm 15%). Bọc lại ở một chỗ để mọi
+ * nơi ghi maxExp đều thống nhất, tránh cảnh hiển thị một đằng tính một nẻo.
+ */
+export function calculateUserMaxExp(user, realmId, layer, isLuyenKhiVanTang = false) {
+  const base = calculateMaxExp(realmId, layer, isLuyenKhiVanTang);
+  const discount = getUserTalentPerks(user).breakDiscount || 0;
+  return Math.max(1, Math.floor(base * (1 - discount)));
+}
+
 export function attemptBreakthrough(user) {
   const config = getRealmsConfig();
   const currentRealm = config.realms.find(r => r.id === user.realm.id) || config.realms[0];
   const currentLayer = user.realm.layer;
+
   const isMaxExp = user.realm.exp >= user.realm.maxExp;
   const stageNames = config.stageNames || ['Sơ Kỳ', 'Trung Kỳ', 'Hậu Kỳ', 'Đỉnh Phong'];
+  const talentPerks = getUserTalentPerks(user);
 
   if (!isMaxExp) {
     return {
@@ -124,9 +140,10 @@ export function attemptBreakthrough(user) {
     const nextLayer = currentLayer + 1;
     user.realm.layer = nextLayer;
     user.realm.exp = 0;
-    user.realm.maxExp = calculateMaxExp(currentRealm.id, nextLayer, user.isLuyenKhiVanTang);
 
-    user.stats.maxHp += currentRealm.hpGain || 50;
+    user.realm.maxExp = calculateUserMaxExp(user, currentRealm.id, nextLayer, user.isLuyenKhiVanTang);
+
+    user.stats.maxHp += Math.floor((currentRealm.hpGain || 50) * (1 + talentPerks.hpBonus));
     user.stats.hp = user.stats.maxHp;
     user.stats.maxMp = (user.stats.maxMp || 100) + (currentRealm.mpGain || 40);
     user.stats.mp = user.stats.maxMp;
@@ -157,9 +174,10 @@ export function attemptBreakthrough(user) {
 
     user.realm.layer = nextLayer;
     user.realm.exp = 0;
-    user.realm.maxExp = calculateMaxExp(currentRealm.id, nextLayer, true);
 
-    user.stats.maxHp += currentRealm.hpGain || 50;
+    user.realm.maxExp = calculateUserMaxExp(user, currentRealm.id, nextLayer, true);
+
+    user.stats.maxHp += Math.floor((currentRealm.hpGain || 50) * (1 + talentPerks.hpBonus));
     user.stats.hp = user.stats.maxHp;
     user.stats.maxMp = (user.stats.maxMp || 100) + (currentRealm.mpGain || 40);
     user.stats.mp = user.stats.maxMp;
@@ -246,9 +264,10 @@ export function attemptBreakthrough(user) {
     user.realm.name = getRealmDisplayName(nextRealm.id, 1, false);
     user.realm.layer = 1;
     user.realm.exp = 0;
-    user.realm.maxExp = calculateMaxExp(nextRealm.id, 1, false);
 
-    user.stats.maxHp += (nextRealm.hpGain || 100) * 2;
+    user.realm.maxExp = calculateUserMaxExp(user, nextRealm.id, 1, false);
+
+    user.stats.maxHp += Math.floor((nextRealm.hpGain || 100) * 2 * (1 + talentPerks.hpBonus));
     user.stats.hp = user.stats.maxHp;
     user.stats.maxMp = (user.stats.maxMp || 100) + (nextRealm.mpGain || 50) * 2;
     user.stats.mp = user.stats.maxMp;
@@ -277,7 +296,8 @@ export function attemptBreakthrough(user) {
     const newLayer = Math.max(1, user.realm.layer - 1);
     user.realm.layer = newLayer;
     user.realm.name = getRealmDisplayName(user.realm.id, newLayer, user.isLuyenKhiVanTang);
-    user.realm.maxExp = calculateMaxExp(user.realm.id, newLayer, user.isLuyenKhiVanTang);
+
+    user.realm.maxExp = calculateUserMaxExp(user, user.realm.id, newLayer, user.isLuyenKhiVanTang);
     user.realm.exp = Math.floor(user.realm.maxExp * 0.40);
 
     return {

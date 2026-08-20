@@ -2,7 +2,9 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { User } from '../database/models/User.js';
+
 import { getFactionBuffs, getCritMultiplier } from './factionService.js';
+import { getUserTalentPerks } from './talentService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -92,15 +94,19 @@ export function releaseChallenge(challengerId, targetId) {
 setInterval(() => purgeExpired(), 5 * 60 * 1000).unref?.();
 
 // ── Mô phỏng giao đấu theo lượt ─────────────────────────────────────
+
 function buildFighter(user) {
   const s = user.stats || {};
   const buffs = getFactionBuffs(user.faction);
+  // Chỉ nhân dmgBonus: hpBonus đã được cộng thẳng vào stats.maxHp mỗi lần đột
+  // phá nên nhân lại ở đây sẽ tính trùng hai lần.
+  const perks = getUserTalentPerks(user);
   return {
     id: user.userId,
     name: user.daoName || user.username,
     hp: Math.max(1, s.maxHp || 100),
     maxHp: Math.max(1, s.maxHp || 100),
-    atk: Math.max(1, s.atk || 15),
+    atk: Math.max(1, Math.floor((s.atk || 15) * (1 + (perks.dmgBonus || 0)))),
     def: Math.max(0, s.def || 8),
     critRate: Math.min(0.60, s.critRate || 0.05),
     dodgeRate: Math.min(0.45, (s.dodgeRate || 0.05) + (buffs.dodgeChance || 0)),

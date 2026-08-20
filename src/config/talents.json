@@ -27,7 +27,9 @@
       "name": "Cực Phẩm",
       "color": "#2196F3",
       "rate": 0.14,
+
       "expMultiplier": 1.35,
+      "hpBonus": 0.10,
       "dmgBonus": 0.20,
       "breakDiscount": 0.15,
       "items": [
@@ -41,7 +43,11 @@
       "name": "Thiên Phẩm",
       "color": "#9C27B0",
       "rate": 0.05,
+
       "expMultiplier": 1.70,
+      "hpBonus": 0.15,
+      "dmgBonus": 0.25,
+      "breakDiscount": 0.15,
       "skillMasterySpeed": 2.0,
       "tribulationResist": 0.30,
       "items": [
@@ -54,7 +60,13 @@
       "name": "Thần Phẩm (Nghịch Thiên)",
       "color": "#FFD700",
       "rate": 0.01,
+
       "expMultiplier": 2.50,
+      "hpBonus": 0.20,
+      "dmgBonus": 0.35,
+      "breakDiscount": 0.20,
+      "skillMasterySpeed": 2.5,
+      "tribulationResist": 0.45,
       "specialSkill": true,
       "items": [
         { "id": "chi_ton_cot", "name": "Chí Tôn Cốt Bẩm Sinh", "desc": "Xương sống khắc đầy thiên đạo thần phù, mở khóa Thần Thông [Chí Tôn Kiếp Quang].", "skill": "Chí Tôn Kiếp Quang" },

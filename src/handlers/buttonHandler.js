@@ -4,7 +4,9 @@ import { MarketItem } from '../database/models/MarketItem.js';
 import { Sect } from '../database/models/Sect.js';
 import { cultivate } from '../commands/prefix/cultivate.js';
 
-import { attemptBreakthrough, getRealmDisplayName, calculateMaxExp } from '../services/cultivationService.js';
+
+import { attemptBreakthrough, getRealmDisplayName, calculateUserMaxExp } from '../services/cultivationService.js';
+import { getUserTalentPerks } from '../services/talentService.js';
 import { getSkillById, getAllSkills } from '../services/skillService.js';
 import { combatSessions, createCombatEmbed, createCombatButtons, SKILL_MANA_COST, GEAR_MANA_COST } from '../commands/prefix/hunting.js';
 import { dungeonCombatSessions, createDungeonCombatEmbed, createDungeonCombatButtons, DUNGEON_SKILL_MANA_COST, DUNGEON_GEAR_MANA_COST } from '../commands/prefix/dungeon.js';
@@ -231,7 +233,9 @@ export async function handleButton(interaction) {
     setCooldown(user, 'hunting');
     await user.save();
 
+
     const huntBuffs = getFactionBuffs(user.faction);
+    const huntPerks = getUserTalentPerks(user);
 
     combatSessions[targetUserId] = {
       factionBuffs: huntBuffs,
@@ -242,7 +246,8 @@ export async function handleButton(interaction) {
       userMaxHp: user.stats.maxHp || 100,
       userMp: user.stats.mp ?? user.stats.maxMp ?? 100,
       userMaxMp: user.stats.maxMp || 100,
-      userAtk: user.stats.atk || 15,
+
+      userAtk: Math.floor((user.stats.atk || 15) * (1 + huntPerks.dmgBonus)),
       userDef: user.stats.def || 8,
       critRate: user.stats.critRate || 0.05,
       equippedSkills: equippedSkills,
@@ -577,7 +582,9 @@ export async function handleButton(interaction) {
     setCooldown(user, 'dungeon');
     await user.save();
 
+
     const dgBuffs = getFactionBuffs(user.faction);
+    const dgPerks = getUserTalentPerks(user);
 
     dungeonCombatSessions[targetUserId] = {
       factionBuffs: dgBuffs,
@@ -588,7 +595,8 @@ export async function handleButton(interaction) {
       userMaxHp: user.stats.maxHp || 100,
       userMp: user.stats.mp ?? user.stats.maxMp ?? 100,
       userMaxMp: user.stats.maxMp || 100,
-      userAtk: user.stats.atk || 15,
+
+      userAtk: Math.floor((user.stats.atk || 15) * (1 + dgPerks.dmgBonus)),
       userDef: user.stats.def || 8,
       critRate: user.stats.critRate || 0.05,
       equippedSkills: equippedSkills,
@@ -1882,8 +1890,13 @@ export async function handleButton(interaction) {
       }
     }
 
-    // Tính toán sát thương nhận vào thực tế
-    const finalDamage = Math.max(80, Math.floor(rawDmg * (1 - Math.min(0.85, damageMitigation)) - session.totalDef * 0.5));
+
+    // Tính toán sát thương nhận vào thực tế.
+    // Kháng thiên lôi bẩm sinh (Thiên Phẩm -30%) nhân sau cùng, nằm ngoài trần
+    // 85% của các thủ đoạn chống đỡ nên vẫn còn giá trị ở đạo lôi thứ ba.
+    const tribulationResist = getUserTalentPerks(user).tribulationResist || 0;
+    const mitigatedDmg = Math.max(0, Math.floor(rawDmg * (1 - Math.min(0.85, damageMitigation)) - session.totalDef * 0.5));
+    const finalDamage = Math.max(80, Math.floor(mitigatedDmg * (1 - tribulationResist)));
     session.currentHp = Math.max(0, session.currentHp - finalDamage);
 
     session.lastLog = `${actionLog}\n⚡ Sát thương lôi kiếp xuyên qua: **-${finalDamage} HP**!`;
@@ -1906,7 +1919,8 @@ export async function handleButton(interaction) {
 
         user.realm.layer = 2;
         user.realm.name = getRealmDisplayName('kim_dan', 2, false);
-        user.realm.maxExp = calculateMaxExp('kim_dan', 2, false);
+
+        user.realm.maxExp = calculateUserMaxExp(user, 'kim_dan', 2, false);
         user.realm.exp = 0;
         protectionMsg = `\n\n💀 Không có bảo dược hộ mệnh, Kim Đan bị lôi kiếp đánh nứt toác, tu vi bị đánh tụt thẳng về **Kim Đan Kỳ [Trung Kỳ]**!`;
       }
@@ -1941,7 +1955,8 @@ export async function handleButton(interaction) {
     user.realm.name = getRealmDisplayName('nguyen_anh', 1, false);
     user.realm.layer = 1;
     user.realm.exp = 0;
-    user.realm.maxExp = calculateMaxExp('nguyen_anh', 1, false);
+
+    user.realm.maxExp = calculateUserMaxExp(user, 'nguyen_anh', 1, false);
     user.stats.maxHp += 2000;
     user.stats.hp = user.stats.maxHp;
     user.stats.atk += 300;

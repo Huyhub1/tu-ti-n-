@@ -1,6 +1,9 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { User } from '../../database/models/User.js';
-import { fuseSkills } from '../../services/skillService.js';
+
+
+import { fuseSkills, RARITY_ORDER, findBestFusableRarity, getRarityName } from '../../services/skillService.js';
+import { getUserTalentPerks } from '../../services/talentService.js';
 
 const TRAIN_COOLDOWN_SECONDS = 10;
 
@@ -83,7 +86,12 @@ export async function executeLuyencong(message, args) {
     });
   }
 
-  skill.mastery = Math.min(100, skill.mastery + 15);
+
+  // Tư chất Thiên Phẩm trở lên có skillMasterySpeed > 1 (x2), trước đây khai báo
+  // trong talents.json nhưng không được đọc nên mọi linh căn học bài như nhau.
+  const masteryGain = Math.max(1, Math.round(15 * (getUserTalentPerks(user).skillMasterySpeed || 1)));
+  const masteryBefore = skill.mastery;
+  skill.mastery = Math.min(100, skill.mastery + masteryGain);
   user.cooldowns.skillTrain = now;
   await user.save();
 
@@ -91,19 +99,49 @@ export async function executeLuyencong(message, args) {
     .setTitle(`🧘 [BẾ QUAN LUYỆN VÕ]`)
     .setColor('#4CAF50')
     .setDescription(
+
       `Đạo hữu diễn luyện chiêu thức của **[${skill.name}]**:\n\n` +
-      `✨ Độ thuần thục tăng lên: **\`${skill.mastery}%\`** ${skill.mastery >= 100 ? '🔥 **VIÊN MÃN!**' : ''}\n` +
+      `✨ Độ thuần thục: \`${masteryBefore}%\` ➜ **\`${skill.mastery}%\`** (+${skill.mastery - masteryBefore}) ${skill.mastery >= 100 ? '🔥 **VIÊN MÃN!**' : ''}\n` +
+      `${masteryGain > 15 ? `🌟 *Linh căn thiên phú giúp lĩnh ngộ nhanh gấp ${(masteryGain / 15).toFixed(1)} lần!*\n` : ''}` +
       `⏱️ *Thời gian hồi chiêu: 10 giây*`
     );
 
   await message.reply({ embeds: [embed] });
 }
 
-export async function executeDunghop(message) {
+
+export async function executeDunghop(message, args = []) {
   const user = await User.findOne({ userId: message.author.id });
   if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
 
-  const result = fuseSkills(user, 'HOANG_GIAI');
+  // Bản cũ khoá cứng 'HOANG_GIAI' nên cả nhánh dung hợp bậc cao là đồ trang trí.
+  // Giờ: có tham số thì theo tham số, không thì tự chọn phẩm cấp cao nhất đủ liệu.
+  let rarity = null;
+  if (args.length > 0) {
+    const wanted = String(args[0]).toUpperCase().replace(/[\s-]/g, '_');
+    if (!RARITY_ORDER.includes(wanted)) {
+      return message.reply({
+        content: `❌ Phẩm cấp không hợp lệ! Chọn một trong: ${RARITY_ORDER.map(r => `\`${r}\``).join(', ')}\n💡 Bỏ trống để bot tự chọn phẩm cấp cao nhất mà đạo hữu đủ liệu.`
+      });
+    }
+    rarity = wanted;
+  } else {
+    rarity = findBestFusableRarity(user);
+    if (!rarity) {
+      const tally = RARITY_ORDER
+        .map(r => {
+          const n = (user.skills || []).filter(s => s.rarity === r && s.mastery >= 100).length;
+          return n > 0 ? `${getRarityName(r)}: **${n}/5**` : null;
+        })
+        .filter(Boolean)
+        .join(' · ') || '*chưa có bí kíp nào viên mãn*';
+      return message.reply({
+        content: `❌ Chưa đủ **5 bí kíp cùng phẩm cấp đạt 100% viên mãn** để dung hợp!\n📊 Kiểm kê: ${tally}\n💡 Dùng \`!luyencong <số>\` để nâng thuần thục.`
+      });
+    }
+  }
+
+  const result = fuseSkills(user, rarity);
   if (!result.success) {
     return message.reply({ content: `❌ ${result.message}` });
   }

@@ -1,5 +1,10 @@
 {
-  "stageNames": ["Sơ Kỳ", "Trung Kỳ", "Hậu Kỳ", "Đỉnh Phong"],
+  "stageNames": [
+    "Sơ Kỳ",
+    "Trung Kỳ",
+    "Hậu Kỳ",
+    "Đỉnh Phong"
+  ],
   "realms": [
     {
       "id": "pham_nhan",
@@ -29,7 +34,7 @@
       "mpGain": 60,
       "atkGain": 20,
       "defGain": 10,
-      "breakSuccessRate": 0.60,
+      "breakSuccessRate": 0.6,
       "canCompress": true,
       "compressMaxLayer": 50,
       "nextRealmId": "truc_co",
@@ -42,8 +47,8 @@
       "name": "Trúc Cơ Kỳ",
       "level": 2,
       "maxLayer": 4,
-      "baseExp": 8000,
-      "expGrowth": 2.5,
+      "baseExp": 7000,
+      "expGrowth": 2.2,
       "hpGain": 300,
       "mpGain": 150,
       "atkGain": 50,
@@ -60,8 +65,8 @@
       "name": "Kim Đan Kỳ",
       "level": 3,
       "maxLayer": 4,
-      "baseExp": 120000,
-      "expGrowth": 2.8,
+      "baseExp": 80000,
+      "expGrowth": 2.4,
       "hpGain": 800,
       "mpGain": 400,
       "atkGain": 120,
@@ -78,8 +83,8 @@
       "name": "Nguyên Anh Kỳ",
       "level": 4,
       "maxLayer": 4,
-      "baseExp": 2500000,
-      "expGrowth": 3.0,
+      "baseExp": 1000000,
+      "expGrowth": 2.2,
       "hpGain": 2000,
       "mpGain": 1000,
       "atkGain": 300,

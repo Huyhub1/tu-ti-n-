@@ -1,6 +1,8 @@
 import { EmbedBuilder } from 'discord.js';
 import { User } from '../../database/models/User.js';
+
 import { getRealmDisplayName } from '../../services/cultivationService.js';
+import { getTalentPerkText } from '../../services/talentService.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -37,7 +39,9 @@ export function createProfileEmbed(user) {
     .setColor(faction.color || '#9C27B0')
     .setDescription(
       `**Trận Doanh:** ${faction.tag}\n` +
-      `**Tư Chất:** 🧬 **[${user.talent.name}]** (*${user.talent.tierName} - EXP x${user.talent.expMultiplier}*)\n` +
+
+      `**Tư Chất:** 🧬 **[${user.talent.name}]** (*${user.talent.tierName}*)\n` +
+      `**Đặc Quyền:** ${getTalentPerkText(user.talent.tier)}\n` +
       `**Cảnh Giới:** ⚡ **${realmInfo}**${goldenCoreText}\n` +
       `**Tu Vi (EXP):** \`${displayExp}/${user.realm.maxExp}\` [${progressBar}] \`${progressPercent}%\``
     )

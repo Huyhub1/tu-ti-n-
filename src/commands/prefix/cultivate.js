@@ -1,7 +1,9 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { User } from '../../database/models/User.js';
 import { Sect } from '../../database/models/Sect.js';
-import { attemptBreakthrough } from '../../services/cultivationService.js';
+
+
+import { attemptBreakthrough, calculateUserMaxExp } from '../../services/cultivationService.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -25,6 +27,16 @@ export async function cultivate(user) {
         message: `⏳ Đạo hữu đang trong trạng thái bế quan điều tức! Vui lòng tĩnh tâm chờ thêm **${waitTime}s**.`
       };
     }
+  }
+
+
+  // Đồng bộ lại vạch tu vi theo config hiện hành. Mỗi lần cân bằng lại
+  // realms.json, người chơi cũ vẫn giữ maxExp cũ trong CSDL nên sẽ phải cày
+  // theo bảng số đã bị bỏ. Tính lại ở đây là chỗ rẻ nhất và tự lành.
+
+  const configMaxExp = calculateUserMaxExp(user, user.realm.id, user.realm.layer || 1, user.isLuyenKhiVanTang);
+  if (configMaxExp > 0 && user.realm.maxExp !== configMaxExp) {
+    user.realm.maxExp = configMaxExp;
   }
 
   // Tính EXP nhận được theo cảnh giới
