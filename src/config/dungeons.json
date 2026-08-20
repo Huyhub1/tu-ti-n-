@@ -1,0 +1,30 @@
+{
+  "dungeons": [
+    {
+      "id": "hang_dong_ngoai_vi",
+      "name": "Hang Động Ngoại Vi (Ải 1)",
+      "minLevel": "Luyện Khí Kỳ",
+      "minLayer": 1,
+      "boss": { "name": "Chuột Chúa Độc Nha", "hp": 600, "atk": 45, "def": 25 },
+      "exp": 120,
+      "linhThach": 80,
+      "nguyenThachMin": 2,
+      "nguyenThachMax": 4,
+      "rareDropRate": 0.20,
+      "desc": "Hang động ẩm thấp nơi đàn chuột yêu tinh quấy nhiễu các đệ tử tạp dịch."
+    },
+    {
+      "id": "thao_khau_son_trai",
+      "name": "Sơn Trại Tà Tu (Ải 2)",
+      "minLevel": "Luyện Khí Kỳ",
+      "minLayer": 5,
+      "boss": { "name": "Đại Đương Gia Hắc Hổ", "hp": 1800, "atk": 110, "def": 55 },
+      "exp": 400,
+      "linhThach": 250,
+      "nguyenThachMin": 5,
+      "nguyenThachMax": 10,
+      "rareDropRate": 0.30,
+      "desc": "Sào huyệt của bọn tán tu cướp bóc, ẩn giấu nhiều rương đan dược và bí kíp trộm cắp."
+    }
+  ]
+}

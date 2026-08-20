@@ -1,0 +1,32 @@
+{
+  "jobs": [
+    {
+      "id": "ganh_nuoc",
+      "title": "Gánh Nước Linh Tuyền",
+      "desc": "Đến suối nguồn sau núi gánh nước linh tuyền về tưới dược điền môn phái.",
+      "minMoney": 40,
+      "maxMoney": 80
+    },
+    {
+      "id": "don_cui",
+      "title": "Đốn Củi Thiết Mộc",
+      "desc": "Vào rừng sâu đốn gỗ cây Thiết Mộc ngàn năm để lò luyện đan dùng làm củi.",
+      "minMoney": 50,
+      "maxMoney": 95
+    },
+    {
+      "id": "hai_thuoc",
+      "title": "Hái Linh Thảo Vách Núi",
+      "desc": "Leo lên vách đá cheo leo hái Bách Thảo ngàn năm.",
+      "minMoney": 60,
+      "maxMoney": 120
+    },
+    {
+      "id": "quet_san",
+      "title": "Quét Dọn Sơn Môn",
+      "desc": "Dọn dẹp lá rụng trên quảng trường và bậc thang sơn môn.",
+      "minMoney": 35,
+      "maxMoney": 75
+    }
+  ]
+}

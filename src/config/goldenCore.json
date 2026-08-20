@@ -1,0 +1,64 @@
+{
+  "grades": [
+    {
+      "id": "HA_PHAM",
+      "name": "Hạ Phẩm Kim Đan (Tạp Đan)",
+      "rate": 0.40,
+      "color": "#9E9E9E",
+      "expBonus": 0.15,
+      "atkBonus": 40,
+      "defBonus": 20,
+      "hpBonus": 200,
+      "critBonus": 0.02,
+      "desc": "Kim Đan lẫn tạp chất ngũ hành, đan quang mờ nhạt. Tăng 15% tốc độ tu luyện."
+    },
+    {
+      "id": "TRUNG_PHAM",
+      "name": "Trung Phẩm Kim Đan (Tam Chuyển)",
+      "rate": 0.35,
+      "color": "#4CAF50",
+      "expBonus": 0.35,
+      "atkBonus": 80,
+      "defBonus": 40,
+      "hpBonus": 400,
+      "critBonus": 0.04,
+      "desc": "Khắc 3 đường đạo văn linh động, đan khí thuần khiết. Tăng 35% tốc độ tu luyện."
+    },
+    {
+      "id": "THUONG_PHAM",
+      "name": "Thượng Phẩm Kim Đan (Lục Chuyển)",
+      "rate": 0.18,
+      "color": "#2196F3",
+      "expBonus": 0.65,
+      "atkBonus": 150,
+      "defBonus": 75,
+      "hpBonus": 750,
+      "critBonus": 0.06,
+      "desc": "Khắc 6 đường đạo văn lấp lánh như tinh tú, linh áp cuồn cuộn. Tăng 65% tốc độ tu luyện."
+    },
+    {
+      "id": "CUC_PHAM",
+      "name": "Cực Phẩm Kim Đan (Cửu Chuyển Bất Hủ)",
+      "rate": 0.06,
+      "color": "#9C27B0",
+      "expBonus": 1.00,
+      "atkBonus": 260,
+      "defBonus": 130,
+      "hpBonus": 1200,
+      "critBonus": 0.10,
+      "desc": "Cửu Chuyển Viên Mãn, 9 đường kim sắc đạo văn rực rỡ ngút trời. Tăng 100% (gấp đôi) tốc độ tu luyện!"
+    },
+    {
+      "id": "THIEN_DAO",
+      "name": "Thiên Đạo Vô Khuyết Kim Đan (Tử Kim Chí Tôn)",
+      "rate": 0.01,
+      "color": "#FFD700",
+      "expBonus": 1.80,
+      "atkBonus": 450,
+      "defBonus": 220,
+      "hpBonus": 2000,
+      "critBonus": 0.15,
+      "desc": "Dị tượng Tử Khí Đông Lai vạn dặm! Kim Đan màu tím hoàng kim không tì vết, tăng 180% tốc độ tu luyện và lực chiến nghịch thiên!"
+    }
+  ]
+}

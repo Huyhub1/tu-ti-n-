@@ -1,0 +1,106 @@
+{
+  "pills": [
+    {
+      "id": "hoi_xuan_dan",
+      "name": "Hồi Xuân Đan",
+      "tier": "HOANG_GIAI",
+      "tierName": "Hoàng Giai",
+      "healHp": 500,
+      "expGain": 30,
+      "statBonus": {},
+      "desc": "Đan dược trị thương sơ cấp, hồi phục ngay lập tức 500 điểm sinh mệnh (HP).",
+      "recipe": {
+        "linhThao": 2,
+        "yeuDan": "yeu_dan_so_cap",
+        "yeuDanName": "Yêu Đan Sơ Cấp",
+        "yeuDanCount": 1,
+        "linhThach": 30
+      }
+    },
+    {
+      "id": "tu_khi_dan",
+      "name": "Tụ Khí Đan",
+      "tier": "HOANG_GIAI",
+      "tierName": "Hoàng Giai",
+      "healHp": 150,
+      "expGain": 200,
+      "statBonus": {},
+      "desc": "Đan dược ngưng tụ linh khí đất trời, ăn vào nhận ngay +200 EXP Tu Vi.",
+      "recipe": {
+        "linhThao": 3,
+        "yeuDan": "yeu_dan_so_cap",
+        "yeuDanName": "Yêu Đan Sơ Cấp",
+        "yeuDanCount": 1,
+        "linhThach": 50
+      }
+    },
+    {
+      "id": "tay_tuy_dan",
+      "name": "Tẩy Tủy Đan",
+      "tier": "HUYEN_GIAI",
+      "tierName": "Huyền Giai",
+      "healHp": 300,
+      "expGain": 350,
+      "statBonus": { "atk": 10, "def": 5 },
+      "desc": "Tẩy rửa gân cốt, phạt mao hoán tủy, tăng vĩnh viễn +10 ATK và +5 DEF cùng +350 EXP.",
+      "recipe": {
+        "linhThao": 5,
+        "yeuDan": "yeu_dan_trung_cap",
+        "yeuDanName": "Yêu Đan Trung Cấp",
+        "yeuDanCount": 2,
+        "linhThach": 120
+      }
+    },
+    {
+      "id": "truc_co_dan",
+      "name": "Trúc Cơ Đan",
+      "tier": "HUYEN_GIAI",
+      "tierName": "Huyền Giai",
+      "healHp": 500,
+      "expGain": 500,
+      "statBonus": { "maxHp": 200 },
+      "desc": "Linh đan trứ danh của Trúc Cơ Cảnh, gia tăng 30% tỉ lệ thành công khi đột phá và +500 EXP.",
+      "recipe": {
+        "linhThao": 8,
+        "yeuDan": "yeu_dan_trung_cap",
+        "yeuDanName": "Yêu Đan Trung Cấp",
+        "yeuDanCount": 3,
+        "linhThach": 200
+      }
+    },
+    {
+      "id": "kim_dan_dan",
+      "name": "Kim Đan Cố Bản Đan",
+      "tier": "DIA_GIAI",
+      "tierName": "Địa Giai",
+      "healHp": 1000,
+      "expGain": 1200,
+      "statBonus": { "atk": 25, "maxHp": 500, "def": 15 },
+      "desc": "Đan dược thượng phẩm cô đọng bản nguyên Kim Đan, tăng vĩnh viễn +25 ATK, +500 HP và +1200 EXP.",
+      "recipe": {
+        "linhThao": 15,
+        "yeuDan": "yeu_dan_cao_cap",
+        "yeuDanName": "Yêu Đan Cao Cấp",
+        "yeuDanCount": 4,
+        "linhThach": 450
+      }
+    },
+    {
+      "id": "ho_mach_dan",
+      "name": "Hộ Mạch Đan",
+      "tier": "HUYEN_GIAI",
+      "tierName": "Huyền Giai",
+      "healHp": 800,
+      "expGain": 300,
+      "statBonus": { "def": 10 },
+      "desc": "Đan dược bảo hộ tâm mạch, khi độ kiếp hoặc đột phá thất bại không bị tổn thương căn cơ.",
+      "recipe": {
+        "linhThao": 6,
+        "yeuDan": "yeu_dan_trung_cap",
+        "yeuDanName": "Yêu Đan Trung Cấp",
+        "yeuDanCount": 2,
+        "linhThach": 150
+      }
+    }
+  ]
+}

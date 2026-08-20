@@ -1,0 +1,68 @@
+{
+  "tiers": {
+    "PHAM_PHAM": {
+      "name": "Phàm Phẩm",
+      "color": "#9E9E9E",
+      "rate": 0.50,
+      "expMultiplier": 1.0,
+      "items": [
+        { "id": "ngu_hanh_tap_linh_can", "name": "Ngũ Hành Tạp Linh Căn", "desc": "Linh căn hỗn tạp năm màu, hấp thu thiên địa linh khí bình thường." },
+        { "id": "pham_nhan_chi_the", "name": "Phàm Nhân Chi Thể", "desc": "Thân thể phàm tục không có dị tượng, căn cơ vững chắc." },
+        { "id": "khi_hai_binh_pham", "name": "Khí Hải Bình Phàm", "desc": "Đan điền dung lượng phổ thông, thích hợp tu luyện công pháp phổ thông." }
+      ]
+    },
+    "LUONG_PHAM": {
+      "name": "Lương Phẩm",
+      "color": "#4CAF50",
+      "rate": 0.30,
+      "expMultiplier": 1.15,
+      "hpBonus": 0.10,
+      "items": [
+        { "id": "tam_linh_can", "name": "Tam Linh Căn (Kim-Mộc-Thổ)", "desc": "Ba dòng linh căn tương sinh, tăng 15% tốc độ tu luyện." },
+        { "id": "cuong_cot_the", "name": "Cương Cốt Chi Thể", "desc": "Xương cốt cứng cáp như sắt thép, tăng 10% HP tối đa." },
+        { "id": "dung_tuyen_khi_hai", "name": "Dũng Tuyền Khí Hải", "desc": "Linh hải cuồn cuộn như suối nguồn, hồi phục pháp lực nhanh hơn." }
+      ]
+    },
+    "CUC_PHAM": {
+      "name": "Cực Phẩm",
+      "color": "#2196F3",
+      "rate": 0.14,
+      "expMultiplier": 1.35,
+      "dmgBonus": 0.20,
+      "breakDiscount": 0.15,
+      "items": [
+        { "id": "loi_hoa_song_linh_can", "name": "Song Linh Căn (Lôi-Hỏa)", "desc": "Lôi hỏa giao thoa, sát thương bùng nổ, tăng 20% lực công kích." },
+        { "id": "phong_bang_song_linh_can", "name": "Song Linh Căn (Phong-Băng)", "desc": "Thân pháp phiêu dật, khống chế hàn băng cực mạnh." },
+        { "id": "thuan_duong_chi_the", "name": "Thuần Dương Chi Thể", "desc": "Dương khí ngút trời, miễn nhiễm hàn độc, tăng 35% tốc độ tu luyện." },
+        { "id": "huyen_am_dao_thai", "name": "Huyền Âm Đạo Thai", "desc": "Căn cơ thuần âm, tốc độ hấp thu linh thạch tăng vọt." }
+      ]
+    },
+    "THIEN_PHAM": {
+      "name": "Thiên Phẩm",
+      "color": "#9C27B0",
+      "rate": 0.05,
+      "expMultiplier": 1.70,
+      "skillMasterySpeed": 2.0,
+      "tribulationResist": 0.30,
+      "items": [
+        { "id": "thien_linh_can_don_he", "name": "Thiên Linh Căn (Đơn Hệ Thuần Khiết)", "desc": "Một lòng hướng đạo, ngộ tính tuyệt luân, học công pháp nhanh gấp đôi." },
+        { "id": "loi_dinh_than_the", "name": "Lôi Đình Thần Thể", "desc": "Khắc chế vạn tà, giảm 30% sát thương lôi kiếp khi đột phá." },
+        { "id": "kiem_tam_thong_minh", "name": "Kiếm Tâm Thông Minh", "desc": "Trời sinh kiếm tu, mọi kiếm quyết tăng 50% uy lực." }
+      ]
+    },
+    "THAN_PHAM": {
+      "name": "Thần Phẩm (Nghịch Thiên)",
+      "color": "#FFD700",
+      "rate": 0.01,
+      "expMultiplier": 2.50,
+      "specialSkill": true,
+      "items": [
+        { "id": "chi_ton_cot", "name": "Chí Tôn Cốt Bẩm Sinh", "desc": "Xương sống khắc đầy thiên đạo thần phù, mở khóa Thần Thông [Chí Tôn Kiếp Quang].", "skill": "Chí Tôn Kiếp Quang" },
+        { "id": "trong_dong_than_nhan", "name": "Trọng Đồng Thần Nhãn", "desc": "Hai con ngươi nhìn thấu vạn vật hư vô, mở khóa Thần Thông [Trọng Đồng Khai Thiên].", "skill": "Trọng Đồng Khai Thiên" },
+        { "id": "tien_thien_thanh_the_dao_thai", "name": "Tiên Thiên Thánh Thể Đạo Thai", "desc": "Thể chất vô song vạn cổ, pháp lực vô cùng tận, tăng 150% tốc độ tu vi.", "skill": "Vạn Pháp Bất Xâm" },
+        { "id": "cuu_u_ma_the", "name": "Cửu U Ma Thể (Kế Thừa Trác Phàm)", "desc": "Khí tức Cửu U Ma Đế, mở khóa Thần Thông [Cửu U Sát Ma Lôi].", "skill": "Cửu U Sát Ma Lôi" },
+        { "id": "hon_don_the", "name": "Hỗn Độn Chi Thể", "desc": "Dung hợp vạn đạo linh căn, thôn phệ chư thiên linh khí.", "skill": "Hỗn Độn Chân Hỏa" }
+      ]
+    }
+  }
+}

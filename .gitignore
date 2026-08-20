@@ -1,0 +1,28 @@
+# Secrets - TUYỆT ĐỐI KHÔNG COMMIT
+.env
+*.env
+!.env.example
+atlas-credentials.env
+
+# Dependencies
+node_modules/
+
+# Logs
+*.log
+npm-debug.log*
+
+# Runtime data
+ai-farmer/memory.json
+
+# OS
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Tài nguyên thô (không cần khi chạy bot, ~77MB) - vẫn giữ trên ổ đĩa
+Tai nguyen/
+*.fla

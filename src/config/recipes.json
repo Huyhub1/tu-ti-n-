@@ -1,0 +1,144 @@
+{
+  "recipes": [
+    {
+      "id": "recipe_kiem_tram_lu",
+      "targetEquipmentId": "kiem_tram_lu",
+      "name": "Rèn [Kiếm Trảm Lư]",
+      "rarity": "HOANG_GIAI",
+      "requirements": {
+        "linhThach": 120,
+        "nguyenThach": 1,
+        "items": [
+          { "itemId": "yeu_dan_linh_tho_tinh", "name": "Yêu Đan [Linh Thỏ Tinh]", "quantity": 1 }
+        ]
+      },
+      "desc": "Kiếm thép đúc từ quặng ngoại môn kết hợp linh khí Linh Thỏ, nhẹ bén cho đệ tử nhập môn."
+    },
+    {
+      "id": "recipe_cung_tien_moc_thi",
+      "targetEquipmentId": "cung_tien_moc_thi",
+      "name": "Chế Tạo [Cung Tiễn Mộc Thi]",
+      "rarity": "HOANG_GIAI",
+      "requirements": {
+        "linhThach": 140,
+        "nguyenThach": 1,
+        "items": [
+          { "itemId": "yeu_dan_linh_tho_tinh", "name": "Yêu Đan [Linh Thỏ Tinh]", "quantity": 1 }
+        ]
+      },
+      "desc": "Cung làm từ gỗ cổ thụ trăm năm sau núi, dùng gân thỏ linh thiêng làm dây cung bắn cực nhanh."
+    },
+    {
+      "id": "recipe_dan_hoang_cuc",
+      "targetEquipmentId": "dan_hoang_cuc",
+      "name": "Luyện [Đan Hoàng Cực]",
+      "rarity": "HOANG_GIAI",
+      "requirements": {
+        "linhThach": 180,
+        "nguyenThach": 2,
+        "items": [
+          { "itemId": "yeu_dan_linh_tho_tinh", "name": "Yêu Đan [Linh Thỏ Tinh]", "quantity": 2 }
+        ]
+      },
+      "desc": "Pháp bảo ngưng tụ từ 2 Yêu Đan Linh Thỏ đeo ở đai lưng giúp tĩnh tâm tăng 5% EXP."
+    },
+    {
+      "id": "recipe_trong_kiem_huyen_kim",
+      "targetEquipmentId": "trong_kiem_huyen_kim",
+      "name": "Đúc [Trọng Kiếm Huyền Kim]",
+      "rarity": "HUYEN_GIAI",
+      "requirements": {
+        "linhThach": 350,
+        "nguyenThach": 3,
+        "items": [
+          { "itemId": "yeu_dan_thach_giap_tru", "name": "Yêu Đan [Thạch Giáp Dã Trư]", "quantity": 2 }
+        ]
+      },
+      "desc": "Lấy da bọc đá của Dã Trư cùng 2 Yêu Đan nung đúc thành cự kiếm ngàn cân không mài bén."
+    },
+    {
+      "id": "recipe_luoi_an_nguyet_ao_vu",
+      "targetEquipmentId": "luoi_an_nguyet_ao_vu",
+      "name": "Rèn [Lưỡi Ẩn Nguyệt Ảo Vũ]",
+      "rarity": "HUYEN_GIAI",
+      "requirements": {
+        "linhThach": 400,
+        "nguyenThach": 4,
+        "items": [
+          { "itemId": "yeu_dan_u_anh_hac_bao", "name": "Yêu Đan [U Ảnh Hắc Báo]", "quantity": 2 }
+        ]
+      },
+      "desc": "Lưỡi đao bóng đêm hấp thu tốc độ của Hắc Báo, xuất đao vô thanh vô tức dưới ánh trăng."
+    },
+    {
+      "id": "recipe_kiem_ly_hoa",
+      "targetEquipmentId": "kiem_ly_hoa",
+      "name": "Tôi Rèn [Kiếm Ly Hỏa]",
+      "rarity": "HUYEN_GIAI",
+      "requirements": {
+        "linhThach": 450,
+        "nguyenThach": 5,
+        "items": [
+          { "itemId": "yeu_dan_xich_diem_lang", "name": "Yêu Đan [Xích Diễm Yêu Lang]", "quantity": 2 }
+        ]
+      },
+      "desc": "Dùng lửa nung trong Yêu Đan Sói Lửa tôi luyện kiếm khí rực cháy thiêu đốt vạn vật."
+    },
+    {
+      "id": "recipe_bua_ma_thien",
+      "targetEquipmentId": "bua_ma_thien",
+      "name": "Đúc [Búa Ma Thiên]",
+      "rarity": "HUYEN_GIAI",
+      "requirements": {
+        "linhThach": 550,
+        "nguyenThach": 6,
+        "items": [
+          { "itemId": "yeu_dan_bach_dien_ho", "name": "Yêu Đan [Bạch Diện Cuồng Hùng]", "quantity": 2 }
+        ]
+      },
+      "desc": "Chiến búa Ma Tộc tích tụ cự lực của Cuồng Hùng, bổ xuống một đòn làm nứt toác mặt đất."
+    },
+    {
+      "id": "recipe_dao_huyet_xich",
+      "targetEquipmentId": "dao_huyet_xich",
+      "name": "Huyết Luyện [Đao Huyết Xích]",
+      "rarity": "DIA_GIAI",
+      "requirements": {
+        "linhThach": 800,
+        "nguyenThach": 8,
+        "items": [
+          { "itemId": "yeu_dan_bich_lan_huyet_mang", "name": "Yêu Đan [Bích Lân Huyết Mãng]", "quantity": 3 }
+        ]
+      },
+      "desc": "Ngâm lưỡi đao trong huyết dịch Mãng Xà ngàn năm, đao chém ra kèm theo khả năng hút máu kẻ thù."
+    },
+    {
+      "id": "recipe_dao_han_suong",
+      "targetEquipmentId": "dao_han_suong",
+      "name": "Băng Đúc [Đao Hàn Sương]",
+      "rarity": "HUYEN_GIAI",
+      "requirements": {
+        "linhThach": 600,
+        "nguyenThach": 6,
+        "items": [
+          { "itemId": "yeu_dan_bang_tinh_tuyet_dieu", "name": "Yêu Đan [Băng Tinh Tuyết Điêu]", "quantity": 2 }
+        ]
+      },
+      "desc": "Tôi luyện trong băng phách đỉnh tuyết sơn cùng Yêu Đan Tuyết Điêu, đao chém ra làn sương buốt giá."
+    },
+    {
+      "id": "recipe_thuong_am_sam_xanh",
+      "targetEquipmentId": "thuong_am_sam_xanh",
+      "name": "Lôi Đúc [Thương Âm Sấm Xanh]",
+      "rarity": "HUYEN_GIAI",
+      "requirements": {
+        "linhThach": 750,
+        "nguyenThach": 8,
+        "items": [
+          { "itemId": "yeu_dan_loi_tinh_cuong_su", "name": "Yêu Đan [Lôi Tinh Cuồng Sư]", "quantity": 2 }
+        ]
+      },
+      "desc": "Thương dài dẫn lôi điện từ Yêu Đan Cuồng Sư, mỗi đòn đâm tóe ra sấm sét tê liệt."
+    }
+  ]
+}

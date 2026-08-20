@@ -1,0 +1,53 @@
+{
+  "factions": {
+    "CHINH_DAO": {
+      "id": "CHINH_DAO",
+      "name": "Chính Đạo",
+      "tag": "☀️ [Chính Đạo]",
+      "color": "#FFC107",
+      "desc": "Danh Môn Tiên Đạo - Trừ ma vệ đạo, tích đức hành thiện, căn cơ vững vàng như bàn thạch.",
+      "buffs": {
+        "breakSuccessBonus": 0.25,
+        "luckBonus": 15,
+        "demonicDmgResist": 0.20,
+        "potionEffectBonus": 0.15
+      },
+      "currency": "congDuc",
+      "currencyName": "Điểm Công Đức",
+      "starterSkill": "hao_nhien_kiem_quyet"
+    },
+    "MA_DAO": {
+      "id": "MA_DAO",
+      "name": "Ma Đạo",
+      "tag": "🌘 [Ma Đạo]",
+      "color": "#E91E63",
+      "desc": "Sát Phạt Đoạt Mệnh - Cá lớn nuốt cá bé, cắn nuốt huyết khí, lực chiến bùng nổ.",
+      "buffs": {
+        "expKillBonus": 0.20,
+        "critDmgBonus": 0.25,
+        "dropRateBonus": 0.15,
+        "pillageBonus": 0.30
+      },
+      "currency": "taTam",
+      "currencyName": "Điểm Tà Tâm",
+      "starterSkill": "huyet_khi_ma_quyet"
+    },
+    "TAN_TU": {
+      "id": "TAN_TU",
+      "name": "Tán Tu / Trung Lập",
+      "tag": "🎭 [Tán Tu]",
+      "color": "#00BCD4",
+      "desc": "Tiêu Dao Du Tán / Ngụy Quân Tử - Không màng phe phái, linh hoạt, buôn bán trục lợi khắp hai giới.",
+      "buffs": {
+        "dodgeBonus": 0.25,
+        "fleeBonus": 0.30,
+        "moneyWorkBonus": 0.20,
+        "marketDiscount": 0.15
+      },
+      "currency": "linhThach",
+      "currencyName": "Linh Thạch",
+      "starterSkill": "tieu_dao_du_bo",
+      "specialTrait": "mask_toggle"
+    }
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "consumables": [
+    {
+      "id": "tu_khi_dan",
+      "name": "Tụ Khí Đan",
+      "type": "DAN_DUOC",
+      "rarity": "HOANG_GIAI",
+      "expGain": 100,
+      "healHp": 100,
+      "desc": "Đan dược sơ cấp giúp ngưng tụ linh khí đất trời, tăng 100 EXP và hồi phục thể lực."
+    },
+    {
+      "id": "hoi_xuan_dan",
+      "name": "Hồi Xuân Đan",
+      "type": "DAN_DUOC",
+      "rarity": "HOANG_GIAI",
+      "expGain": 30,
+      "healHp": 500,
+      "desc": "Đan dược trị thương, hồi phục ngay lập tức 500 điểm sinh mệnh (HP)."
+    },
+    {
+      "id": "linh_qua_sau_nui",
+      "name": "Linh Quả Ngàn Năm",
+      "type": "LINH_DUOC",
+      "rarity": "HUYEN_GIAI",
+      "expGain": 350,
+      "healHp": 300,
+      "desc": "Trái cây linh thiêng mọc trên đỉnh núi tuyết, ăn vào khai thông kinh mạch, tăng 350 EXP."
+    }
+  ]
+}

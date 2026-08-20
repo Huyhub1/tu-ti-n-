@@ -1,0 +1,1784 @@
+{
+  "imageDirectory": "C:\\game\\id_97_60 vũ khí pháp bảo tu tiên kiếm hiệp\\id_97_60 vũ khí pháp bảo tu tiên kiếm hiệp",
+  "equipments": [
+    {
+      "id": "chuong_hon_don",
+      "name": "Chuông Hỗn Độn",
+      "type": "PHAP_BAO",
+      "slot": "accessory",
+      "rarity": "THAN_GIAI",
+      "rarityName": "Thần Giai Thái Cổ",
+      "color": "#FFD700",
+      "imageFile": "Chuông Hỗn Độn.jpg",
+      "stats": {
+        "atk": 880,
+        "def": 520,
+        "maxHp": 16000,
+        "critRate": 0.45
+      },
+      "passives": {
+        "expBonus": 1.5,
+        "damageReduction": 0.35,
+        "regenHpPerTurn": 0.15,
+        "desc": "🔔 [HỖN ĐỘN THÁI CỔ CHUNG]: +150% EXP Tu Vi vĩnh viễn, Miễn 35% toàn bộ sát thương nhận vào, Tự động hồi phục 15% HP tối đa sau mỗi hiệp đấu."
+      },
+      "combatSkill": {
+        "name": "Định Càn Khôn Nhật Nguyệt",
+        "damageMultiplier": 6.5,
+        "shield": 3500,
+        "desc": "Tiếng chuông ngân vang trấn áp nhật nguyệt: Gây 650% sát thương cực đại, Tạo Giáp Càn Khôn +3,500 HP và Trấn áp giảm 50% ATK kẻ địch!"
+      },
+      "lore": "Thái Cổ Thần Khí, tiếng chuông vang lên định trụ càn khôn nhật nguyệt.",
+      "imageUrl": "https://i.ibb.co/vx7Ktrvf/Chu-ng-H-n-n.jpg",
+      "pageUrl": "https://ibb.co/rGC1WLfq"
+    },
+    {
+      "id": "lien_hoa_sang_the",
+      "name": "Liên Hoa Sáng Thế",
+      "type": "PHAP_BAO",
+      "slot": "accessory",
+      "rarity": "THAN_GIAI",
+      "rarityName": "Thần Giai Thái Cổ",
+      "color": "#FFD700",
+      "imageFile": "Liên Hoa Sáng Thế.jpg",
+      "stats": {
+        "atk": 780,
+        "def": 480,
+        "maxHp": 18000,
+        "critRate": 0.4
+      },
+      "passives": {
+        "expBonus": 1.5,
+        "regenHpPerTurn": 0.2,
+        "resurrect": 1,
+        "desc": "🌸 [SÁNG THẾ THANH LIÊN]: +150% EXP Tu Vi vĩnh viễn, Hồi 20% HP sau mỗi hiệp, Ban phúc Bất Tử chuyển nguy thành an khi gặp đại nạn."
+      },
+      "combatSkill": {
+        "name": "Vạn Hóa Sáng Thế Thanh Liên",
+        "damageMultiplier": 6,
+        "heal": 3000,
+        "desc": "Thanh liên nở rộ khai thiên lập địa: Gây 600% sát thương cực hạn, Hồi phục +3,000 HP lập tức và Hóa giải mọi thương thế!"
+      },
+      "lore": "Hạt sen sinh ra từ thời hỗn độn sơ khai dựng nên trời đất.",
+      "imageUrl": "https://i.ibb.co/fYbpCFJn/Li-n-Hoa-S-ng-Th.jpg",
+      "pageUrl": "https://ibb.co/vxbPJq9Q"
+    },
+    {
+      "id": "dinh_than_nong",
+      "name": "Đỉnh Thần Nông Đồng Xanh",
+      "type": "PHAP_BAO",
+      "slot": "accessory",
+      "rarity": "THAN_GIAI",
+      "rarityName": "Thần Giai Thái Cổ",
+      "color": "#FFD700",
+      "imageFile": "Đỉnh Thần Nông Đồng Xanh.jpg",
+      "stats": {
+        "atk": 750,
+        "def": 450,
+        "maxHp": 15000,
+        "critRate": 0.42
+      },
+      "passives": {
+        "expBonus": 1.5,
+        "alchemyMastery": 3,
+        "luckBonus": 50,
+        "desc": "🌿 [THẦN NÔNG BÁCH THẢO TIÊN KHÍ]: +150% EXP Tu Vi vĩnh viễn, Tăng x3 lần hiệu quả đan dược, Tăng +50% Khí Vận may mắn nhặt bảo vật quý."
+      },
+      "combatSkill": {
+        "name": "Càn Khôn Thần Nông Đỉnh Chấn",
+        "damageMultiplier": 5.8,
+        "lifesteal": 0.5,
+        "desc": "Luyện hóa càn khôn vạn dặm: Gây 580% sát thương, Hút 50% Máu (Lifesteal) và Gia tăng vĩnh viễn +500 HP tối đa trong trận!"
+      },
+      "lore": "Thần Đỉnh ngưng tụ ngàn vạn linh dược của thượng cổ Viêm Đế.",
+      "imageUrl": "https://i.ibb.co/wrFwG9zz/nh-Th-n-N-ng-ng-Xanh.jpg",
+      "pageUrl": "https://ibb.co/7NdRMw11"
+    },
+    {
+      "id": "cung_ban_mat_troi",
+      "name": "Cung Bắn Mặt Trời Trảm Thần",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "THAN_GIAI",
+      "rarityName": "Thần Giai Thái Cổ",
+      "color": "#FFD700",
+      "imageFile": "Cung Bắn Mặt Trời Trảm Thần.jpg",
+      "stats": {
+        "atk": 950,
+        "def": 380,
+        "maxHp": 12000,
+        "critRate": 0.5
+      },
+      "passives": {
+        "expBonus": 1.5,
+        "armorPen": 0.5,
+        "tripleCritChance": 0.4,
+        "desc": "☀️ [XẠ NHẬT THẦN UY]: +150% EXP Tu Vi vĩnh viễn, Bỏ qua 50% Phòng ngự của kẻ địch, Đòn đánh có 40% cơ hội kích hoạt Tam Trọng Bạo Kích (x3 Sát thương)!"
+      },
+      "combatSkill": {
+        "name": "Cửu Dương Lạc Nhật Trảm Thần",
+        "damageMultiplier": 7.5,
+        "desc": "Mũi tên bắn rụng chín mặt trời: Gây 750% sát thương diệt tuyệt, Bỏ qua 70% Giáp đối thủ và Nhất Kích Tất Sát!",
+        "armorPen": 0.7
+      },
+      "lore": "Thần cung bắn rụng chín vầng thái dương thời viễn cổ.",
+      "imageUrl": "https://i.ibb.co/1frSMMvx/Cung-B-n-M-t-Tr-i-Tr-m-Th-n.jpg",
+      "pageUrl": "https://ibb.co/gMSnddjC"
+    },
+    {
+      "id": "gay_nhu_y_kim_co",
+      "name": "Gậy Như Ý Kim Cô",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "THAN_GIAI",
+      "rarityName": "Thần Giai Thái Cổ",
+      "color": "#FFD700",
+      "imageFile": "Gậy Như Ý Kim Cô.jpg",
+      "stats": {
+        "atk": 920,
+        "def": 420,
+        "maxHp": 14000,
+        "critRate": 0.48
+      },
+      "passives": {
+        "expBonus": 1.5,
+        "stunChance": 0.35,
+        "powerMultiplier": 1.5,
+        "desc": "🐒 [ĐỊNH HẢI THẦN CHÂM BẤT DIỆT]: +150% EXP Tu Vi vĩnh viễn, Tăng +50% Uy Lực Chiến Lực, Đòn đánh có 35% cơ hội làm choáng và Bạo Kích x3!"
+      },
+      "combatSkill": {
+        "name": "Thiên Địa Nhất Bổng Phá Càn Khôn",
+        "damageMultiplier": 7,
+        "desc": "Thiết bổng một kích đập vỡ thiên địa: Gây 700% sát thương bạo liệt, Làm choáng đối phương 1 hiệp và Giảm 50% DEF của kẻ địch!"
+      },
+      "lore": "Thần thiết trấn áp Đông Hải, co giãn tùy tâm xưng bá Tam Giới.",
+      "imageUrl": "https://i.ibb.co/q3prm6wK/G-y-Nh-Kim-C.jpg",
+      "pageUrl": "https://ibb.co/21dkcJBx"
+    },
+    {
+      "id": "ky_tu_huy_diet_thai_cuc",
+      "name": "Ký Tự Hủy Diệt Thái Cực",
+      "type": "PHAP_BAO",
+      "slot": "accessory",
+      "rarity": "THIEN_GIAI",
+      "rarityName": "Thiên Giai Tuyệt Phẩm",
+      "color": "#E91E63",
+      "imageFile": "Ký Tự Hủy Diệt Thái Cực.jpg",
+      "stats": {
+        "atk": 375,
+        "def": 185,
+        "maxHp": 4350,
+        "critRate": 0.32
+      },
+      "passives": {
+        "expBonus": 0.7,
+        "armorPen": 0.25,
+        "regenHpPerTurn": 0.08,
+        "desc": "🌟 [Thiên Đạo Trấn Thế]: +70% EXP Tu Vi vĩnh viễn, Bỏ qua 25% Giáp kẻ địch, Tự động hồi 8% HP mỗi hiệp đấu."
+      },
+      "combatSkill": {
+        "name": "Thái Cực Hủy Diệt Quang",
+        "damageMultiplier": 4.3,
+        "shield": 870,
+        "desc": "Khai mở chân hỏa Thiên Giai: Gây 430% sát thương và Tạo khiên hộ thể +870 HP!"
+      },
+      "lore": "Phù tự cổ khắc ghi quy luật sinh diệt của Âm Dương đạo nguyên.",
+      "imageUrl": "https://i.ibb.co/wZg2gfGW/K-T-H-y-Di-t-Th-i-C-c.jpg",
+      "pageUrl": "https://ibb.co/spRXRZxw"
+    },
+    {
+      "id": "kinh_con_ngo",
+      "name": "Kính Côn Ngô",
+      "type": "PHAP_BAO",
+      "slot": "accessory",
+      "rarity": "THIEN_GIAI",
+      "rarityName": "Thiên Giai Tuyệt Phẩm",
+      "color": "#E91E63",
+      "imageFile": "Kính Côn Ngô.jpg",
+      "stats": {
+        "atk": 381,
+        "def": 226,
+        "maxHp": 3800,
+        "critRate": 0.29
+      },
+      "passives": {
+        "expBonus": 0.7,
+        "armorPen": 0.25,
+        "regenHpPerTurn": 0.08,
+        "desc": "🌟 [Thiên Đạo Trấn Thế]: +70% EXP Tu Vi vĩnh viễn, Bỏ qua 25% Giáp kẻ địch, Tự động hồi 8% HP mỗi hiệp đấu."
+      },
+      "combatSkill": {
+        "name": "Thấu Cốt Thần Quang",
+        "damageMultiplier": 4.9,
+        "shield": 760,
+        "desc": "Khai mở chân hỏa Thiên Giai: Gây 490% sát thương và Tạo khiên hộ thể +760 HP!"
+      },
+      "lore": "Cổ kính đúc từ tinh thiết núi Côn Ngô, thấu chiếu vạn dặm hư không.",
+      "imageUrl": "https://i.ibb.co/dwgjWNmk/K-nh-C-n-Ng.jpg",
+      "pageUrl": "https://ibb.co/ycSdfz4g"
+    },
+    {
+      "id": "lo_luyen_dan_can_khon",
+      "name": "Lò Luyện Đan Càn Khôn",
+      "type": "PHAP_BAO",
+      "slot": "accessory",
+      "rarity": "THIEN_GIAI",
+      "rarityName": "Thiên Giai Tuyệt Phẩm",
+      "color": "#E91E63",
+      "imageFile": "Lò Luyện Đan Càn Khôn.jpg",
+      "stats": {
+        "atk": 419,
+        "def": 207,
+        "maxHp": 4600,
+        "critRate": 0.3
+      },
+      "passives": {
+        "expBonus": 0.7,
+        "armorPen": 0.25,
+        "regenHpPerTurn": 0.08,
+        "desc": "🌟 [Thiên Đạo Trấn Thế]: +70% EXP Tu Vi vĩnh viễn, Bỏ qua 25% Giáp kẻ địch, Tự động hồi 8% HP mỗi hiệp đấu."
+      },
+      "combatSkill": {
+        "name": "Đan Hỏa Liêu Nguyên",
+        "damageMultiplier": 4.5,
+        "shield": 920,
+        "desc": "Khai mở chân hỏa Thiên Giai: Gây 450% sát thương và Tạo khiên hộ thể +920 HP!"
+      },
+      "lore": "Lò luyện đan chứa Tam Muội Chân Hỏa tôi luyện vạn vật.",
+      "imageUrl": "https://i.ibb.co/xKCJHbhW/L-Luy-n-an-C-n-Kh-n.jpg",
+      "pageUrl": "https://ibb.co/spmyH4jn"
+    },
+    {
+      "id": "an_tu_phuong_can_khon",
+      "name": "Ấn Tứ Phương Càn Khôn",
+      "type": "PHAP_BAO",
+      "slot": "accessory",
+      "rarity": "THIEN_GIAI",
+      "rarityName": "Thiên Giai Tuyệt Phẩm",
+      "color": "#E91E63",
+      "imageFile": "Ấn Tứ Phương Càn Khôn.jpg",
+      "stats": {
+        "atk": 375,
+        "def": 237,
+        "maxHp": 3850,
+        "critRate": 0.28
+      },
+      "passives": {
+        "expBonus": 0.7,
+        "armorPen": 0.25,
+        "regenHpPerTurn": 0.08,
+        "desc": "🌟 [Thiên Đạo Trấn Thế]: +70% EXP Tu Vi vĩnh viễn, Bỏ qua 25% Giáp kẻ địch, Tự động hồi 8% HP mỗi hiệp đấu."
+      },
+      "combatSkill": {
+        "name": "Thiên Ấn Trấn Sơn",
+        "damageMultiplier": 4.9,
+        "shield": 770,
+        "desc": "Khai mở chân hỏa Thiên Giai: Gây 490% sát thương và Tạo khiên hộ thể +770 HP!"
+      },
+      "lore": "Bảo ấn của cổ hoàng đế vương, trấn áp tứ phương bát hoang."
+    },
+    {
+      "id": "luan_mat_troi_vang_chay",
+      "name": "Luân Mặt Trời Rơi Vàng Chảy",
+      "type": "PHAP_BAO",
+      "slot": "accessory",
+      "rarity": "THIEN_GIAI",
+      "rarityName": "Thiên Giai Tuyệt Phẩm",
+      "color": "#E91E63",
+      "imageFile": "Luân Mặt Trời Rơi Vàng Chảy.jpg",
+      "stats": {
+        "atk": 331,
+        "def": 196,
+        "maxHp": 4100,
+        "critRate": 0.32
+      },
+      "passives": {
+        "expBonus": 0.7,
+        "armorPen": 0.25,
+        "regenHpPerTurn": 0.08,
+        "desc": "🌟 [Thiên Đạo Trấn Thế]: +70% EXP Tu Vi vĩnh viễn, Bỏ qua 25% Giáp kẻ địch, Tự động hồi 8% HP mỗi hiệp đấu."
+      },
+      "combatSkill": {
+        "name": "Liệt Nhật Kim Luân",
+        "damageMultiplier": 4.4,
+        "shield": 820,
+        "desc": "Khai mở chân hỏa Thiên Giai: Gây 440% sát thương và Tạo khiên hộ thể +820 HP!"
+      },
+      "lore": "Vòng quay đúc từ lông cánh Kim Ô và vàng ròng Thái Dương.",
+      "imageUrl": "https://i.ibb.co/BVNSLmZy/Lu-n-M-t-Tr-i-R-i-V-ng-Ch-y.jpg",
+      "pageUrl": "https://ibb.co/jvR1hdMy"
+    },
+    {
+      "id": "than_kiem_tu_thanh",
+      "name": "Thần Kiếm Tử Thanh",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "THIEN_GIAI",
+      "rarityName": "Thiên Giai Tuyệt Phẩm",
+      "color": "#E91E63",
+      "imageFile": "Thần Kiếm Tử Thanh.jpg",
+      "stats": {
+        "atk": 410,
+        "def": 166,
+        "maxHp": 3800,
+        "critRate": 0.35
+      },
+      "passives": {
+        "expBonus": 0.7,
+        "armorPen": 0.25,
+        "regenHpPerTurn": 0.08,
+        "desc": "🌟 [Thiên Đạo Trấn Thế]: +70% EXP Tu Vi vĩnh viễn, Bỏ qua 25% Giáp kẻ địch, Tự động hồi 8% HP mỗi hiệp đấu."
+      },
+      "combatSkill": {
+        "name": "Tử Thanh Kiếm Quang",
+        "damageMultiplier": 4.6,
+        "shield": 760,
+        "desc": "Khai mở chân hỏa Thiên Giai: Gây 460% sát thương và Tạo khiên hộ thể +760 HP!"
+      },
+      "lore": "Song kiếm Tử Dĩnh và Thanh Tỏa hợp nhất chém rách hư không.",
+      "imageUrl": "https://i.ibb.co/9Hf0GCr0/Th-n-Ki-m-T-Thanh.jpg",
+      "pageUrl": "https://ibb.co/pjsTn9LT"
+    },
+    {
+      "id": "luoi_hai_mau_trang_do",
+      "name": "Lưỡi Hái Máu Trăng Đỏ Âm Phủ",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "THIEN_GIAI",
+      "rarityName": "Thiên Giai Tuyệt Phẩm",
+      "color": "#E91E63",
+      "imageFile": "Lưỡi Hái Máu Trăng Đỏ Âm Phủ.jpg",
+      "stats": {
+        "atk": 444,
+        "def": 171,
+        "maxHp": 3550,
+        "critRate": 0.31
+      },
+      "passives": {
+        "expBonus": 0.7,
+        "armorPen": 0.25,
+        "regenHpPerTurn": 0.08,
+        "desc": "🌟 [Thiên Đạo Trấn Thế]: +70% EXP Tu Vi vĩnh viễn, Bỏ qua 25% Giáp kẻ địch, Tự động hồi 8% HP mỗi hiệp đấu."
+      },
+      "combatSkill": {
+        "name": "Huyết Nguyệt Tuyệt Sát",
+        "damageMultiplier": 4.3,
+        "shield": 710,
+        "desc": "Khai mở chân hỏa Thiên Giai: Gây 430% sát thương và Tạo khiên hộ thể +710 HP!"
+      },
+      "lore": "Vũ khí thu hoạch linh hồn dưới ánh trăng đỏ chốn Cửu U Minh Giới.",
+      "imageUrl": "https://i.ibb.co/s9wLSDJQ/L-i-H-i-M-u-Tr-ng-m-Ph.jpg",
+      "pageUrl": "https://ibb.co/XxsmBdkp"
+    },
+    {
+      "id": "cay_dinh_ba_phu_hai",
+      "name": "Cây Đinh Ba Phủ Hải",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "THIEN_GIAI",
+      "rarityName": "Thiên Giai Tuyệt Phẩm",
+      "color": "#E91E63",
+      "imageFile": "Cây Đinh Ba Phủ Hải.jpg",
+      "stats": {
+        "atk": 362,
+        "def": 220,
+        "maxHp": 5350,
+        "critRate": 0.26
+      },
+      "passives": {
+        "expBonus": 0.7,
+        "armorPen": 0.25,
+        "regenHpPerTurn": 0.08,
+        "desc": "🌟 [Thiên Đạo Trấn Thế]: +70% EXP Tu Vi vĩnh viễn, Bỏ qua 25% Giáp kẻ địch, Tự động hồi 8% HP mỗi hiệp đấu."
+      },
+      "combatSkill": {
+        "name": "Nộ Hải Cuồng Đào",
+        "damageMultiplier": 4.7,
+        "shield": 1070,
+        "desc": "Khai mở chân hỏa Thiên Giai: Gây 470% sát thương và Tạo khiên hộ thể +1070 HP!"
+      },
+      "lore": "Thần binh của Thủy Tộc cổ đại, vung lên dâng sóng ngập trời.",
+      "imageUrl": "https://i.ibb.co/LdK3Qq7z/C-y-inh-Ba-Ph-H-i.jpg",
+      "pageUrl": "https://ibb.co/Zz90HwD6"
+    },
+    {
+      "id": "riu_chien_thien_cuc",
+      "name": "Rìu Chiến Thiên Cực",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "THIEN_GIAI",
+      "rarityName": "Thiên Giai Tuyệt Phẩm",
+      "color": "#E91E63",
+      "imageFile": "Rìu Chiến Thiên Cực.jpg",
+      "stats": {
+        "atk": 426,
+        "def": 203,
+        "maxHp": 5500,
+        "critRate": 0.31
+      },
+      "passives": {
+        "expBonus": 0.7,
+        "armorPen": 0.25,
+        "regenHpPerTurn": 0.08,
+        "desc": "🌟 [Thiên Đạo Trấn Thế]: +70% EXP Tu Vi vĩnh viễn, Bỏ qua 25% Giáp kẻ địch, Tự động hồi 8% HP mỗi hiệp đấu."
+      },
+      "combatSkill": {
+        "name": "Bổ Thiên Nhất Trảm",
+        "damageMultiplier": 4.3,
+        "shield": 1100,
+        "desc": "Khai mở chân hỏa Thiên Giai: Gây 430% sát thương và Tạo khiên hộ thể +1100 HP!"
+      },
+      "lore": "Chiến rìu tôi luyện nơi Thiên Cực Cực Địa, nặng tựa núi non.",
+      "imageUrl": "https://i.ibb.co/tTHGCb2v/R-u-Chi-n-Thi-n-C-c.jpg",
+      "pageUrl": "https://ibb.co/FLhr7BYy"
+    },
+    {
+      "id": "luoi_dao_rong_cuon_tu_kim",
+      "name": "Lưỡi Đao Rồng Cuộn Tử Kim",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "THIEN_GIAI",
+      "rarityName": "Thiên Giai Tuyệt Phẩm",
+      "color": "#E91E63",
+      "imageFile": "Lưỡi Đao Rồng Cuộn Tử Kim.jpg",
+      "stats": {
+        "atk": 368,
+        "def": 171,
+        "maxHp": 4450,
+        "critRate": 0.35
+      },
+      "passives": {
+        "expBonus": 0.7,
+        "armorPen": 0.25,
+        "regenHpPerTurn": 0.08,
+        "desc": "🌟 [Thiên Đạo Trấn Thế]: +70% EXP Tu Vi vĩnh viễn, Bỏ qua 25% Giáp kẻ địch, Tự động hồi 8% HP mỗi hiệp đấu."
+      },
+      "combatSkill": {
+        "name": "Tử Kim Long Trảm",
+        "damageMultiplier": 4.9,
+        "shield": 890,
+        "desc": "Khai mở chân hỏa Thiên Giai: Gây 490% sát thương và Tạo khiên hộ thể +890 HP!"
+      },
+      "lore": "Đao khắc linh hồn rồng vàng ngàn năm quấn quanh lưỡi tử kim.",
+      "imageUrl": "https://i.ibb.co/xq6ZmtRf/L-i-ao-R-ng-Cu-n-T-Kim.jpg",
+      "pageUrl": "https://ibb.co/JjHZxwMy"
+    },
+    {
+      "id": "bau_ruou_tu_kim",
+      "name": "Bầu Rượu Tử Kim",
+      "type": "PHAP_BAO",
+      "slot": "accessory",
+      "rarity": "DIA_GIAI",
+      "rarityName": "Địa Giai Cực Phẩm",
+      "color": "#9C27B0",
+      "imageFile": "Bầu Rượu Tử Kim.jpg",
+      "stats": {
+        "atk": 167,
+        "def": 81,
+        "maxHp": 1550,
+        "critRate": 0.16
+      },
+      "passives": {
+        "expBonus": 0.35,
+        "luckBonus": 15,
+        "desc": "🔮 [Địa Mạch Tinh Hoa]: +35% EXP Tu Vi vĩnh viễn, Tăng +15% Khí Vận may mắn rơi đồ hiếm."
+      },
+      "combatSkill": {
+        "name": "Tử Kim Thôn Linh",
+        "damageMultiplier": 3,
+        "heal": 232,
+        "desc": "Vận chuyển địa khí: Gây 300% sát thương và Hồi phục +232 HP!"
+      },
+      "lore": "Bầu hồ lô chứa linh tửu ngâm từ ngàn loại linh quả thượng cổ.",
+      "imageUrl": "https://i.ibb.co/cKmcs996/B-u-R-u-T-Kim.jpg",
+      "pageUrl": "https://ibb.co/spBvX44K"
+    },
+    {
+      "id": "quat_can_khon",
+      "name": "Quạt Càn Khôn",
+      "type": "PHAP_BAO",
+      "slot": "accessory",
+      "rarity": "DIA_GIAI",
+      "rarityName": "Địa Giai Cực Phẩm",
+      "color": "#9C27B0",
+      "imageFile": "Quạt Càn Khôn.jpg",
+      "stats": {
+        "atk": 185,
+        "def": 84,
+        "maxHp": 1750,
+        "critRate": 0.19
+      },
+      "passives": {
+        "expBonus": 0.35,
+        "luckBonus": 15,
+        "desc": "🔮 [Địa Mạch Tinh Hoa]: +35% EXP Tu Vi vĩnh viễn, Tăng +15% Khí Vận may mắn rơi đồ hiếm."
+      },
+      "combatSkill": {
+        "name": "Bát Hoang Cương Phong",
+        "damageMultiplier": 2.8,
+        "heal": 262,
+        "desc": "Vận chuyển địa khí: Gây 280% sát thương và Hồi phục +262 HP!"
+      },
+      "lore": "Quạt ngọc vẽ cảnh giới càn khôn non nước thái bình.",
+      "imageUrl": "https://i.ibb.co/LdZx97dp/Qu-t-C-n-Kh-n.jpg",
+      "pageUrl": "https://ibb.co/pjLf4FjX"
+    },
+    {
+      "id": "vong_tron_can_khon",
+      "name": "Vòng Tròn Càn Khôn",
+      "type": "PHAP_BAO",
+      "slot": "accessory",
+      "rarity": "DIA_GIAI",
+      "rarityName": "Địa Giai Cực Phẩm",
+      "color": "#9C27B0",
+      "imageFile": "Vòng Tròn Càn Khôn.jpg",
+      "stats": {
+        "atk": 176,
+        "def": 94,
+        "maxHp": 2000,
+        "critRate": 0.18
+      },
+      "passives": {
+        "expBonus": 0.35,
+        "luckBonus": 15,
+        "desc": "🔮 [Địa Mạch Tinh Hoa]: +35% EXP Tu Vi vĩnh viễn, Tăng +15% Khí Vận may mắn rơi đồ hiếm."
+      },
+      "combatSkill": {
+        "name": "Càn Khôn Quy Tông",
+        "damageMultiplier": 3.4,
+        "heal": 300,
+        "desc": "Vận chuyển địa khí: Gây 340% sát thương và Hồi phục +300 HP!"
+      },
+      "lore": "Vòng tròn hoàng kim bay lượn ngàn dặm lấy thủ cấp địch nhân.",
+      "imageUrl": "https://i.ibb.co/Kp3m9L5R/V-ng-Tr-n-C-n-Kh-n.jpg",
+      "pageUrl": "https://ibb.co/cS7xNCyM"
+    },
+    {
+      "id": "ngoc_bang_han_chau",
+      "name": "Ngọc Băng Hàn Châu",
+      "type": "PHAP_BAO",
+      "slot": "accessory",
+      "rarity": "DIA_GIAI",
+      "rarityName": "Địa Giai Cực Phẩm",
+      "color": "#9C27B0",
+      "imageFile": "Ngọc Băng Hàn Châu.jpg",
+      "stats": {
+        "atk": 148,
+        "def": 98,
+        "maxHp": 2250,
+        "critRate": 0.17
+      },
+      "passives": {
+        "expBonus": 0.35,
+        "luckBonus": 15,
+        "desc": "🔮 [Địa Mạch Tinh Hoa]: +35% EXP Tu Vi vĩnh viễn, Tăng +15% Khí Vận may mắn rơi đồ hiếm."
+      },
+      "combatSkill": {
+        "name": "Băng Phách Thần Quang",
+        "damageMultiplier": 3.4,
+        "heal": 337,
+        "desc": "Vận chuyển địa khí: Gây 340% sát thương và Hồi phục +337 HP!"
+      },
+      "lore": "Viên châu kết tinh từ băng tuyết ngàn năm trên đỉnh Tuyết Sơn.",
+      "imageUrl": "https://i.ibb.co/0y20MWbh/Ng-c-B-ng-H-n-Ch-u.jpg",
+      "pageUrl": "https://ibb.co/LdRTtq7n"
+    },
+    {
+      "id": "ngoc_chau_luu_ly_bien_xanh",
+      "name": "Ngọc Châu Lưu Ly Biển Xanh",
+      "type": "PHAP_BAO",
+      "slot": "accessory",
+      "rarity": "DIA_GIAI",
+      "rarityName": "Địa Giai Cực Phẩm",
+      "color": "#9C27B0",
+      "imageFile": "Ngọc Châu Lưu Ly Biển Xanh.jpg",
+      "stats": {
+        "atk": 151,
+        "def": 98,
+        "maxHp": 1950,
+        "critRate": 0.16
+      },
+      "passives": {
+        "expBonus": 0.35,
+        "luckBonus": 15,
+        "desc": "🔮 [Địa Mạch Tinh Hoa]: +35% EXP Tu Vi vĩnh viễn, Tăng +15% Khí Vận may mắn rơi đồ hiếm."
+      },
+      "combatSkill": {
+        "name": "Lưu Ly Thủy Triều",
+        "damageMultiplier": 3.3,
+        "heal": 292,
+        "desc": "Vận chuyển địa khí: Gây 330% sát thương và Hồi phục +292 HP!"
+      },
+      "lore": "Hạt ngọc biển sâu lưu ly tỏa ánh sáng ngọc bích êm dịu.",
+      "imageUrl": "https://i.ibb.co/pjpYySVM/Ng-c-Ch-u-L-u-Ly-Bi-n-Xanh.jpg",
+      "pageUrl": "https://ibb.co/5hVbFPpS"
+    },
+    {
+      "id": "long_vu_ngu_sac",
+      "name": "Lông Vũ Ngũ Sắc Huyền Ảo",
+      "type": "PHAP_BAO",
+      "slot": "accessory",
+      "rarity": "DIA_GIAI",
+      "rarityName": "Địa Giai Cực Phẩm",
+      "color": "#9C27B0",
+      "imageFile": "Lông Vũ Ngũ Sắc Huyền Ảo.jpg",
+      "stats": {
+        "atk": 177,
+        "def": 85,
+        "maxHp": 1500,
+        "critRate": 0.16
+      },
+      "passives": {
+        "expBonus": 0.35,
+        "luckBonus": 15,
+        "desc": "🔮 [Địa Mạch Tinh Hoa]: +35% EXP Tu Vi vĩnh viễn, Tăng +15% Khí Vận may mắn rơi đồ hiếm."
+      },
+      "combatSkill": {
+        "name": "Ngũ Sắc Thần Quang Trảm",
+        "damageMultiplier": 3.2,
+        "heal": 225,
+        "desc": "Vận chuyển địa khí: Gây 320% sát thương và Hồi phục +225 HP!"
+      },
+      "lore": "Lông đuôi của Thần Cầm Khổng Tước ngũ sắc viễn cổ.",
+      "imageUrl": "https://i.ibb.co/8TN528z/L-ng-V-Ng-S-c-Huy-n-o.jpg",
+      "pageUrl": "https://ibb.co/2mWtPK8"
+    },
+    {
+      "id": "den_bau_vo_da",
+      "name": "Đèn Báu Vô Dạ",
+      "type": "PHAP_BAO",
+      "slot": "accessory",
+      "rarity": "DIA_GIAI",
+      "rarityName": "Địa Giai Cực Phẩm",
+      "color": "#9C27B0",
+      "imageFile": "Đèn Báu Vô Dạ.jpg",
+      "stats": {
+        "atk": 178,
+        "def": 79,
+        "maxHp": 2350,
+        "critRate": 0.2
+      },
+      "passives": {
+        "expBonus": 0.35,
+        "luckBonus": 15,
+        "desc": "🔮 [Địa Mạch Tinh Hoa]: +35% EXP Tu Vi vĩnh viễn, Tăng +15% Khí Vận may mắn rơi đồ hiếm."
+      },
+      "combatSkill": {
+        "name": "Vô Dạ Tâm Hỏa",
+        "damageMultiplier": 3.2,
+        "heal": 352,
+        "desc": "Vận chuyển địa khí: Gây 320% sát thương và Hồi phục +352 HP!"
+      },
+      "lore": "Ngọn đèn thiêng cháy sáng bất diệt soi rọi tiên đồ.",
+      "imageUrl": "https://i.ibb.co/rKQQMBYC/n-B-u-V-D.jpg",
+      "pageUrl": "https://ibb.co/Kc557tdM"
+    },
+    {
+      "id": "o_do_chan_that_huyen_thien",
+      "name": "Ô Đỏ Chân Thật Huyền Thiên",
+      "type": "PHAP_BAO",
+      "slot": "accessory",
+      "rarity": "DIA_GIAI",
+      "rarityName": "Địa Giai Cực Phẩm",
+      "color": "#9C27B0",
+      "imageFile": "Ô Đỏ Chân Thật Huyền Thiên.jpg",
+      "stats": {
+        "atk": 149,
+        "def": 92,
+        "maxHp": 1550,
+        "critRate": 0.16
+      },
+      "passives": {
+        "expBonus": 0.35,
+        "luckBonus": 15,
+        "desc": "🔮 [Địa Mạch Tinh Hoa]: +35% EXP Tu Vi vĩnh viễn, Tăng +15% Khí Vận may mắn rơi đồ hiếm."
+      },
+      "combatSkill": {
+        "name": "Huyết Tán Thiên Hoa",
+        "damageMultiplier": 3,
+        "heal": 232,
+        "desc": "Vận chuyển địa khí: Gây 300% sát thương và Hồi phục +232 HP!"
+      },
+      "lore": "Chiếc ô đỏ huyền bí rèn từ tơ nhện huyết thiên cổ.",
+      "imageUrl": "https://i.ibb.co/YTcNGPjy/Ch-n-Th-t-Huy-n-Thi-n.jpg",
+      "pageUrl": "https://ibb.co/3YpTH4hM"
+    },
+    {
+      "id": "kiem_ba_thien",
+      "name": "Kiếm Bá Thiên",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "DIA_GIAI",
+      "rarityName": "Địa Giai Cực Phẩm",
+      "color": "#9C27B0",
+      "imageFile": "Kiếm Bá Thiên.jpg",
+      "stats": {
+        "atk": 189,
+        "def": 82,
+        "maxHp": 1400,
+        "critRate": 0.18
+      },
+      "passives": {
+        "expBonus": 0.35,
+        "luckBonus": 15,
+        "desc": "🔮 [Địa Mạch Tinh Hoa]: +35% EXP Tu Vi vĩnh viễn, Tăng +15% Khí Vận may mắn rơi đồ hiếm."
+      },
+      "combatSkill": {
+        "name": "Bá Thiên Cuồng Trảm",
+        "damageMultiplier": 3.2,
+        "heal": 210,
+        "desc": "Vận chuyển địa khí: Gây 320% sát thương và Hồi phục +210 HP!"
+      },
+      "lore": "Thanh kiếm mang ý chí bá chủ thiên hạ của cuồng kiếm khách.",
+      "imageUrl": "https://i.ibb.co/6RNttFS1/Ki-m-B-Thi-n.jpg",
+      "pageUrl": "https://ibb.co/99G44W0V"
+    },
+    {
+      "id": "kiem_thanh_tieu",
+      "name": "Kiếm Thanh Tiêu",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "DIA_GIAI",
+      "rarityName": "Địa Giai Cực Phẩm",
+      "color": "#9C27B0",
+      "imageFile": "Kiếm Thanh Tiêu.jpg",
+      "stats": {
+        "atk": 130,
+        "def": 77,
+        "maxHp": 1750,
+        "critRate": 0.15
+      },
+      "passives": {
+        "expBonus": 0.35,
+        "luckBonus": 15,
+        "desc": "🔮 [Địa Mạch Tinh Hoa]: +35% EXP Tu Vi vĩnh viễn, Tăng +15% Khí Vận may mắn rơi đồ hiếm."
+      },
+      "combatSkill": {
+        "name": "Thanh Tiêu Nhất Kiếm",
+        "damageMultiplier": 3.4,
+        "heal": 262,
+        "desc": "Vận chuyển địa khí: Gây 340% sát thương và Hồi phục +262 HP!"
+      },
+      "lore": "Kiếm đúc từ thiên thạch xanh rơi xuống từ Thanh Tiêu Thiên giới.",
+      "imageUrl": "https://i.ibb.co/yBy7Jw78/Ki-m-Thanh-Ti-u.jpg",
+      "pageUrl": "https://ibb.co/R40dWxdC"
+    },
+    {
+      "id": "kiem_thanh_lien",
+      "name": "Kiếm Thanh Liên",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "DIA_GIAI",
+      "rarityName": "Địa Giai Cực Phẩm",
+      "color": "#9C27B0",
+      "imageFile": "Kiếm Thanh Liên.jpg",
+      "stats": {
+        "atk": 144,
+        "def": 70,
+        "maxHp": 2350,
+        "critRate": 0.16
+      },
+      "passives": {
+        "expBonus": 0.35,
+        "luckBonus": 15,
+        "desc": "🔮 [Địa Mạch Tinh Hoa]: +35% EXP Tu Vi vĩnh viễn, Tăng +15% Khí Vận may mắn rơi đồ hiếm."
+      },
+      "combatSkill": {
+        "name": "Thanh Liên Kiếm Trận",
+        "damageMultiplier": 2.8,
+        "heal": 352,
+        "desc": "Vận chuyển địa khí: Gây 280% sát thương và Hồi phục +352 HP!"
+      },
+      "lore": "Kiếm của Thi Tiên Kiếm Khách, vung kiếm như ngâm thơ hoa sen.",
+      "imageUrl": "https://i.ibb.co/LDV6X21x/Ki-m-Thanh-Li-n.jpg",
+      "pageUrl": "https://ibb.co/1YFKtwTr"
+    },
+    {
+      "id": "dao_huyet_xich",
+      "name": "Đao Huyết Xích",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "DIA_GIAI",
+      "rarityName": "Địa Giai Cực Phẩm",
+      "color": "#9C27B0",
+      "imageFile": "Đao Huyết Xích.jpg",
+      "stats": {
+        "atk": 151,
+        "def": 96,
+        "maxHp": 2100,
+        "critRate": 0.17
+      },
+      "passives": {
+        "expBonus": 0.35,
+        "luckBonus": 15,
+        "desc": "🔮 [Địa Mạch Tinh Hoa]: +35% EXP Tu Vi vĩnh viễn, Tăng +15% Khí Vận may mắn rơi đồ hiếm."
+      },
+      "combatSkill": {
+        "name": "Xích Huyết Trảm",
+        "damageMultiplier": 2.8,
+        "heal": 315,
+        "desc": "Vận chuyển địa khí: Gây 280% sát thương và Hồi phục +315 HP!"
+      },
+      "lore": "Thanh đao ngâm trong huyết trì ma đạo ngàn năm chưa ráo máu.",
+      "imageUrl": "https://i.ibb.co/MkZ9NsMH/ao-Huy-t-X-ch.jpg",
+      "pageUrl": "https://ibb.co/1G7b2L8N"
+    },
+    {
+      "id": "thuong_huyen_bang",
+      "name": "Thương Huyền Băng",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "DIA_GIAI",
+      "rarityName": "Địa Giai Cực Phẩm",
+      "color": "#9C27B0",
+      "imageFile": "Thương Huyền Băng.jpg",
+      "stats": {
+        "atk": 135,
+        "def": 68,
+        "maxHp": 1750,
+        "critRate": 0.17
+      },
+      "passives": {
+        "expBonus": 0.35,
+        "luckBonus": 15,
+        "desc": "🔮 [Địa Mạch Tinh Hoa]: +35% EXP Tu Vi vĩnh viễn, Tăng +15% Khí Vận may mắn rơi đồ hiếm."
+      },
+      "combatSkill": {
+        "name": "Băng Long Xuất Hải",
+        "damageMultiplier": 3.1,
+        "heal": 262,
+        "desc": "Vận chuyển địa khí: Gây 310% sát thương và Hồi phục +262 HP!"
+      },
+      "lore": "Trường thương đúc từ lõi băng vạn năm ở Bắc Cực Hoang Dã.",
+      "imageUrl": "https://i.ibb.co/nMd4LSM2/Th-ng-Huy-n-B-ng.jpg",
+      "pageUrl": "https://ibb.co/b5wYKn5h"
+    },
+    {
+      "id": "dan_rong_ao",
+      "name": "Đàn Rồng Ảo",
+      "type": "PHAP_BAO",
+      "slot": "accessory",
+      "rarity": "DIA_GIAI",
+      "rarityName": "Địa Giai Cực Phẩm",
+      "color": "#9C27B0",
+      "imageFile": "Đàn Rồng Ảo.jpg",
+      "stats": {
+        "atk": 185,
+        "def": 92,
+        "maxHp": 2150,
+        "critRate": 0.16
+      },
+      "passives": {
+        "expBonus": 0.35,
+        "luckBonus": 15,
+        "desc": "🔮 [Địa Mạch Tinh Hoa]: +35% EXP Tu Vi vĩnh viễn, Tăng +15% Khí Vận may mắn rơi đồ hiếm."
+      },
+      "combatSkill": {
+        "name": "Cửu Tiêu Long Ngâm",
+        "damageMultiplier": 3.2,
+        "heal": 322,
+        "desc": "Vận chuyển địa khí: Gây 320% sát thương và Hồi phục +322 HP!"
+      },
+      "lore": "Cổ cầm gỗ trầm hương chạm khắc rồng ảo, tiếng đàn như sấm rền.",
+      "imageUrl": "https://i.ibb.co/Qt8BXMH/n-R-ng-o.jpg",
+      "pageUrl": "https://ibb.co/CDJdWQ9"
+    },
+    {
+      "id": "bua_ma_thien",
+      "name": "Búa Ma Thiên",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "DIA_GIAI",
+      "rarityName": "Địa Giai Cực Phẩm",
+      "color": "#9C27B0",
+      "imageFile": "Búa Ma Thiên.jpg",
+      "stats": {
+        "atk": 160,
+        "def": 76,
+        "maxHp": 1500,
+        "critRate": 0.15
+      },
+      "passives": {
+        "expBonus": 0.35,
+        "luckBonus": 15,
+        "desc": "🔮 [Địa Mạch Tinh Hoa]: +35% EXP Tu Vi vĩnh viễn, Tăng +15% Khí Vận may mắn rơi đồ hiếm."
+      },
+      "combatSkill": {
+        "name": "Ma Thần Nộ Phách",
+        "damageMultiplier": 2.9,
+        "heal": 225,
+        "desc": "Vận chuyển địa khí: Gây 290% sát thương và Hồi phục +225 HP!"
+      },
+      "lore": "Chiến búa của Ma Tộc viễn cổ nung từ nham thạch đáy hỏa ngục.",
+      "imageUrl": "https://i.ibb.co/4gnT8p0r/B-a-Ma-Thi-n.jpg",
+      "pageUrl": "https://ibb.co/rfR6xHXr"
+    },
+    {
+      "id": "song_nhan_hong_lien",
+      "name": "Song Nhận Hồng Liên",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "DIA_GIAI",
+      "rarityName": "Địa Giai Cực Phẩm",
+      "color": "#9C27B0",
+      "imageFile": "Song Nhận Hồng Liên.jpg",
+      "stats": {
+        "atk": 141,
+        "def": 89,
+        "maxHp": 2350,
+        "critRate": 0.17
+      },
+      "passives": {
+        "expBonus": 0.35,
+        "luckBonus": 15,
+        "desc": "🔮 [Địa Mạch Tinh Hoa]: +35% EXP Tu Vi vĩnh viễn, Tăng +15% Khí Vận may mắn rơi đồ hiếm."
+      },
+      "combatSkill": {
+        "name": "Song Nhận Hồng Liên Trảm",
+        "damageMultiplier": 2.8,
+        "heal": 352,
+        "desc": "Vận chuyển địa khí: Gây 280% sát thương và Hồi phục +352 HP!"
+      },
+      "lore": "Cặp đoản đao rực lửa như hai cánh sen hồng địa ngục.",
+      "imageUrl": "https://i.ibb.co/VYScVQB0/Song-Nh-n-H-ng-Li-n.jpg",
+      "pageUrl": "https://ibb.co/5h8gTncX"
+    },
+    {
+      "id": "cung_anh_kiem_truy_phong",
+      "name": "Cung Ảnh Kiếm Truy Phong",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "DIA_GIAI",
+      "rarityName": "Địa Giai Cực Phẩm",
+      "color": "#9C27B0",
+      "imageFile": "Cung Ảnh Kiếm Truy Phong.jpg",
+      "stats": {
+        "atk": 134,
+        "def": 73,
+        "maxHp": 1400,
+        "critRate": 0.18
+      },
+      "passives": {
+        "expBonus": 0.35,
+        "luckBonus": 15,
+        "desc": "🔮 [Địa Mạch Tinh Hoa]: +35% EXP Tu Vi vĩnh viễn, Tăng +15% Khí Vận may mắn rơi đồ hiếm."
+      },
+      "combatSkill": {
+        "name": "Truy Phong Ảnh Tiễn",
+        "damageMultiplier": 2.9,
+        "heal": 210,
+        "desc": "Vận chuyển địa khí: Gây 290% sát thương và Hồi phục +210 HP!"
+      },
+      "lore": "Thần cung nhẹ bén như bóng gió cuốn lá rơi.",
+      "imageUrl": "https://i.ibb.co/QjhrmpmM/Cung-nh-Ki-m-Truy-Phong.jpg",
+      "pageUrl": "https://ibb.co/6JGgsrsF"
+    },
+    {
+      "id": "truong_quyen_bich_lac",
+      "name": "Trượng Quyền Bích Lạc",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "DIA_GIAI",
+      "rarityName": "Địa Giai Cực Phẩm",
+      "color": "#9C27B0",
+      "imageFile": "Trượng Quyền Bích Lạc.jpg",
+      "stats": {
+        "atk": 143,
+        "def": 94,
+        "maxHp": 1400,
+        "critRate": 0.2
+      },
+      "passives": {
+        "expBonus": 0.35,
+        "luckBonus": 15,
+        "desc": "🔮 [Địa Mạch Tinh Hoa]: +35% EXP Tu Vi vĩnh viễn, Tăng +15% Khí Vận may mắn rơi đồ hiếm."
+      },
+      "combatSkill": {
+        "name": "Bích Lạc Thần Quang",
+        "damageMultiplier": 3.1,
+        "heal": 210,
+        "desc": "Vận chuyển địa khí: Gây 310% sát thương và Hồi phục +210 HP!"
+      },
+      "lore": "Pháp trượng quyền trượng tượng trưng quyền uy Bích Lạc Cung.",
+      "imageUrl": "https://i.ibb.co/C390DJsR/Tr-ng-Quy-n-B-ch-L-c.jpg",
+      "pageUrl": "https://ibb.co/9k4YSw3Q"
+    },
+    {
+      "id": "but_thien_ao",
+      "name": "Bút Thiên Ảo",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "HUYEN_GIAI",
+      "rarityName": "Huyền Giai Thượng Phẩm",
+      "color": "#2196F3",
+      "imageFile": "Bút Thiên Ảo.jpg",
+      "stats": {
+        "atk": 54,
+        "def": 28,
+        "maxHp": 750,
+        "critRate": 0.12
+      },
+      "passives": {
+        "expBonus": 0.15,
+        "defBonus": 0.08,
+        "desc": "✨ [Bảo Khí Linh Quang]: +15% EXP Tu Vi vĩnh viễn, Tăng 8% Phòng ngự."
+      },
+      "combatSkill": {
+        "name": "Họa Hư Không",
+        "damageMultiplier": 2.2,
+        "desc": "Kích phát linh khí: Gây 220% sát thương bạo liệt!"
+      },
+      "lore": "Bút lông ngọc bích của Nho gia, ngòi bút biến ảo khôn lường.",
+      "imageUrl": "https://i.ibb.co/3mQ7SQTY/B-t-Thi-n-o.jpg",
+      "pageUrl": "https://ibb.co/SwGPVG67"
+    },
+    {
+      "id": "binh_tu_hoa",
+      "name": "Bình Tụ Hoa",
+      "type": "PHAP_BAO",
+      "slot": "accessory",
+      "rarity": "HUYEN_GIAI",
+      "rarityName": "Huyền Giai Thượng Phẩm",
+      "color": "#2196F3",
+      "imageFile": "Bình Tụ Hoa.jpg",
+      "stats": {
+        "atk": 75,
+        "def": 37,
+        "maxHp": 750,
+        "critRate": 0.08
+      },
+      "passives": {
+        "expBonus": 0.15,
+        "defBonus": 0.08,
+        "desc": "✨ [Bảo Khí Linh Quang]: +15% EXP Tu Vi vĩnh viễn, Tăng 8% Phòng ngự."
+      },
+      "combatSkill": {
+        "name": "Tụ Hoa Linh Quang",
+        "damageMultiplier": 2,
+        "desc": "Kích phát linh khí: Gây 200% sát thương bạo liệt!"
+      },
+      "lore": "Bình gốm thanh nhã ngưng tụ hương hoa bách thảo dưỡng sinh.",
+      "imageUrl": "https://i.ibb.co/pvgdxpsZ/B-nh-T-Hoa.jpg",
+      "pageUrl": "https://ibb.co/SX2BPp10"
+    },
+    {
+      "id": "kinh_than_dong_xanh",
+      "name": "Kính Thần Đồng Xanh",
+      "type": "PHAP_BAO",
+      "slot": "accessory",
+      "rarity": "HUYEN_GIAI",
+      "rarityName": "Huyền Giai Thượng Phẩm",
+      "color": "#2196F3",
+      "imageFile": "Kính Thần Đồng Xanh.jpg",
+      "stats": {
+        "atk": 78,
+        "def": 38,
+        "maxHp": 650,
+        "critRate": 0.08
+      },
+      "passives": {
+        "expBonus": 0.15,
+        "defBonus": 0.08,
+        "desc": "✨ [Bảo Khí Linh Quang]: +15% EXP Tu Vi vĩnh viễn, Tăng 8% Phòng ngự."
+      },
+      "combatSkill": {
+        "name": "Thanh Đồng Hộ Quang",
+        "damageMultiplier": 2.4,
+        "desc": "Kích phát linh khí: Gây 240% sát thương bạo liệt!"
+      },
+      "lore": "Kính cổ đúc bằng đồng xanh thời nhà Thương, soi tỏ tà khí.",
+      "imageUrl": "https://i.ibb.co/HLsfxC0t/K-nh-Th-n-ng-Xanh.jpg",
+      "pageUrl": "https://ibb.co/RGmkBN13"
+    },
+    {
+      "id": "sao_than_ngoc_bich",
+      "name": "Sáo Thần Ngọc Bích",
+      "type": "PHAP_BAO",
+      "slot": "accessory",
+      "rarity": "HUYEN_GIAI",
+      "rarityName": "Huyền Giai Thượng Phẩm",
+      "color": "#2196F3",
+      "imageFile": "Sáo Thần Ngọc Bích.jpg",
+      "stats": {
+        "atk": 56,
+        "def": 34,
+        "maxHp": 650,
+        "critRate": 0.08
+      },
+      "passives": {
+        "expBonus": 0.15,
+        "defBonus": 0.08,
+        "desc": "✨ [Bảo Khí Linh Quang]: +15% EXP Tu Vi vĩnh viễn, Tăng 8% Phòng ngự."
+      },
+      "combatSkill": {
+        "name": "Thanh Tâm Khúc",
+        "damageMultiplier": 2.3,
+        "desc": "Kích phát linh khí: Gây 230% sát thương bạo liệt!"
+      },
+      "lore": "Ống sáo tạc từ bạch ngọc thượng hạng, âm thanh thanh thoát.",
+      "imageUrl": "https://i.ibb.co/hRs0W3yb/S-o-Th-n-Ng-c-B-ch.jpg",
+      "pageUrl": "https://ibb.co/pv2qzYxc"
+    },
+    {
+      "id": "canh_luot_may",
+      "name": "Cánh Lướt Mây",
+      "type": "PHAP_BAO",
+      "slot": "accessory",
+      "rarity": "HUYEN_GIAI",
+      "rarityName": "Huyền Giai Thượng Phẩm",
+      "color": "#2196F3",
+      "imageFile": "Cánh Lướt Mây.jpg",
+      "stats": {
+        "atk": 75,
+        "def": 35,
+        "maxHp": 500,
+        "critRate": 0.11
+      },
+      "passives": {
+        "expBonus": 0.15,
+        "defBonus": 0.08,
+        "desc": "✨ [Bảo Khí Linh Quang]: +15% EXP Tu Vi vĩnh viễn, Tăng 8% Phòng ngự."
+      },
+      "combatSkill": {
+        "name": "Xung Phong Đột Kích",
+        "damageMultiplier": 2,
+        "desc": "Kích phát linh khí: Gây 200% sát thương bạo liệt!"
+      },
+      "lore": "Đôi cánh lông vũ ngưng kết từ mây gió lướt đi ngàn dặm.",
+      "imageUrl": "https://i.ibb.co/N6S40wMf/C-nh-L-t-M-y.jpg",
+      "pageUrl": "https://ibb.co/QFd5Ws4h"
+    },
+    {
+      "id": "hat_hon_don",
+      "name": "Hạt Hỗn Độn",
+      "type": "PHAP_BAO",
+      "slot": "accessory",
+      "rarity": "HUYEN_GIAI",
+      "rarityName": "Huyền Giai Thượng Phẩm",
+      "color": "#2196F3",
+      "imageFile": "Hạt Hỗn Độn.jpg",
+      "stats": {
+        "atk": 62,
+        "def": 29,
+        "maxHp": 550,
+        "critRate": 0.07
+      },
+      "passives": {
+        "expBonus": 0.15,
+        "defBonus": 0.08,
+        "desc": "✨ [Bảo Khí Linh Quang]: +15% EXP Tu Vi vĩnh viễn, Tăng 8% Phòng ngự."
+      },
+      "combatSkill": {
+        "name": "Hỗn Độn Khí Toái",
+        "damageMultiplier": 2.1,
+        "desc": "Kích phát linh khí: Gây 210% sát thương bạo liệt!"
+      },
+      "lore": "Hạt ngọc chứa một tia khí hỗn độn chưa phân tách nguyên thủy.",
+      "imageUrl": "https://i.ibb.co/qPShDby/H-t-H-n-n.jpg",
+      "pageUrl": "https://ibb.co/sMfcgLm"
+    },
+    {
+      "id": "kiem_ly_hoa",
+      "name": "Kiếm Ly Hỏa",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "HUYEN_GIAI",
+      "rarityName": "Huyền Giai Thượng Phẩm",
+      "color": "#2196F3",
+      "imageFile": "Kiếm Ly Hỏa.jpg",
+      "stats": {
+        "atk": 60,
+        "def": 31,
+        "maxHp": 550,
+        "critRate": 0.09
+      },
+      "passives": {
+        "expBonus": 0.15,
+        "defBonus": 0.08,
+        "desc": "✨ [Bảo Khí Linh Quang]: +15% EXP Tu Vi vĩnh viễn, Tăng 8% Phòng ngự."
+      },
+      "combatSkill": {
+        "name": "Ly Hỏa Kiếm Quyết",
+        "damageMultiplier": 2.3,
+        "desc": "Kích phát linh khí: Gây 230% sát thương bạo liệt!"
+      },
+      "lore": "Kiếm nung trong lò lửa Ly Hỏa Cốc ba năm mới thành hình.",
+      "imageUrl": "https://i.ibb.co/fzWwDrSf/Ki-m-Ly-H-a.jpg",
+      "pageUrl": "https://ibb.co/wFqmcpLV"
+    },
+    {
+      "id": "kiem_phi_duong",
+      "name": "Kiếm Phi Dương",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "HUYEN_GIAI",
+      "rarityName": "Huyền Giai Thượng Phẩm",
+      "color": "#2196F3",
+      "imageFile": "Kiếm Phi Dương.jpg",
+      "stats": {
+        "atk": 58,
+        "def": 25,
+        "maxHp": 450,
+        "critRate": 0.12
+      },
+      "passives": {
+        "expBonus": 0.15,
+        "defBonus": 0.08,
+        "desc": "✨ [Bảo Khí Linh Quang]: +15% EXP Tu Vi vĩnh viễn, Tăng 8% Phòng ngự."
+      },
+      "combatSkill": {
+        "name": "Phi Dương Kiếm Ảnh",
+        "damageMultiplier": 2.3,
+        "desc": "Kích phát linh khí: Gây 230% sát thương bạo liệt!"
+      },
+      "lore": "Kiếm thép của lãng tử tiêu dao khắp năm châu bốn biển.",
+      "imageUrl": "https://i.ibb.co/gFmvZt7y/Ki-m-Phi-D-ng.jpg",
+      "pageUrl": "https://ibb.co/prbWj4P2"
+    },
+    {
+      "id": "kiem_xich_dieu",
+      "name": "Kiếm Xích Diệu",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "HUYEN_GIAI",
+      "rarityName": "Huyền Giai Thượng Phẩm",
+      "color": "#2196F3",
+      "imageFile": "Kiếm Xích Diệu.jpg",
+      "stats": {
+        "atk": 66,
+        "def": 42,
+        "maxHp": 450,
+        "critRate": 0.11
+      },
+      "passives": {
+        "expBonus": 0.15,
+        "defBonus": 0.08,
+        "desc": "✨ [Bảo Khí Linh Quang]: +15% EXP Tu Vi vĩnh viễn, Tăng 8% Phòng ngự."
+      },
+      "combatSkill": {
+        "name": "Xích Diệu Liệt Trảm",
+        "damageMultiplier": 2.1,
+        "desc": "Kích phát linh khí: Gây 210% sát thương bạo liệt!"
+      },
+      "lore": "Kiếm đúc từ quặng Xích Diệu Thạch sáng lấp lánh như ngọc thạch.",
+      "imageUrl": "https://i.ibb.co/tw7kqsmJ/Ki-m-X-ch-Di-u.jpg",
+      "pageUrl": "https://ibb.co/j9cByM6r"
+    },
+    {
+      "id": "dao_han_suong",
+      "name": "Đao Hàn Sương",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "HUYEN_GIAI",
+      "rarityName": "Huyền Giai Thượng Phẩm",
+      "color": "#2196F3",
+      "imageFile": "Đao Hàn Sương.jpg",
+      "stats": {
+        "atk": 52,
+        "def": 37,
+        "maxHp": 600,
+        "critRate": 0.09
+      },
+      "passives": {
+        "expBonus": 0.15,
+        "defBonus": 0.08,
+        "desc": "✨ [Bảo Khí Linh Quang]: +15% EXP Tu Vi vĩnh viễn, Tăng 8% Phòng ngự."
+      },
+      "combatSkill": {
+        "name": "Hàn Sương Tuyệt Trảm",
+        "damageMultiplier": 2,
+        "desc": "Kích phát linh khí: Gây 200% sát thương bạo liệt!"
+      },
+      "lore": "Lưỡi đao tôi luyện trong dòng suối băng lạnh buốt ngàn năm.",
+      "imageUrl": "https://i.ibb.co/jkcvbzT0/ao-H-n-S-ng.jpg",
+      "pageUrl": "https://ibb.co/s90vbC2x"
+    },
+    {
+      "id": "dao_tuyet_phong",
+      "name": "Đao Tuyệt Phong",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "HUYEN_GIAI",
+      "rarityName": "Huyền Giai Thượng Phẩm",
+      "color": "#2196F3",
+      "imageFile": "Đao Tuyệt Phong.jpg",
+      "stats": {
+        "atk": 75,
+        "def": 33,
+        "maxHp": 750,
+        "critRate": 0.07
+      },
+      "passives": {
+        "expBonus": 0.15,
+        "defBonus": 0.08,
+        "desc": "✨ [Bảo Khí Linh Quang]: +15% EXP Tu Vi vĩnh viễn, Tăng 8% Phòng ngự."
+      },
+      "combatSkill": {
+        "name": "Cuồng Phong Bạo Đao",
+        "damageMultiplier": 2,
+        "desc": "Kích phát linh khí: Gây 200% sát thương bạo liệt!"
+      },
+      "lore": "Đao của kiếm khách vùng Tây Vực, xuất đao vô thanh vô tức.",
+      "imageUrl": "https://i.ibb.co/Vcd1m4CH/ao-Tuy-t-Phong.jpg",
+      "pageUrl": "https://ibb.co/tTSGXr2Z"
+    },
+    {
+      "id": "luoi_an_nguyet_ao_vu",
+      "name": "Lưỡi Ẩn Nguyệt Ảo Vũ",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "HUYEN_GIAI",
+      "rarityName": "Huyền Giai Thượng Phẩm",
+      "color": "#2196F3",
+      "imageFile": "Lưỡi Ẩn Nguyệt Ảo Vũ.jpg",
+      "stats": {
+        "atk": 69,
+        "def": 27,
+        "maxHp": 650,
+        "critRate": 0.09
+      },
+      "passives": {
+        "expBonus": 0.15,
+        "defBonus": 0.08,
+        "desc": "✨ [Bảo Khí Linh Quang]: +15% EXP Tu Vi vĩnh viễn, Tăng 8% Phòng ngự."
+      },
+      "combatSkill": {
+        "name": "Huyễn Nguyệt Trảm",
+        "damageMultiplier": 2.4,
+        "desc": "Kích phát linh khí: Gây 240% sát thương bạo liệt!"
+      },
+      "lore": "Binh khí thích khách ám toán trong đêm trăng mờ ảo.",
+      "imageUrl": "https://i.ibb.co/1tpKMqvQ/L-i-n-Nguy-t-o-V.jpg",
+      "pageUrl": "https://ibb.co/W4dF0yx5"
+    },
+    {
+      "id": "luoi_hai_quy_u_minh",
+      "name": "Lưỡi Hái Quỷ U Minh",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "HUYEN_GIAI",
+      "rarityName": "Huyền Giai Thượng Phẩm",
+      "color": "#2196F3",
+      "imageFile": "Lưỡi Hái Quỷ U Minh.jpg",
+      "stats": {
+        "atk": 64,
+        "def": 42,
+        "maxHp": 750,
+        "critRate": 0.1
+      },
+      "passives": {
+        "expBonus": 0.15,
+        "defBonus": 0.08,
+        "desc": "✨ [Bảo Khí Linh Quang]: +15% EXP Tu Vi vĩnh viễn, Tăng 8% Phòng ngự."
+      },
+      "combatSkill": {
+        "name": "U Minh Quỷ Trảm",
+        "damageMultiplier": 2.4,
+        "desc": "Kích phát linh khí: Gây 240% sát thương bạo liệt!"
+      },
+      "lore": "Lưỡi hái của quỷ tốt U Minh tuần tra chốn hoàng tuyền.",
+      "imageUrl": "https://i.ibb.co/qMhmxHJY/L-i-H-i-Qu-U-Minh.jpg",
+      "pageUrl": "https://ibb.co/ns4QRXPM"
+    },
+    {
+      "id": "thuong_vi_vong",
+      "name": "Thương Vị Võng",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "HUYEN_GIAI",
+      "rarityName": "Huyền Giai Thượng Phẩm",
+      "color": "#2196F3",
+      "imageFile": "Thương Vị Võng.jpg",
+      "stats": {
+        "atk": 72,
+        "def": 35,
+        "maxHp": 500,
+        "critRate": 0.09
+      },
+      "passives": {
+        "expBonus": 0.15,
+        "defBonus": 0.08,
+        "desc": "✨ [Bảo Khí Linh Quang]: +15% EXP Tu Vi vĩnh viễn, Tăng 8% Phòng ngự."
+      },
+      "combatSkill": {
+        "name": "Võng Thương Khốn Địch",
+        "damageMultiplier": 2.5,
+        "desc": "Kích phát linh khí: Gây 250% sát thương bạo liệt!"
+      },
+      "lore": "Ngọn thương đúc kết với tơ bạc ngàn năm trói buộc yêu thú.",
+      "imageUrl": "https://i.ibb.co/j944DFxd/Th-ng-V-V-ng.jpg",
+      "pageUrl": "https://ibb.co/hx88Vvnk"
+    },
+    {
+      "id": "thuong_am_sam_xanh",
+      "name": "Thương Âm Sấm Xanh",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "HUYEN_GIAI",
+      "rarityName": "Huyền Giai Thượng Phẩm",
+      "color": "#2196F3",
+      "imageFile": "Thương Âm Sấm Xanh.jpg",
+      "stats": {
+        "atk": 65,
+        "def": 29,
+        "maxHp": 700,
+        "critRate": 0.1
+      },
+      "passives": {
+        "expBonus": 0.15,
+        "defBonus": 0.08,
+        "desc": "✨ [Bảo Khí Linh Quang]: +15% EXP Tu Vi vĩnh viễn, Tăng 8% Phòng ngự."
+      },
+      "combatSkill": {
+        "name": "Lôi Đình Nhất Kích",
+        "damageMultiplier": 2.1,
+        "desc": "Kích phát linh khí: Gây 210% sát thương bạo liệt!"
+      },
+      "lore": "Trường thương hấp thu lôi điện từ cơn bão sấm xanh trên biển.",
+      "imageUrl": "https://i.ibb.co/prh3FjHT/Th-ng-m-S-m-Xanh.jpg",
+      "pageUrl": "https://ibb.co/vvXJn4NW"
+    },
+    {
+      "id": "truong_than_thanh_linh",
+      "name": "Trượng Thần Thánh Linh",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "HUYEN_GIAI",
+      "rarityName": "Huyền Giai Thượng Phẩm",
+      "color": "#2196F3",
+      "imageFile": "Trượng Thần Thánh Linh.jpg",
+      "stats": {
+        "atk": 63,
+        "def": 36,
+        "maxHp": 500,
+        "critRate": 0.12
+      },
+      "passives": {
+        "expBonus": 0.15,
+        "defBonus": 0.08,
+        "desc": "✨ [Bảo Khí Linh Quang]: +15% EXP Tu Vi vĩnh viễn, Tăng 8% Phòng ngự."
+      },
+      "combatSkill": {
+        "name": "Thánh Linh Chi Quang",
+        "damageMultiplier": 2,
+        "desc": "Kích phát linh khí: Gây 200% sát thương bạo liệt!"
+      },
+      "lore": "Pháp trượng bằng gỗ thánh tỏa ánh sáng vàng ấm áp.",
+      "imageUrl": "https://i.ibb.co/ccgb2kS8/Tr-ng-Th-n-Th-nh-Linh.jpg",
+      "pageUrl": "https://ibb.co/zhn8PQT2"
+    },
+    {
+      "id": "truong_anh_kim",
+      "name": "Trượng Ảnh Kim",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "HUYEN_GIAI",
+      "rarityName": "Huyền Giai Thượng Phẩm",
+      "color": "#2196F3",
+      "imageFile": "Trượng Ảnh Kim.jpg",
+      "stats": {
+        "atk": 62,
+        "def": 40,
+        "maxHp": 450,
+        "critRate": 0.11
+      },
+      "passives": {
+        "expBonus": 0.15,
+        "defBonus": 0.08,
+        "desc": "✨ [Bảo Khí Linh Quang]: +15% EXP Tu Vi vĩnh viễn, Tăng 8% Phòng ngự."
+      },
+      "combatSkill": {
+        "name": "Kim Cương Trượng Kình",
+        "damageMultiplier": 2.2,
+        "desc": "Kích phát linh khí: Gây 220% sát thương bạo liệt!"
+      },
+      "lore": "Trượng dát vàng ròng của tăng nhân khổ hạnh Tây Vực.",
+      "imageUrl": "https://i.ibb.co/k2JgDNxB/Tr-ng-nh-Kim.jpg",
+      "pageUrl": "https://ibb.co/nMBs1xbm"
+    },
+    {
+      "id": "trong_kiem_huyen_kim",
+      "name": "Trọng Kiếm Huyền Kim",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "HUYEN_GIAI",
+      "rarityName": "Huyền Giai Thượng Phẩm",
+      "color": "#2196F3",
+      "imageFile": "Trọng Kiếm Huyền Kim.jpg",
+      "stats": {
+        "atk": 74,
+        "def": 34,
+        "maxHp": 600,
+        "critRate": 0.09
+      },
+      "passives": {
+        "expBonus": 0.15,
+        "defBonus": 0.08,
+        "desc": "✨ [Bảo Khí Linh Quang]: +15% EXP Tu Vi vĩnh viễn, Tăng 8% Phòng ngự."
+      },
+      "combatSkill": {
+        "name": "Bá Lực Phách Địa",
+        "damageMultiplier": 2.4,
+        "desc": "Kích phát linh khí: Gây 240% sát thương bạo liệt!"
+      },
+      "lore": "Thanh kiếm bản to đúc từ sắt đen nguyên khối không mài bén.",
+      "imageUrl": "https://i.ibb.co/SX5PhR48/Tr-ng-Ki-m-Huy-n-Kim.jpg",
+      "pageUrl": "https://ibb.co/fYq2h4z5"
+    },
+    {
+      "id": "riu_chien_huyen_thiet",
+      "name": "Rìu Chiến Huyền Thiết",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "HUYEN_GIAI",
+      "rarityName": "Huyền Giai Thượng Phẩm",
+      "color": "#2196F3",
+      "imageFile": "Rìu Chiến Huyền Thiết.jpg",
+      "stats": {
+        "atk": 72,
+        "def": 25,
+        "maxHp": 750,
+        "critRate": 0.12
+      },
+      "passives": {
+        "expBonus": 0.15,
+        "defBonus": 0.08,
+        "desc": "✨ [Bảo Khí Linh Quang]: +15% EXP Tu Vi vĩnh viễn, Tăng 8% Phòng ngự."
+      },
+      "combatSkill": {
+        "name": "Huyền Thiết Bạo Trảm",
+        "damageMultiplier": 2.1,
+        "desc": "Kích phát linh khí: Gây 210% sát thương bạo liệt!"
+      },
+      "lore": "Rìu đúc từ quặng Huyền Thiết đào sâu trong lòng núi lửa đã tắt.",
+      "imageUrl": "https://i.ibb.co/m56zr6tJ/R-u-Chi-n-Huy-n-Thi-t.jpg",
+      "pageUrl": "https://ibb.co/CKh0phvB"
+    },
+    {
+      "id": "riu_vang_cham_muc",
+      "name": "Rìu Vàng Chấm Mực",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "HUYEN_GIAI",
+      "rarityName": "Huyền Giai Thượng Phẩm",
+      "color": "#2196F3",
+      "imageFile": "Rìu Vàng Chấm Mực.jpg",
+      "stats": {
+        "atk": 69,
+        "def": 38,
+        "maxHp": 750,
+        "critRate": 0.11
+      },
+      "passives": {
+        "expBonus": 0.15,
+        "defBonus": 0.08,
+        "desc": "✨ [Bảo Khí Linh Quang]: +15% EXP Tu Vi vĩnh viễn, Tăng 8% Phòng ngự."
+      },
+      "combatSkill": {
+        "name": "Mặc Kim Phách",
+        "damageMultiplier": 2.1,
+        "desc": "Kích phát linh khí: Gây 210% sát thương bạo liệt!"
+      },
+      "lore": "Chiến rìu cổ khảm vàng và khắc mực huyền bí thời phong kiến.",
+      "imageUrl": "https://i.ibb.co/BV4FNjGs/R-u-V-ng-Ch-m-M-c.jpg",
+      "pageUrl": "https://ibb.co/xSmdHGY5"
+    },
+    {
+      "id": "roi_hon_vang",
+      "name": "Roi Hồn Vàng",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "HUYEN_GIAI",
+      "rarityName": "Huyền Giai Thượng Phẩm",
+      "color": "#2196F3",
+      "imageFile": "Roi Hồn Vàng.jpg",
+      "stats": {
+        "atk": 66,
+        "def": 35,
+        "maxHp": 750,
+        "critRate": 0.12
+      },
+      "passives": {
+        "expBonus": 0.15,
+        "defBonus": 0.08,
+        "desc": "✨ [Bảo Khí Linh Quang]: +15% EXP Tu Vi vĩnh viễn, Tăng 8% Phòng ngự."
+      },
+      "combatSkill": {
+        "name": "Kim Tiên Liệt Hồn",
+        "damageMultiplier": 2.4,
+        "desc": "Kích phát linh khí: Gây 240% sát thương bạo liệt!"
+      },
+      "lore": "Roi bện từ gân rồng vàng và chỉ vàng càn khôn dẻo dai.",
+      "imageUrl": "https://i.ibb.co/BHkGk2kf/Roi-H-n-V-ng.jpg",
+      "pageUrl": "https://ibb.co/0p5K5y5n"
+    },
+    {
+      "id": "cung_tien_moc_thi",
+      "name": "Cung Tiễn Mộc Thi",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "HOANG_GIAI",
+      "rarityName": "Hoàng Giai Phổ Thông",
+      "color": "#8D6E63",
+      "imageFile": "Cung Tiễn Mộc Thi.jpg",
+      "stats": {
+        "atk": 15,
+        "def": 8,
+        "maxHp": 200,
+        "critRate": 0.03
+      },
+      "passives": {
+        "expBonus": 0.05,
+        "desc": "🗡️ [Phàm Binh Dẫn Khí]: +5% EXP Tu Vi."
+      },
+      "combatSkill": {
+        "name": "Mộc Tiễn Xạ",
+        "damageMultiplier": 1.4,
+        "desc": "Đòn đánh cường hóa: Gây 140% sát thương cơ bản."
+      },
+      "lore": "Cung làm từ gỗ cây cổ thụ trăm năm sau núi đệ tử ngoại môn.",
+      "imageUrl": "https://i.ibb.co/m5zh2gVK/Cung-Ti-n-M-c-Thi.jpg",
+      "pageUrl": "https://ibb.co/YBjf1wFS"
+    },
+    {
+      "id": "phi_tieu_truy_hon_long_mau",
+      "name": "Phi Tiêu Truy Hồn Lông Máu",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "HOANG_GIAI",
+      "rarityName": "Hoàng Giai Phổ Thông",
+      "color": "#8D6E63",
+      "imageFile": "Phi Tiêu Truy Hồn Lông Máu.jpg",
+      "stats": {
+        "atk": 19,
+        "def": 9,
+        "maxHp": 150,
+        "critRate": 0.05
+      },
+      "passives": {
+        "expBonus": 0.05,
+        "desc": "🗡️ [Phàm Binh Dẫn Khí]: +5% EXP Tu Vi."
+      },
+      "combatSkill": {
+        "name": "Truy Hồn Tiêu",
+        "damageMultiplier": 1.6,
+        "desc": "Đòn đánh cường hóa: Gây 160% sát thương cơ bản."
+      },
+      "lore": "Phi tiêu gắn lông vũ đỏ ngâm độc dùng cho ám sát săn thú.",
+      "imageUrl": "https://i.ibb.co/KpNhkKFB/Phi-Ti-u-Truy-H-n-L-ng-M-u.jpg",
+      "pageUrl": "https://ibb.co/DHGWyr5m"
+    },
+    {
+      "id": "thanh_quang_nhan",
+      "name": "Thánh Quang Nhận",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "HOANG_GIAI",
+      "rarityName": "Hoàng Giai Phổ Thông",
+      "color": "#8D6E63",
+      "imageFile": "Thánh Quang Nhận.jpg",
+      "stats": {
+        "atk": 21,
+        "def": 13,
+        "maxHp": 100,
+        "critRate": 0.05
+      },
+      "passives": {
+        "expBonus": 0.05,
+        "desc": "🗡️ [Phàm Binh Dẫn Khí]: +5% EXP Tu Vi."
+      },
+      "combatSkill": {
+        "name": "Quang Minh Trảm",
+        "damageMultiplier": 1.5,
+        "desc": "Đòn đánh cường hóa: Gây 150% sát thương cơ bản."
+      },
+      "lore": "Đoản kiếm tôi luyện dưới ánh mặt trời rực rỡ nhập môn.",
+      "imageUrl": "https://i.ibb.co/1tLkJpWB/Th-nh-Quang-Nh-n.jpg",
+      "pageUrl": "https://ibb.co/Vctsph4b"
+    },
+    {
+      "id": "kiem_tram_lu",
+      "name": "Kiếm Trảm Lư",
+      "type": "VU_KHI",
+      "slot": "weapon",
+      "rarity": "HOANG_GIAI",
+      "rarityName": "Hoàng Giai Phổ Thông",
+      "color": "#8D6E63",
+      "imageFile": "Kiếm Trảm Lư.jpg",
+      "stats": {
+        "atk": 22,
+        "def": 12,
+        "maxHp": 150,
+        "critRate": 0.04
+      },
+      "passives": {
+        "expBonus": 0.05,
+        "desc": "🗡️ [Phàm Binh Dẫn Khí]: +5% EXP Tu Vi."
+      },
+      "combatSkill": {
+        "name": "Trảm Lư Kiếm Thức",
+        "damageMultiplier": 1.6,
+        "desc": "Đòn đánh cường hóa: Gây 160% sát thương cơ bản."
+      },
+      "lore": "Thanh kiếm rèn theo phong cách kiếm khách cổ sơ môn.",
+      "imageUrl": "https://i.ibb.co/qLtg51dc/Ki-m-Tr-m-L.jpg",
+      "pageUrl": "https://ibb.co/JWfpQkKG"
+    },
+    {
+      "id": "dan_hoang_cuc",
+      "name": "Đan Hoàng Cực",
+      "type": "PHAP_BAO",
+      "slot": "accessory",
+      "rarity": "HOANG_GIAI",
+      "rarityName": "Hoàng Giai Phổ Thông",
+      "color": "#8D6E63",
+      "imageFile": "Đan Hoàng Cực.jpg",
+      "stats": {
+        "atk": 20,
+        "def": 13,
+        "maxHp": 150,
+        "critRate": 0.04
+      },
+      "passives": {
+        "expBonus": 0.05,
+        "desc": "🗡️ [Phàm Binh Dẫn Khí]: +5% EXP Tu Vi."
+      },
+      "combatSkill": {
+        "name": "Hoàng Cực Chân Hỏa",
+        "damageMultiplier": 1.5,
+        "desc": "Đòn đánh cường hóa: Gây 150% sát thương cơ bản."
+      },
+      "lore": "Viên linh đan bảo ngọc đeo ở đai lưng giúp tĩnh tâm ngưng thần.",
+      "imageUrl": "https://i.ibb.co/3mRFZx2N/an-Ho-ng-C-c.jpg",
+      "pageUrl": "https://ibb.co/Zz2gDQ58"
+    },
+    {
+      "id": "dan_thanh_hon",
+      "name": "Đan Thanh Hồn",
+      "type": "PHAP_BAO",
+      "slot": "accessory",
+      "rarity": "HOANG_GIAI",
+      "rarityName": "Hoàng Giai Phổ Thông",
+      "color": "#8D6E63",
+      "imageFile": "Đan Thanh Hồn.jpg",
+      "stats": {
+        "atk": 19,
+        "def": 8,
+        "maxHp": 150,
+        "critRate": 0.05
+      },
+      "passives": {
+        "expBonus": 0.05,
+        "desc": "🗡️ [Phàm Binh Dẫn Khí]: +5% EXP Tu Vi."
+      },
+      "combatSkill": {
+        "name": "Thanh Hồn Ba Động",
+        "damageMultiplier": 1.6,
+        "desc": "Đòn đánh cường hóa: Gây 160% sát thương cơ bản."
+      },
+      "lore": "Viên ngọc đan xanh biếc làm mát tâm can, tránh tẩu hỏa nhập ma.",
+      "imageUrl": "https://i.ibb.co/SXpPZGDD/an-Thanh-H-n.jpg",
+      "pageUrl": "https://ibb.co/ccd1sVKK"
+    }
+  ]
+}
