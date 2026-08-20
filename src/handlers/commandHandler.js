@@ -2,7 +2,8 @@ import { execute as startSlash } from '../commands/slash/start.js';
 import { execute as helpSlash, createHelpOverviewEmbed, createHelpSelectMenuRow } from '../commands/slash/help.js';
 import { execute as profilePrefix } from '../commands/prefix/profile.js';
 import { executeTuluyen, executeDotpha } from '../commands/prefix/cultivate.js';
-import { executeTangkinhcac, executeLuyencong, executeDunghop } from '../commands/prefix/skills.js';
+
+import { executeTangkinhcac, executeLuyencong, executeDunghop, executeKichhoat } from '../commands/prefix/skills.js';
 import { executeLamcong } from '../commands/prefix/work.js';
 
 import { executeChotroi, executeBan, executeBandan, executeMua, executeHuyban } from '../commands/prefix/market.js';
@@ -142,6 +143,14 @@ export async function handlePrefixCommand(message, prefix = '!') {
       case 'bikip':
       case 'kho':
         return executeTangkinhcac(message);
+
+
+      case 'kichhoat':
+      case 'trangbicongphap':
+      case 'dungcongphap':
+      case 'setskill':
+      case 'equipskill':
+        return executeKichhoat(message, args);
 
       case 'luyencong':
       case 'train':

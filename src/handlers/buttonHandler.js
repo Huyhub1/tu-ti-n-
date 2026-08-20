@@ -119,6 +119,83 @@ function checkHuyenGiaiDrop(user, rate = 0.15) {
   return '';
 }
 
+
+
+/**
+ * Phát thưởng khi hạ yêu thú (`!santhu`).
+ * Cũng gom về một chỗ: trước đây chỉ nhánh đánh thường mới nhân hệ số tư chất
+ * và mới thực sự bỏ Yêu Đan vào túi, trong khi cả ba nhánh đều in dòng
+ * "🎁 1 Yêu Đan" — kết liễu bằng công pháp hay pháp bảo là mất trắng.
+ */
+function grantHuntVictoryRewards(user, session) {
+  user.realm.exp += session.exp;
+  user.currencies.linhThach += session.linhThach;
+  user.currencies.nguyenThach = (user.currencies.nguyenThach || 0) + session.nguyenThach;
+
+  const yeuDanId = `yeu_dan_${session.beastId}`;
+  const existingItem = user.inventory.find(i => i.itemId === yeuDanId);
+  if (existingItem) {
+    existingItem.quantity += 1;
+  } else {
+    user.inventory.push({
+      itemId: yeuDanId,
+      name: `Yêu Đan [${session.beastName}]`,
+      type: 'DAN_DUOC',
+      quantity: 1,
+      desc: `Nội đan chứa linh khí thuần túy của ${session.beastName}`
+    });
+  }
+
+  const dropMsg = checkHuyenGiaiDrop(user, session.gearDropRate ?? 0.15);
+  const rewardLine =
+    `✨ \`+${session.exp} EXP\` | 💎 \`+${session.linhThach} Linh Thạch\` | 🔮 \`+${session.nguyenThach} Nguyên Thạch\` | 🎁 **1 Yêu Đan**!`;
+
+  return { dropMsg, rewardLine };
+}
+
+/**
+ * Phát thưởng khi hạ Boss bí cảnh.
+ * Gom về một chỗ vì trước đây ba nhánh kết liễu (đánh thường / công pháp /
+ * pháp bảo) trả thưởng khác nhau: đánh thường random Nguyên Thạch nhưng in ra
+ * số max (nói dối người chơi), còn công pháp và pháp bảo luôn ăn trọn max và
+ * mất hẳn tỉ lệ rớt bí kíp. Nay cả ba đi chung một đường.
+ */
+function grantDungeonVictoryRewards(user, session) {
+  const min = session.nguyenThachMin ?? 0;
+  const max = Math.max(min, session.nguyenThachMax ?? min);
+  const nguyenThachEarned = Math.floor(Math.random() * (max - min + 1)) + min;
+
+  user.realm.exp += session.exp;
+  user.currencies.linhThach += session.linhThach;
+  user.currencies.nguyenThach = (user.currencies.nguyenThach || 0) + nguyenThachEarned;
+
+  let dropMsg = '';
+
+  // Rớt bí kíp
+  if (Math.random() <= (session.rareDropRate || 0)) {
+    const allSkills = getAllSkills();
+    const droppedSkill = allSkills[Math.floor(Math.random() * allSkills.length)];
+    if (droppedSkill && !user.skills.some(s => s.skillId === droppedSkill.id)) {
+      user.skills.push({
+        skillId: droppedSkill.id,
+        name: droppedSkill.name,
+        category: droppedSkill.category,
+        rarity: droppedSkill.rarity,
+        mastery: 10,
+        equipped: false
+      });
+      dropMsg += `\n🎁 **MỞ RƯƠNG BẢO VẬT:** Thu được bí kíp **[${droppedSkill.name}]** (${droppedSkill.rarity})!`;
+    }
+  }
+
+  dropMsg += checkHuyenGiaiDrop(user, session.gearDropRate ?? 0.30);
+
+  const rewardLine =
+    `✨ \`+${session.exp} EXP\` | 💎 \`+${session.linhThach} LT\` | 🔮 \`+${nguyenThachEarned} Nguyên Thạch\``;
+
+  return { nguyenThachEarned, dropMsg, rewardLine };
+}
+
 export async function handleButton(interaction) {
   const customId = interaction.customId;
   const clickerId = interaction.user.id;
@@ -258,7 +335,11 @@ export async function handleButton(interaction) {
       beastMaxHp: beast.hp,
       beastAtk: beast.atk,
       beastDef: beast.def,
-      exp: Math.floor(beast.exp * (1 + huntBuffs.expKillBonus)),
+
+      // Hệ số tư chất nướng thẳng vào session để cả ba nhánh kết liễu ăn giống
+      // nhau và con số in ra đúng bằng con số thực nhận. Trước đây chỉ nhánh
+      // đánh thường nhân expMultiplier, đánh bằng công pháp/pháp bảo thì mất.
+      exp: Math.floor(beast.exp * (1 + huntBuffs.expKillBonus) * (user.talent?.expMultiplier || 1)),
       linhThach: beast.linhThach,
       nguyenThach: beast.nguyenThach,
       gearDropRate: Math.min(0.60, 0.15 * (1 + huntBuffs.dropRateBonus)),
@@ -294,35 +375,20 @@ export async function handleButton(interaction) {
 
     if (session.beastHp <= 0) {
       delete combatSessions[targetUserId];
+
       const user = await User.findOne({ userId: targetUserId });
       let gearDropMsg = '';
+      let rewardLine = '';
 
       if (user) {
-        const expGained = Math.floor(session.exp * (user.talent.expMultiplier || 1.0));
-        user.realm.exp += expGained;
-        user.currencies.linhThach += session.linhThach;
-        user.currencies.nguyenThach = (user.currencies.nguyenThach || 0) + session.nguyenThach;
-
-        const existingItem = user.inventory.find(i => i.itemId === `yeu_dan_${session.beastId}`);
-        if (existingItem) {
-          existingItem.quantity += 1;
-        } else {
-          user.inventory.push({
-            itemId: `yeu_dan_${session.beastId}`,
-            name: `Yêu Đan [${session.beastName}]`,
-            type: 'DAN_DUOC',
-            quantity: 1,
-            desc: `Nội đan chứa linh khí thuần túy của ${session.beastName}`
-          });
-        }
-
-        // Tỉ lệ rớt trang bị Bậc 4 (Huyền Giai)
-        gearDropMsg = checkHuyenGiaiDrop(user, session.gearDropRate ?? 0.15);
+        const rewards = grantHuntVictoryRewards(user, session);
+        gearDropMsg = rewards.dropMsg;
+        rewardLine = rewards.rewardLine;
         u_syncCombatStats(user, session);
         await user.save();
       }
 
-      session.lastLog = `${logText}\n\n🏆 **CHIẾN THẮNG!** Đạo hữu đã trảm sát **${session.beastName}**!\n✨ Nhận: \`+${session.exp} EXP\` | 💎 \`+${session.linhThach} Linh Thạch\` | 🔮 \`+${session.nguyenThach} Nguyên Thạch\` | 🎁 **1 Yêu Đan**!${gearDropMsg}`;
+      session.lastLog = `${logText}\n\n🏆 **CHIẾN THẮNG!** Đạo hữu đã trảm sát **${session.beastName}**!\n✨ Nhận: ${rewardLine}${gearDropMsg}`;
       const embed = createCombatEmbed(session);
       return interaction.update({ embeds: [embed], components: [] });
     }
@@ -408,17 +474,18 @@ export async function handleButton(interaction) {
 
     if (session.beastHp <= 0) {
       delete combatSessions[targetUserId];
+
       let gearDropMsg = '';
+      let rewardLine = '';
       if (user) {
-        user.realm.exp += session.exp;
-        user.currencies.linhThach += session.linhThach;
-        user.currencies.nguyenThach = (user.currencies.nguyenThach || 0) + session.nguyenThach;
-        gearDropMsg = checkHuyenGiaiDrop(user, session.gearDropRate ?? 0.15);
+        const rewards = grantHuntVictoryRewards(user, session);
+        gearDropMsg = rewards.dropMsg;
+        rewardLine = rewards.rewardLine;
         u_syncCombatStats(user, session);
         await user.save();
       }
 
-      session.lastLog = `${logText}\n\n🏆 **CHIẾN THẮNG TUYỆT ĐỐI!** Một kích diệt sát **${session.beastName}**!\n✨ \`+${session.exp} EXP\` | 💎 \`+${session.linhThach} Linh Thạch\` | 🔮 \`+${session.nguyenThach} Nguyên Thạch\` | 🎁 **1 Yêu Đan**!${gearDropMsg}`;
+      session.lastLog = `${logText}\n\n🏆 **CHIẾN THẮNG TUYỆT ĐỐI!** Một kích diệt sát **${session.beastName}**!\n✨ ${rewardLine}${gearDropMsg}`;
       const embed = createCombatEmbed(session);
       return interaction.update({ embeds: [embed], components: [] });
     }
@@ -491,17 +558,18 @@ export async function handleButton(interaction) {
 
     if (session.beastHp <= 0) {
       delete combatSessions[targetUserId];
+
       let gearDropMsg = '';
+      let rewardLine = '';
       if (user) {
-        user.realm.exp += session.exp;
-        user.currencies.linhThach += session.linhThach;
-        user.currencies.nguyenThach = (user.currencies.nguyenThach || 0) + session.nguyenThach;
-        gearDropMsg = checkHuyenGiaiDrop(user, session.gearDropRate ?? 0.15);
+        const rewards = grantHuntVictoryRewards(user, session);
+        gearDropMsg = rewards.dropMsg;
+        rewardLine = rewards.rewardLine;
         u_syncCombatStats(user, session);
         await user.save();
       }
 
-      session.lastLog = `${logText}\n\n🏆 **CHIẾN THẮNG TUYỆT ĐỐI!** Pháp bảo chấn sát **${session.beastName}**!\n✨ \`+${session.exp} EXP\` | 💎 \`+${session.linhThach} Linh Thạch\` | 🔮 \`+${session.nguyenThach} Nguyên Thạch\` | 🎁 **1 Yêu Đan**!${gearDropMsg}`;
+      session.lastLog = `${logText}\n\n🏆 **CHIẾN THẮNG TUYỆT ĐỐI!** Pháp bảo chấn sát **${session.beastName}**!\n✨ ${rewardLine}${gearDropMsg}`;
       const embed = createCombatEmbed(session);
       return interaction.update({ embeds: [embed], components: [] });
     }
@@ -608,7 +676,8 @@ export async function handleButton(interaction) {
       bossMaxHp: dungeon.boss.hp,
       bossAtk: dungeon.boss.atk,
       bossDef: dungeon.boss.def,
-      exp: Math.floor(dungeon.exp * (1 + dgBuffs.expKillBonus)),
+
+      exp: Math.floor(dungeon.exp * (1 + dgBuffs.expKillBonus) * (user.talent?.expMultiplier || 1)),
       linhThach: dungeon.linhThach,
       nguyenThachMin: dungeon.nguyenThachMin,
       nguyenThachMax: dungeon.nguyenThachMax,
@@ -644,41 +713,20 @@ export async function handleButton(interaction) {
 
     if (session.bossHp <= 0) {
       delete dungeonCombatSessions[targetUserId];
+
       const user = await User.findOne({ userId: targetUserId });
       let dropMsg = '';
+      let rewardLine = '';
 
       if (user) {
-        const nguyenThachEarned = Math.floor(Math.random() * (session.nguyenThachMax - session.nguyenThachMin + 1)) + session.nguyenThachMin;
-        user.realm.exp += session.exp;
-        user.currencies.linhThach += session.linhThach;
-        user.currencies.nguyenThach = (user.currencies.nguyenThach || 0) + nguyenThachEarned;
-
-        // Rớt bí kíp
-        if (Math.random() <= session.rareDropRate) {
-          const allSkills = getAllSkills();
-          const droppedSkill = allSkills[Math.floor(Math.random() * allSkills.length)];
-          if (!user.skills.some(s => s.skillId === droppedSkill.id)) {
-            user.skills.push({
-              skillId: droppedSkill.id,
-              name: droppedSkill.name,
-              category: droppedSkill.category,
-              rarity: droppedSkill.rarity,
-              mastery: 10,
-              equipped: false
-            });
-            dropMsg += `\n🎁 **MỞ RƯƠNG BẢO VẬT:** Thu được bí kíp **[${droppedSkill.name}]** (${droppedSkill.rarity})!`;
-          }
-        }
-
-        // Tỉ lệ rớt trang bị Bậc 4 (Huyền Giai) từ Boss (30%)
-        const gearDropMsg = checkHuyenGiaiDrop(user, session.gearDropRate ?? 0.30);
-        dropMsg += gearDropMsg;
-
+        const rewards = grantDungeonVictoryRewards(user, session);
+        dropMsg = rewards.dropMsg;
+        rewardLine = rewards.rewardLine;
         u_syncCombatStats(user, session);
         await user.save();
       }
 
-      session.lastLog = `${logText}\n\n🏆 **ĐẠI THẮNG BÍ CẢNH!** Boss **${session.bossName}** đã bị tiêu diệt!\n✨ \`+${session.exp} EXP\` | 💎 \`+${session.linhThach} LT\` | 🔮 \`+${session.nguyenThachMax} Nguyên Thạch\`${dropMsg}`;
+      session.lastLog = `${logText}\n\n🏆 **ĐẠI THẮNG BÍ CẢNH!** Boss **${session.bossName}** đã bị tiêu diệt!\n${rewardLine}${dropMsg}`;
       const embed = createDungeonCombatEmbed(session);
       return interaction.update({ embeds: [embed], components: [] });
     }
@@ -764,17 +812,18 @@ export async function handleButton(interaction) {
 
     if (session.bossHp <= 0) {
       delete dungeonCombatSessions[targetUserId];
+
       let dropMsg = '';
+      let rewardLine = '';
       if (user) {
-        user.realm.exp += session.exp;
-        user.currencies.linhThach += session.linhThach;
-        user.currencies.nguyenThach = (user.currencies.nguyenThach || 0) + session.nguyenThachMax;
-        dropMsg = checkHuyenGiaiDrop(user, session.gearDropRate ?? 0.30);
+        const rewards = grantDungeonVictoryRewards(user, session);
+        dropMsg = rewards.dropMsg;
+        rewardLine = rewards.rewardLine;
         u_syncCombatStats(user, session);
         await user.save();
       }
 
-      session.lastLog = `${logText}\n\n🏆 **ĐẠI THẮNG BÍ CẢNH!** Phá tan Boss **${session.bossName}**!\n✨ \`+${session.exp} EXP\` | 💎 \`+${session.linhThach} LT\` | 🔮 \`+${session.nguyenThachMax} Nguyên Thạch\`!${dropMsg}`;
+      session.lastLog = `${logText}\n\n🏆 **ĐẠI THẮNG BÍ CẢNH!** Phá tan Boss **${session.bossName}**!\n${rewardLine}${dropMsg}`;
       const embed = createDungeonCombatEmbed(session);
       return interaction.update({ embeds: [embed], components: [] });
     }
@@ -847,17 +896,18 @@ export async function handleButton(interaction) {
 
     if (session.bossHp <= 0) {
       delete dungeonCombatSessions[targetUserId];
+
       let dropMsg = '';
+      let rewardLine = '';
       if (user) {
-        user.realm.exp += session.exp;
-        user.currencies.linhThach += session.linhThach;
-        user.currencies.nguyenThach = (user.currencies.nguyenThach || 0) + session.nguyenThachMax;
-        dropMsg = checkHuyenGiaiDrop(user, session.gearDropRate ?? 0.30);
+        const rewards = grantDungeonVictoryRewards(user, session);
+        dropMsg = rewards.dropMsg;
+        rewardLine = rewards.rewardLine;
         u_syncCombatStats(user, session);
         await user.save();
       }
 
-      session.lastLog = `${logText}\n\n🏆 **ĐẠI THẮNG BÍ CẢNH!** Pháp bảo trấn sát Boss **${session.bossName}**!\n✨ \`+${session.exp} EXP\` | 💎 \`+${session.linhThach} LT\` | 🔮 \`+${session.nguyenThachMax} Nguyên Thạch\`!${dropMsg}`;
+      session.lastLog = `${logText}\n\n🏆 **ĐẠI THẮNG BÍ CẢNH!** Pháp bảo trấn sát Boss **${session.bossName}**!\n${rewardLine}${dropMsg}`;
       const embed = createDungeonCombatEmbed(session);
       return interaction.update({ embeds: [embed], components: [] });
     }

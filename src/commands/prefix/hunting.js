@@ -96,6 +96,49 @@ export const SKILL_MANA_COST = {
   THAN_GIAI: 100
 };
 
+
+// Discord chỉ cho 5 nút mỗi hàng và nhãn tối đa 80 ký tự.
+export const MAX_COMBAT_SKILL_BUTTONS = 4;
+export const MAX_COMBAT_GEAR_BUTTONS = 2;
+
+export function trimButtonLabel(label) {
+  return label.length <= 80 ? label : `${label.slice(0, 77)}...`;
+}
+
+/**
+ * Lọc danh sách công pháp dùng được trong trận: bỏ trùng skillId (Discord từ
+ * chối cả tin nhắn nếu có 2 customId giống nhau), ưu tiên phẩm cao rồi thuần
+ * thục cao, cắt còn tối đa 4 nút.
+ */
+export function pickCombatSkills(equippedSkills = []) {
+  const seen = new Set();
+  return (equippedSkills || [])
+    .filter(s => {
+      if (!s || !s.skillId || seen.has(s.skillId)) return false;
+      seen.add(s.skillId);
+      return true;
+    })
+    .sort((a, b) => {
+      const rank = (SKILL_MANA_COST[b.rarity] || 0) - (SKILL_MANA_COST[a.rarity] || 0);
+      return rank !== 0 ? rank : (b.mastery || 0) - (a.mastery || 0);
+    })
+    .slice(0, MAX_COMBAT_SKILL_BUTTONS);
+}
+
+// Chỉ pháp bảo thực sự có tuyệt kỹ mới thành nút; trùng gearId thì bỏ.
+export function pickCombatGears(equippedGears = []) {
+  const seen = new Set();
+  return (equippedGears || [])
+    .filter(g => {
+      if (!g || !g.combatSkill || !g.combatSkill.name) return false;
+      const key = g.gearId || g.id;
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .slice(0, MAX_COMBAT_GEAR_BUTTONS);
+}
+
 export const GEAR_MANA_COST = {
   HOANG_GIAI: 30,
   HUYEN_GIAI: 50,
@@ -124,49 +167,52 @@ export function createCombatEmbed(session) {
   return embed;
 }
 
+
+/**
+ * Dựng bảng nút giao chiến.
+ * Trước đây chỉ vẽ đúng 1 công pháp và 1 pháp bảo dù `!tangkinhcac` hứa
+ * "tối đa kích hoạt 4 công pháp khi giao chiến" — nay vẽ đủ số đã kích hoạt.
+ * Hàng 1: đánh thường + tối đa 4 công pháp (giới hạn 5 nút/hàng của Discord)
+ * Hàng 2: tối đa 2 pháp bảo + tháo chạy
+ */
 export function createCombatButtons(userId, equippedSkills = [], equippedGears = [], userMp = 100, isFinished = false) {
   if (isFinished) return [];
 
-  const row = new ActionRowBuilder();
-  row.addComponents(
+  const skills = pickCombatSkills(equippedSkills);
+  const gears = pickCombatGears(equippedGears);
+
+  const rowSkills = new ActionRowBuilder();
+  rowSkills.addComponents(
     new ButtonBuilder().setCustomId(`combat_attack_normal_${userId}`).setLabel('🗡️ Đánh Thường (+15 MP)').setStyle(ButtonStyle.Primary)
   );
 
-  // 1. Tuyệt kỹ công pháp (Tiêu hao Mana)
-  if (equippedSkills && equippedSkills.length > 0) {
-    const firstSkill = equippedSkills[0];
-    const skillCost = SKILL_MANA_COST[firstSkill.rarity] || 25;
-    const notEnoughMp = (userMp || 0) < skillCost;
-    row.addComponents(
+  skills.forEach((skill, idx) => {
+    const skillCost = SKILL_MANA_COST[skill.rarity] || 25;
+    rowSkills.addComponents(
       new ButtonBuilder()
-        .setCustomId(`combat_skill::${firstSkill.skillId}::0::${userId}`)
-        .setLabel(`🔥 ${firstSkill.name} (${skillCost} MP)`)
+        .setCustomId(`combat_skill::${skill.skillId}::${idx}::${userId}`)
+        .setLabel(trimButtonLabel(`🔥 ${skill.name} (${skillCost} MP)`))
         .setStyle(ButtonStyle.Danger)
-        .setDisabled(notEnoughMp)
+        .setDisabled((userMp || 0) < skillCost)
     );
-  }
+  });
 
-  // 2. Tuyệt kỹ Pháp Bảo / Vũ Khí (Tiêu hao Mana, không giới hạn lượt)
-  if (equippedGears && equippedGears.length > 0) {
-    const mainGear = equippedGears.find(g => g.combatSkill && g.combatSkill.name) || equippedGears[0];
-    if (mainGear && mainGear.combatSkill && mainGear.combatSkill.name) {
-      const gearCost = GEAR_MANA_COST[mainGear.rarity] || 40;
-      const notEnoughMp = (userMp || 0) < gearCost;
-      row.addComponents(
-        new ButtonBuilder()
-          .setCustomId(`combat_gear_skill::${mainGear.gearId}::${userId}`)
-          .setLabel(`🔮 ${mainGear.combatSkill.name} (${gearCost} MP)`)
-          .setStyle(ButtonStyle.Success)
-          .setDisabled(notEnoughMp)
-      );
-    }
-  }
-
-  row.addComponents(
+  const rowSupport = new ActionRowBuilder();
+  gears.forEach(gear => {
+    const gearCost = GEAR_MANA_COST[gear.rarity] || 40;
+    rowSupport.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`combat_gear_skill::${gear.gearId}::${userId}`)
+        .setLabel(trimButtonLabel(`🔮 ${gear.combatSkill.name} (${gearCost} MP)`))
+        .setStyle(ButtonStyle.Success)
+        .setDisabled((userMp || 0) < gearCost)
+    );
+  });
+  rowSupport.addComponents(
     new ButtonBuilder().setCustomId(`combat_flee_${userId}`).setLabel('🏃 Tháo Chạy').setStyle(ButtonStyle.Secondary)
   );
 
-  return [row];
+  return [rowSkills, rowSupport];
 }
 
 function getProgressBar(current, max, length = 10) {

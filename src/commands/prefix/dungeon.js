@@ -2,7 +2,8 @@ import { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMe
 
 import { User } from '../../database/models/User.js';
 import { checkCooldown, formatWait, checkBattleReady } from '../../utils/cooldown.js';
-import { combatSessions } from './hunting.js';
+
+import { combatSessions, pickCombatSkills, pickCombatGears, trimButtonLabel } from './hunting.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -125,49 +126,47 @@ export function createDungeonCombatEmbed(session) {
   return embed;
 }
 
+
+// Cùng bố cục với săn thú: hàng 1 đánh thường + tối đa 4 công pháp,
+// hàng 2 tối đa 2 pháp bảo + rút lui.
 export function createDungeonCombatButtons(userId, equippedSkills = [], equippedGears = [], userMp = 100, isFinished = false) {
   if (isFinished) return [];
 
-  const row = new ActionRowBuilder();
-  row.addComponents(
+  const skills = pickCombatSkills(equippedSkills);
+  const gears = pickCombatGears(equippedGears);
+
+  const rowSkills = new ActionRowBuilder();
+  rowSkills.addComponents(
     new ButtonBuilder().setCustomId(`dungeon_attack_normal_${userId}`).setLabel('🗡️ Đánh Thường (+15 MP)').setStyle(ButtonStyle.Primary)
   );
 
-  // 1. Tuyệt kỹ công pháp (Tiêu hao Mana)
-  if (equippedSkills && equippedSkills.length > 0) {
-    const firstSkill = equippedSkills[0];
-    const skillCost = DUNGEON_SKILL_MANA_COST[firstSkill.rarity] || 25;
-    const notEnoughMp = (userMp || 0) < skillCost;
-    row.addComponents(
+  skills.forEach((skill, idx) => {
+    const skillCost = DUNGEON_SKILL_MANA_COST[skill.rarity] || 25;
+    rowSkills.addComponents(
       new ButtonBuilder()
-        .setCustomId(`dungeon_skill::${firstSkill.skillId}::0::${userId}`)
-        .setLabel(`🔥 ${firstSkill.name} (${skillCost} MP)`)
+        .setCustomId(`dungeon_skill::${skill.skillId}::${idx}::${userId}`)
+        .setLabel(trimButtonLabel(`🔥 ${skill.name} (${skillCost} MP)`))
         .setStyle(ButtonStyle.Danger)
-        .setDisabled(notEnoughMp)
+        .setDisabled((userMp || 0) < skillCost)
     );
-  }
+  });
 
-  // 2. Tuyệt kỹ Pháp Bảo / Vũ Khí (Tiêu hao Mana, không giới hạn lượt)
-  if (equippedGears && equippedGears.length > 0) {
-    const mainGear = equippedGears.find(g => g.combatSkill && g.combatSkill.name) || equippedGears[0];
-    if (mainGear && mainGear.combatSkill && mainGear.combatSkill.name) {
-      const gearCost = DUNGEON_GEAR_MANA_COST[mainGear.rarity] || 40;
-      const notEnoughMp = (userMp || 0) < gearCost;
-      row.addComponents(
-        new ButtonBuilder()
-          .setCustomId(`dungeon_gear_skill::${mainGear.gearId}::${userId}`)
-          .setLabel(`🔮 ${mainGear.combatSkill.name} (${gearCost} MP)`)
-          .setStyle(ButtonStyle.Success)
-          .setDisabled(notEnoughMp)
-      );
-    }
-  }
-
-  row.addComponents(
+  const rowSupport = new ActionRowBuilder();
+  gears.forEach(gear => {
+    const gearCost = DUNGEON_GEAR_MANA_COST[gear.rarity] || 40;
+    rowSupport.addComponents(
+      new ButtonBuilder()
+        .setCustomId(`dungeon_gear_skill::${gear.gearId}::${userId}`)
+        .setLabel(trimButtonLabel(`🔮 ${gear.combatSkill.name} (${gearCost} MP)`))
+        .setStyle(ButtonStyle.Success)
+        .setDisabled((userMp || 0) < gearCost)
+    );
+  });
+  rowSupport.addComponents(
     new ButtonBuilder().setCustomId(`dungeon_flee_${userId}`).setLabel('🏃 Rút Khỏi Bí Cảnh').setStyle(ButtonStyle.Secondary)
   );
 
-  return [row];
+  return [rowSkills, rowSupport];
 }
 
 function getProgressBar(current, max, length = 10) {

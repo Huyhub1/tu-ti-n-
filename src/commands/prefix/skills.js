@@ -5,7 +5,75 @@ import { User } from '../../database/models/User.js';
 import { fuseSkills, RARITY_ORDER, findBestFusableRarity, getRarityName } from '../../services/skillService.js';
 import { getUserTalentPerks } from '../../services/talentService.js';
 
+
 const TRAIN_COOLDOWN_SECONDS = 10;
+
+// Trùng với MAX_COMBAT_SKILL_BUTTONS bên hunting.js: Discord chỉ còn 4 chỗ
+// trống trên hàng nút đầu tiên sau nút "Đánh Thường".
+export const MAX_EQUIPPED_SKILLS = 4;
+
+/**
+ * `!kichhoat <stt>` — bật/tắt một công pháp cho khay chiến đấu.
+ * Trước đây cờ `equipped` chỉ được đặt đúng một lần cho công pháp khởi đầu và
+ * không có lệnh nào đổi được, nên dòng chữ "tối đa kích hoạt 4 công pháp" ở
+ * `!tangkinhcac` là lời hứa suông và mọi bí kíp mua/dung hợp về đều nằm kho.
+ */
+export async function executeKichhoat(message, args = []) {
+  const user = await User.findOne({ userId: message.author.id });
+  if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
+
+  if (!user.skills || user.skills.length === 0) {
+    return message.reply({ content: `❌ Đạo hữu chưa có công pháp nào trong kho! Gõ \`!choden\` để tìm mua bí kíp.` });
+  }
+
+  const listEquipped = () => {
+    const active = user.skills.filter(s => s.equipped);
+
+    // Khi chưa chọn gì, hunting.js/dungeon.js tự lấy toàn bộ kho rồi lọc ra 4
+    // bí kíp mạnh nhất, nên người chơi mới không bị thiệt vì chưa biết lệnh.
+    if (active.length === 0) return '*(chưa chọn — vào trận bot tự dùng 4 bí kíp phẩm cao nhất trong kho)*';
+    return active.map(s => `🔥 **[${s.name}]** \`${s.rarity}\` — thuần thục \`${s.mastery}%\``).join('\n');
+  };
+
+  if (args.length === 0) {
+    const embed = new EmbedBuilder()
+      .setTitle(`⚔️ [KHAY CHIẾN ĐẤU] - ${user.daoName || user.username}`)
+      .setColor('#FF7043')
+      .setDescription(
+        `Công pháp đang kích hoạt (**${user.skills.filter(s => s.equipped).length}/${MAX_EQUIPPED_SKILLS}**):\n${listEquipped()}\n\n` +
+        `💡 Gõ \`!kichhoat <stt>\` để bật/tắt một công pháp. Số thứ tự xem ở \`!tangkinhcac\`.`
+      );
+    return message.reply({ embeds: [embed] });
+  }
+
+  const index = parseInt(args[0], 10) - 1;
+  if (Number.isNaN(index) || index < 0 || index >= user.skills.length) {
+    return message.reply({ content: `❌ Số thứ tự không hợp lệ! Chọn từ **1** đến **${user.skills.length}** (xem \`!tangkinhcac\`).` });
+  }
+
+  const skill = user.skills[index];
+
+  if (skill.equipped) {
+    skill.equipped = false;
+    await user.save();
+    return message.reply({
+      content: `🔻 Đã cất **[${skill.name}]** khỏi khay chiến đấu.\n⚔️ Đang kích hoạt: **${user.skills.filter(s => s.equipped).length}/${MAX_EQUIPPED_SKILLS}**`
+    });
+  }
+
+  const activeCount = user.skills.filter(s => s.equipped).length;
+  if (activeCount >= MAX_EQUIPPED_SKILLS) {
+    return message.reply({
+      content: `❌ Khay chiến đấu đã đầy (**${activeCount}/${MAX_EQUIPPED_SKILLS}**)! Hãy tắt bớt một công pháp trước:\n${listEquipped()}`
+    });
+  }
+
+  skill.equipped = true;
+  await user.save();
+  return message.reply({
+    content: `✅ Đã kích hoạt **[${skill.name}]** \`${skill.rarity}\` vào khay chiến đấu!\n⚔️ Đang kích hoạt: **${activeCount + 1}/${MAX_EQUIPPED_SKILLS}**`
+  });
+}
 
 export async function executeTangkinhcac(message) {
   const user = await User.findOne({ userId: message.author.id });
@@ -17,15 +85,18 @@ export async function executeTangkinhcac(message) {
     .setTitle(`🏴‍☠️ [CHỢ ĐEN & KHO BÍ KÍP CÁ NHÂN] - ${user.daoName || user.username}`)
     .setColor('#37474F')
     .setDescription(
+
       `Danh sách tất cả các công pháp đạo hữu đã thu thập (\`${user.skills.length}\` bí kíp):\n` +
-      `*(Tối đa kích hoạt 4 công pháp khi giao chiến)*\n\n`
+      `*(Đang kích hoạt \`${user.skills.filter(s => s.equipped).length}/4\` — dùng \`!kichhoat <stt>\` để đổi)*\n\n`
     );
 
   if (user.skills.length === 0) {
     embed.setDescription(`*Kho của bạn đang trống! Hãy bấm nút [Vào Sàn Giao Dịch Chợ Đen] để mua bí kíp.*`);
   } else {
     user.skills.forEach((s, idx) => {
+
       const equipTag = s.equipped ? `✅ [ĐANG DÙNG]` : `⭕`;
+      // stt hiển thị = index + 1, khớp với tham số của !kichhoat và !luyencong
       const masteryTag = s.mastery >= 100 ? `🔥 VIÊN MÃN (100%)` : `Thuần thục: \`${s.mastery}%\``;
       embed.addFields({
         name: `${idx + 1}. ${equipTag} **[${s.name}]** - Phẩm: \`${s.rarity}\``,
@@ -38,7 +109,11 @@ export async function executeTangkinhcac(message) {
   embed.addFields(
     {
       name: `💡 Lệnh Rèn Luyện & Nấu Chảy:`,
-      value: `• \`!luyencong <stt>\` : Bế quan luyện thuần thục công pháp (+15% Mastery, Delay 10s).\n• \`!dunghop\` : Nấu chảy 5 công pháp Viên Mãn thành 1 bí kíp phẩm cao hơn!`,
+
+      value:
+        `• \`!kichhoat <stt>\` : Bật/tắt công pháp cho khay chiến đấu (tối đa **4**).\n` +
+        `• \`!luyencong <stt>\` : Bế quan luyện thuần thục công pháp (+15% Mastery, Delay 10s).\n` +
+        `• \`!dunghop [phẩm cấp]\` : Nấu chảy 5 công pháp Viên Mãn cùng phẩm thành 1 bí kíp phẩm cao hơn!`,
       inline: false
     }
   );
