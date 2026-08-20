@@ -1,0 +1,183 @@
+@@@BLOCK
+@@@FILE src/handlers/buttonHandler.js
+@@@FIND
+      targetGear.equipped = true;
+      user.stats.atk += targetGear.stats.atk;
+      user.stats.def += targetGear.stats.def;
+      user.stats.maxHp += targetGear.stats.maxHp;
+      user.stats.hp = user.stats.maxHp;
+@@@REPLACE
+      targetGear.equipped = true;
+      user.stats.atk += targetGear.stats.atk;
+      user.stats.def += targetGear.stats.def;
+      user.stats.maxHp += targetGear.stats.maxHp;
+      // Mặc giáp làm tăng thể chất -> được cộng đúng phần HP tối đa tăng thêm,
+      // KHÔNG hồi đầy máu (nếu không sẽ thành nút hồi máu vô hạn).
+      user.stats.hp = Math.min(user.stats.maxHp, (user.stats.hp || 0) + targetGear.stats.maxHp);
+@@@END
+@@@BLOCK
+@@@FILE src/handlers/buttonHandler.js
+@@@FIND
+    const gear = user.equipments[idx];
+    const costLinhThach = (gear.enhanceLevel + 1) * 150;
+    const costNguyenThach = Math.floor(gear.enhanceLevel / 3) + 1;
+
+    if (user.currencies.linhThach < costLinhThach || (user.currencies.nguyenThach || 0) < costNguyenThach) {
+      return interaction.reply({
+        content: `❌ Không đủ tài nguyên cường hóa! Cần **${costLinhThach.toLocaleString()} Linh Thạch** + **${costNguyenThach} Nguyên Thạch** (Hiện có: \`${user.currencies.linhThach}\` LT | \`${user.currencies.nguyenThach || 0}\` NT).`,
+        ephemeral: true
+      });
+    }
+
+    user.currencies.linhThach -= costLinhThach;
+    user.currencies.nguyenThach -= costNguyenThach;
+
+    gear.enhanceLevel += 1;
+    const atkBoost = Math.max(2, Math.floor(gear.stats.atk * 0.08) + 1);
+    const defBoost = Math.max(1, Math.floor(gear.stats.def * 0.08) + 1);
+    const hpBoost = Math.max(10, Math.floor(gear.stats.maxHp * 0.08) + 5);
+
+    gear.stats.atk += atkBoost;
+    gear.stats.def += defBoost;
+    gear.stats.maxHp += hpBoost;
+
+    if (gear.equipped) {
+      user.stats.atk += atkBoost;
+      user.stats.def += defBoost;
+      user.stats.maxHp += hpBoost;
+      user.stats.hp = user.stats.maxHp;
+    }
+
+    await user.save();
+
+    const embed = new EmbedBuilder()
+      .setTitle(`✨ [CƯỜNG HÓA THÀNH CÔNG] - ${gear.name} (+${gear.enhanceLevel})`)
+      .setColor('#FFD700')
+      .setDescription(
+        `Thần binh phát sáng hào quang rực rỡ!\n` +
+        `Trang bị **[${gear.name}]** đã tăng lên cấp **+${gear.enhanceLevel}**!\n\n` +
+        `📈 **Chỉ số gia tăng:**\n` +
+        `🗡️ ATK: \`+${gear.stats.atk}\` (+${atkBoost})\n` +
+        `🛡️ DEF: \`+${gear.stats.def}\` (+${defBoost})\n` +
+        `❤️ HP: \`+${gear.stats.maxHp}\` (+${hpBoost})`
+      );
+
+    return interaction.update({ embeds: [embed], components: [] });
+@@@REPLACE
+    const gear = user.equipments[idx];
+    const lv = gear.enhanceLevel || 0;
+
+    // ── GIỚI HẠN CƯỜNG HÓA ──
+    if (lv >= MAX_ENHANCE_LEVEL) {
+      return interaction.reply({
+        content: `🔒 **[${gear.name}]** đã đạt cấp cường hóa tối đa **+${MAX_ENHANCE_LEVEL}** — vật chất phàm tục không thể chịu thêm linh khí nữa!`,
+        ephemeral: true
+      });
+    }
+
+    // Chi phí tăng theo cấp số nhân để cân với sức mạnh tăng kép 8%
+    const costLinhThach = Math.floor(150 * Math.pow(1.55, lv));
+    const costNguyenThach = Math.floor(lv / 2) + 1;
+    const successRate = getEnhanceSuccessRate(lv);
+
+    if (user.currencies.linhThach < costLinhThach || (user.currencies.nguyenThach || 0) < costNguyenThach) {
+      return interaction.reply({
+        content: `❌ Không đủ tài nguyên cường hóa! Cần **${costLinhThach.toLocaleString()} Linh Thạch** + **${costNguyenThach} Nguyên Thạch** (Hiện có: \`${user.currencies.linhThach.toLocaleString()}\` LT | \`${user.currencies.nguyenThach || 0}\` NT).`,
+        ephemeral: true
+      });
+    }
+
+    // Nguyên liệu bị tiêu hao dù thành công hay thất bại
+    user.currencies.linhThach -= costLinhThach;
+    user.currencies.nguyenThach -= costNguyenThach;
+
+    // ── PHÁN ĐỊNH THÀNH BẠI ──
+    if (Math.random() > successRate) {
+      let downgradeMsg = '';
+      // Từ +10 trở lên, thất bại có 20% nguy cơ tụt 1 cấp
+      if (lv >= 10 && Math.random() < 0.20) {
+        const dAtk = Math.max(2, Math.floor(gear.stats.atk / 1.08 * 0.08) + 1);
+        const dDef = Math.max(1, Math.floor(gear.stats.def / 1.08 * 0.08) + 1);
+        const dHp = Math.max(10, Math.floor(gear.stats.maxHp / 1.08 * 0.08) + 5);
+
+        gear.enhanceLevel = lv - 1;
+        gear.stats.atk = Math.max(1, gear.stats.atk - dAtk);
+        gear.stats.def = Math.max(0, gear.stats.def - dDef);
+        gear.stats.maxHp = Math.max(0, gear.stats.maxHp - dHp);
+
+        if (gear.equipped) {
+          user.stats.atk = Math.max(10, user.stats.atk - dAtk);
+          user.stats.def = Math.max(5, user.stats.def - dDef);
+          user.stats.maxHp = Math.max(100, user.stats.maxHp - dHp);
+          user.stats.hp = Math.min(user.stats.maxHp, user.stats.hp);
+        }
+        downgradeMsg = `\n\n💔 **Linh văn trên thân binh nứt vỡ!** Cấp cường hóa tụt xuống **+${gear.enhanceLevel}**.`;
+      }
+
+      await user.save();
+
+      const failEmbed = new EmbedBuilder()
+        .setTitle(`💥 [CƯỜNG HÓA THẤT BẠI] - ${gear.name} (+${lv})`)
+        .setColor('#D32F2F')
+        .setDescription(
+          `Búa thần giáng xuống, nhưng linh khí phản phệ bắn tung tóe!\n` +
+          `Nguyên liệu hóa thành tro bụi: \`-${costLinhThach.toLocaleString()} LT\` | \`-${costNguyenThach} NT\`.${downgradeMsg}\n\n` +
+          `🎲 *Tỉ lệ thành công ở cấp +${lv} là **${Math.round(successRate * 100)}%** — đạo hữu hãy thử lại!*`
+        );
+      return interaction.update({ embeds: [failEmbed], components: [] });
+    }
+
+    // ── THÀNH CÔNG ──
+    gear.enhanceLevel = lv + 1;
+    const atkBoost = Math.max(2, Math.floor(gear.stats.atk * 0.08) + 1);
+    const defBoost = Math.max(1, Math.floor(gear.stats.def * 0.08) + 1);
+    const hpBoost = Math.max(10, Math.floor(gear.stats.maxHp * 0.08) + 5);
+
+    gear.stats.atk += atkBoost;
+    gear.stats.def += defBoost;
+    gear.stats.maxHp += hpBoost;
+
+    if (gear.equipped) {
+      user.stats.atk += atkBoost;
+      user.stats.def += defBoost;
+      user.stats.maxHp += hpBoost;
+      // Tăng HP tối đa thì được cộng đúng phần tăng thêm, không hồi đầy máu
+      user.stats.hp = Math.min(user.stats.maxHp, (user.stats.hp || 0) + hpBoost);
+    }
+
+    await user.save();
+
+    const nextRate = gear.enhanceLevel >= MAX_ENHANCE_LEVEL
+      ? '🔒 Đã đạt cấp tối đa'
+      : `${Math.round(getEnhanceSuccessRate(gear.enhanceLevel) * 100)}% (chi phí ${Math.floor(150 * Math.pow(1.55, gear.enhanceLevel)).toLocaleString()} LT)`;
+
+    const embed = new EmbedBuilder()
+      .setTitle(`✨ [CƯỜNG HÓA THÀNH CÔNG] - ${gear.name} (+${gear.enhanceLevel})`)
+      .setColor('#FFD700')
+      .setDescription(
+        `Thần binh phát sáng hào quang rực rỡ!\n` +
+        `Trang bị **[${gear.name}]** đã tăng lên cấp **+${gear.enhanceLevel}/${MAX_ENHANCE_LEVEL}**!\n\n` +
+        `📈 **Chỉ số hiện tại:**\n` +
+        `🗡️ ATK: \`${gear.stats.atk}\` (+${atkBoost})\n` +
+        `🛡️ DEF: \`${gear.stats.def}\` (+${defBoost})\n` +
+        `❤️ HP: \`${gear.stats.maxHp}\` (+${hpBoost})\n\n` +
+        `🎲 **Lần cường hóa kế tiếp:** ${nextRate}`
+      );
+
+    return interaction.update({ embeds: [embed], components: [] });
+@@@END
+@@@BLOCK
+@@@FILE src/handlers/buttonHandler.js
+@@@FIND
+// Đồng bộ HP/MP còn lại sau trận về nhân vật (dùng ở nhánh thắng trận)
+@@@REPLACE
+// ── CƯỜNG HÓA TRANG BỊ ──
+export const MAX_ENHANCE_LEVEL = 15;
+
+// Tỉ lệ thành công giảm dần theo cấp: +0 = 98% ... +14 = 30% (sàn)
+export function getEnhanceSuccessRate(level) {
+  return Math.max(0.30, 0.98 - level * 0.05);
+}
+
+// Đồng bộ HP/MP còn lại sau trận về nhân vật (dùng ở nhánh thắng trận)
+@@@END

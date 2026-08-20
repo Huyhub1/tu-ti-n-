@@ -1,5 +1,7 @@
 import { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+
 import { User } from '../../database/models/User.js';
+import { checkCooldown, formatWait, checkBattleReady } from '../../utils/cooldown.js';
 import { combatSessions } from './hunting.js';
 import fs from 'fs';
 import path from 'path';
@@ -31,9 +33,25 @@ export async function executePhoban(message) {
 
   if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
 
+
   if (dungeonCombatSessions[userId]) {
     return message.reply({
       content: `⛩️ Đạo hữu đang trong ải khiêu chiến Boss **[${dungeonCombatSessions[userId].bossName}]**! Hãy hoàn thành hoặc rút lui trước khi mở ải mới.`
+    });
+  }
+
+  const cd = checkCooldown(user, 'dungeon');
+  if (!cd.ready) {
+    return message.reply({
+      content: `⏳ Bí cảnh vừa khép lại, linh khí cần thời gian tái tụ! Vui lòng chờ **${formatWait(cd.waitTime)}**.`
+    });
+  }
+
+  const battle = checkBattleReady(user);
+  if (!battle.ready) {
+    return message.reply({
+      content: `🩸 **Trọng thương chưa lành!** Máu hiện tại \`${battle.hp}/${battle.maxHp}\` — cần tối thiểu \`${battle.need}\` HP mới dám bước vào bí cảnh.\n` +
+        `💊 Hãy dùng \`!uongdan hoi_xuan_dan\` để hồi phục, hoặc \`!tuluyen\` để vận công dưỡng thương.`
     });
   }
   if (combatSessions && combatSessions[userId]) {

@@ -11,7 +11,9 @@ import { createGearListEmbed, createGearListButtons, isAdmin } from '../commands
 import { createSectEmbed, createSectButtons, getSectMaxMembers, getSectBuffText } from '../commands/prefix/sect.js';
 import { createPublicGearListEmbed, createPublicGearSelectMenu, createPublicGearButtons } from '../commands/prefix/baovat.js';
 import { getPillById } from '../commands/prefix/alchemy.js';
+
 import { dokiepSessions, createDokiepEmbed, createDokiepButtons } from '../commands/prefix/dokiep.js';
+import { setCooldown } from '../utils/cooldown.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -32,6 +34,49 @@ const RARITY_MULTIPLIERS = {
   THIEN_GIAI: 2.75,
   THAN_GIAI: 3.80
 };
+
+
+// ── CƯỜNG HÓA TRANG BỊ ──
+export const MAX_ENHANCE_LEVEL = 15;
+
+// Tỉ lệ thành công giảm dần theo cấp: +0 = 98% ... +14 = 30% (sàn)
+export function getEnhanceSuccessRate(level) {
+  return Math.max(0.30, 0.98 - level * 0.05);
+}
+
+// Đồng bộ HP/MP còn lại sau trận về nhân vật (dùng ở nhánh thắng trận)
+function u_syncCombatStats(user, session) {
+  if (!user || !session) return;
+  user.stats.maxHp = user.stats.maxHp || 100;
+  user.stats.maxMp = user.stats.maxMp || 100;
+  user.stats.hp = Math.max(1, Math.min(user.stats.maxHp, session.userHp ?? user.stats.hp));
+  user.stats.mp = Math.max(0, Math.min(user.stats.maxMp, session.userMp ?? user.stats.mp));
+}
+
+// Ghi trạng thái chiến đấu (HP/MP/thuần thục) từ RAM về CSDL.
+// Nếu thua trận: hồi tỉnh với 20% HP và chịu phạt 10% EXP tầng hiện tại.
+async function persistCombatState(userOrId, session, { defeated = false } = {}) {
+  try {
+    const u = typeof userOrId === 'string' ? await User.findOne({ userId: userOrId }) : userOrId;
+    if (!u || !session) return null;
+
+    u.stats.maxHp = u.stats.maxHp || 100;
+    u.stats.maxMp = u.stats.maxMp || 100;
+    u.stats.hp = Math.max(0, Math.min(u.stats.maxHp, session.userHp ?? u.stats.hp));
+    u.stats.mp = Math.max(0, Math.min(u.stats.maxMp, session.userMp ?? u.stats.mp));
+
+    if (defeated) {
+      u.stats.hp = Math.max(1, Math.floor(u.stats.maxHp * 0.20));
+      u.realm.exp = Math.max(0, Math.floor((u.realm.exp || 0) * 0.90));
+    }
+
+    await u.save();
+    return u;
+  } catch (err) {
+    console.error('[persistCombatState] Lỗi ghi trạng thái chiến đấu:', err);
+    return null;
+  }
+}
 
 // Hàm hỗ trợ thưởng rớt trang bị Bậc 4 (Huyền Giai)
 function checkHuyenGiaiDrop(user, rate = 0.15) {
@@ -164,7 +209,11 @@ export async function handleButton(interaction) {
     let equippedSkills = user.skills.filter(s => s.equipped);
     if (equippedSkills.length === 0) equippedSkills = user.skills;
 
+
     const equippedGears = (user.equipments || []).filter(e => e.equipped);
+
+    setCooldown(user, 'hunting');
+    await user.save();
 
     combatSessions[targetUserId] = {
       userId: targetUserId,
@@ -243,6 +292,7 @@ export async function handleButton(interaction) {
 
         // Tỉ lệ rớt trang bị Bậc 4 (Huyền Giai)
         gearDropMsg = checkHuyenGiaiDrop(user, 0.15);
+        u_syncCombatStats(user, session);
         await user.save();
       }
 
@@ -257,11 +307,13 @@ export async function handleButton(interaction) {
 
     if (session.userHp <= 0) {
       delete combatSessions[targetUserId];
+    await persistCombatState(targetUserId, session, { defeated: true });
       session.lastLog = `${logText}\n\n💀 **THẤT BẠI!** Đạo hữu đã bị trọng thương, đành phải vận chuyển độn thuật chạy về dưỡng thương!`;
       const embed = createCombatEmbed(session);
       return interaction.update({ embeds: [embed], components: [] });
     }
 
+    await persistCombatState(targetUserId, session);
     session.lastLog = logText;
     const embed = createCombatEmbed(session);
     const buttons = createCombatButtons(targetUserId, session.equippedSkills, session.equippedGears, session.userMp, false);
@@ -291,14 +343,15 @@ export async function handleButton(interaction) {
     let skillRarity = 'HOANG_GIAI';
     let skillMastery = 10;
 
+
+    // Chỉ ĐỌC thông tin công pháp ở bước này — chưa cộng thuần thục
+    let activeSkill = null;
     if (user && skillId) {
-      const userSkill = user.skills.find(s => s.skillId === skillId);
-      if (userSkill) {
-        skillName = userSkill.name;
-        skillRarity = userSkill.rarity;
-        skillMastery = userSkill.mastery;
-        userSkill.mastery = Math.min(100, userSkill.mastery + 1);
-        await user.save();
+      activeSkill = user.skills.find(s => s.skillId === skillId) || null;
+      if (activeSkill) {
+        skillName = activeSkill.name;
+        skillRarity = activeSkill.rarity;
+        skillMastery = activeSkill.mastery;
       }
     }
 
@@ -308,6 +361,11 @@ export async function handleButton(interaction) {
     }
 
     session.userMp -= skillCost;
+
+    // Đủ MP và đòn đánh đã thực sự tung ra → mới cộng độ thuần thục
+    if (activeSkill) {
+      activeSkill.mastery = Math.min(100, activeSkill.mastery + 1);
+    }
 
     const baseMult = RARITY_MULTIPLIERS[skillRarity] || 1.35;
     const masteryMult = 1 + (skillMastery / 300);
@@ -327,6 +385,7 @@ export async function handleButton(interaction) {
         user.currencies.linhThach += session.linhThach;
         user.currencies.nguyenThach = (user.currencies.nguyenThach || 0) + session.nguyenThach;
         gearDropMsg = checkHuyenGiaiDrop(user, 0.15);
+        u_syncCombatStats(user, session);
         await user.save();
       }
 
@@ -341,11 +400,13 @@ export async function handleButton(interaction) {
 
     if (session.userHp <= 0) {
       delete combatSessions[targetUserId];
+    await persistCombatState(user, session, { defeated: true });
       session.lastLog = `${logText}\n\n💀 **THẤT BẠI!** Đạo hữu kiệt sức, đành rút lui dưỡng thương!`;
       const embed = createCombatEmbed(session);
       return interaction.update({ embeds: [embed], components: [] });
     }
 
+    await persistCombatState(user, session);
     session.lastLog = logText;
     const embed = createCombatEmbed(session);
     const buttons = createCombatButtons(targetUserId, session.equippedSkills, session.equippedGears, session.userMp, false);
@@ -404,6 +465,7 @@ export async function handleButton(interaction) {
         user.currencies.linhThach += session.linhThach;
         user.currencies.nguyenThach = (user.currencies.nguyenThach || 0) + session.nguyenThach;
         gearDropMsg = checkHuyenGiaiDrop(user, 0.15);
+        u_syncCombatStats(user, session);
         await user.save();
       }
 
@@ -418,11 +480,13 @@ export async function handleButton(interaction) {
 
     if (session.userHp <= 0) {
       delete combatSessions[targetUserId];
+    await persistCombatState(user, session, { defeated: true });
       session.lastLog = `${logText}\n\n💀 **THẤT BẠI!** Đạo hữu kiệt sức, rút lui dưỡng thương!`;
       const embed = createCombatEmbed(session);
       return interaction.update({ embeds: [embed], components: [] });
     }
 
+    await persistCombatState(user, session);
     session.lastLog = logText;
     const embed = createCombatEmbed(session);
     const buttons = createCombatButtons(targetUserId, session.equippedSkills, session.equippedGears, session.userMp, false);
@@ -477,7 +541,11 @@ export async function handleButton(interaction) {
 
     let equippedSkills = user.skills.filter(s => s.equipped);
     if (equippedSkills.length === 0) equippedSkills = user.skills;
+
     const equippedGears = (user.equipments || []).filter(e => e.equipped);
+
+    setCooldown(user, 'dungeon');
+    await user.save();
 
     dungeonCombatSessions[targetUserId] = {
       userId: targetUserId,
@@ -563,6 +631,7 @@ export async function handleButton(interaction) {
         const gearDropMsg = checkHuyenGiaiDrop(user, 0.30);
         dropMsg += gearDropMsg;
 
+        u_syncCombatStats(user, session);
         await user.save();
       }
 
@@ -577,11 +646,13 @@ export async function handleButton(interaction) {
 
     if (session.userHp <= 0) {
       delete dungeonCombatSessions[targetUserId];
+    await persistCombatState(targetUserId, session, { defeated: true });
       session.lastLog = `${logText}\n\n💀 **THẤT BẠI!** Đạo hữu trọng thương, phù bảo hộ cứu mạng truyền tống ra ngoài!`;
       const embed = createDungeonCombatEmbed(session);
       return interaction.update({ embeds: [embed], components: [] });
     }
 
+    await persistCombatState(targetUserId, session);
     session.lastLog = logText;
     const embed = createDungeonCombatEmbed(session);
     const buttons = createDungeonCombatButtons(targetUserId, session.equippedSkills, session.equippedGears, session.userMp, false);
@@ -611,14 +682,15 @@ export async function handleButton(interaction) {
     let skillRarity = 'HOANG_GIAI';
     let skillMastery = 10;
 
+
+    // Chỉ ĐỌC thông tin công pháp ở bước này — chưa cộng thuần thục
+    let activeSkill = null;
     if (user && skillId) {
-      const userSkill = user.skills.find(s => s.skillId === skillId);
-      if (userSkill) {
-        skillName = userSkill.name;
-        skillRarity = userSkill.rarity;
-        skillMastery = userSkill.mastery;
-        userSkill.mastery = Math.min(100, userSkill.mastery + 1);
-        await user.save();
+      activeSkill = user.skills.find(s => s.skillId === skillId) || null;
+      if (activeSkill) {
+        skillName = activeSkill.name;
+        skillRarity = activeSkill.rarity;
+        skillMastery = activeSkill.mastery;
       }
     }
 
@@ -628,6 +700,11 @@ export async function handleButton(interaction) {
     }
 
     session.userMp -= skillCost;
+
+    // Đủ MP và đòn đánh đã thực sự tung ra → mới cộng độ thuần thục
+    if (activeSkill) {
+      activeSkill.mastery = Math.min(100, activeSkill.mastery + 1);
+    }
 
     const baseMult = RARITY_MULTIPLIERS[skillRarity] || 1.35;
     const masteryMult = 1 + (skillMastery / 300);
@@ -647,6 +724,7 @@ export async function handleButton(interaction) {
         user.currencies.linhThach += session.linhThach;
         user.currencies.nguyenThach = (user.currencies.nguyenThach || 0) + session.nguyenThachMax;
         dropMsg = checkHuyenGiaiDrop(user, 0.30);
+        u_syncCombatStats(user, session);
         await user.save();
       }
 
@@ -661,11 +739,13 @@ export async function handleButton(interaction) {
 
     if (session.userHp <= 0) {
       delete dungeonCombatSessions[targetUserId];
+    await persistCombatState(user, session, { defeated: true });
       session.lastLog = `${logText}\n\n💀 **THẤT BẠI!** Đạo hữu kiệt sức, truyền tống thoát thân!`;
       const embed = createDungeonCombatEmbed(session);
       return interaction.update({ embeds: [embed], components: [] });
     }
 
+    await persistCombatState(user, session);
     session.lastLog = logText;
     const embed = createDungeonCombatEmbed(session);
     const buttons = createDungeonCombatButtons(targetUserId, session.equippedSkills, session.equippedGears, session.userMp, false);
@@ -724,6 +804,7 @@ export async function handleButton(interaction) {
         user.currencies.linhThach += session.linhThach;
         user.currencies.nguyenThach = (user.currencies.nguyenThach || 0) + session.nguyenThachMax;
         dropMsg = checkHuyenGiaiDrop(user, 0.30);
+        u_syncCombatStats(user, session);
         await user.save();
       }
 
@@ -738,11 +819,13 @@ export async function handleButton(interaction) {
 
     if (session.userHp <= 0) {
       delete dungeonCombatSessions[targetUserId];
+    await persistCombatState(user, session, { defeated: true });
       session.lastLog = `${logText}\n\n💀 **THẤT BẠI!** Đạo hữu trọng thương, truyền tống thoát thân!`;
       const embed = createDungeonCombatEmbed(session);
       return interaction.update({ embeds: [embed], components: [] });
     }
 
+    await persistCombatState(user, session);
     session.lastLog = logText;
     const embed = createDungeonCombatEmbed(session);
     const buttons = createDungeonCombatButtons(targetUserId, session.equippedSkills, session.equippedGears, session.userMp, false);
@@ -775,16 +858,41 @@ export async function handleButton(interaction) {
     const recipe = recipesConfig.recipes.find(r => r.id === recipeId);
     if (!recipe) return interaction.reply({ content: `❌ Công thức không tồn tại!`, ephemeral: true });
 
-    // Trừ nguyên liệu
-    user.currencies.nguyenThach = (user.currencies.nguyenThach || 0) - recipe.requirements.nguyenThach;
-    user.currencies.linhThach -= recipe.requirements.linhThach;
 
-    recipe.requirements.items.forEach(req => {
+    // ── KIỂM TRA ĐỦ NGUYÊN LIỆU TRƯỚC KHI TRỪ ──
+    const needLT = recipe.requirements.linhThach || 0;
+    const needNT = recipe.requirements.nguyenThach || 0;
+    const haveLT = user.currencies.linhThach || 0;
+    const haveNT = user.currencies.nguyenThach || 0;
+    const missing = [];
+
+    if (haveLT < needLT) missing.push(`💎 Linh Thạch: cần \`${needLT.toLocaleString()}\` (thiếu \`${(needLT - haveLT).toLocaleString()}\`)`);
+    if (haveNT < needNT) missing.push(`🔮 Nguyên Thạch: cần \`${needNT}\` (thiếu \`${needNT - haveNT}\`)`);
+
+    for (const req of (recipe.requirements.items || [])) {
       const invItem = user.inventory.find(i => i.itemId === req.itemId);
-      if (invItem) {
-        invItem.quantity -= req.quantity;
+      const have = invItem ? invItem.quantity : 0;
+      if (have < req.quantity) {
+        missing.push(`📦 ${req.name || req.itemId}: cần \`${req.quantity}\` (thiếu \`${req.quantity - have}\`)`);
       }
-    });
+    }
+
+    if (missing.length > 0) {
+      return interaction.reply({
+        content: `❌ **Nguyên liệu không đủ để khởi lò!**\n\n${missing.join('\n')}\n\n` +
+          `💡 *Săn quái (\`!santhu\`) để lấy Yêu Đan, đào khoáng (\`!daokhoang\`) để lấy Nguyên Thạch.*`,
+        ephemeral: true
+      });
+    }
+
+    // Đủ điều kiện → trừ nguyên liệu
+    user.currencies.nguyenThach = haveNT - needNT;
+    user.currencies.linhThach = haveLT - needLT;
+
+    for (const req of (recipe.requirements.items || [])) {
+      const invItem = user.inventory.find(i => i.itemId === req.itemId);
+      invItem.quantity -= req.quantity;
+    }
     user.inventory = user.inventory.filter(i => i.quantity > 0);
 
     const baseGear = equipmentConfig.equipments.find(e => e.id === recipe.targetEquipmentId);
@@ -802,8 +910,10 @@ export async function handleButton(interaction) {
       equipped: false
     };
 
+
     user.equipments = user.equipments || [];
     user.equipments.push(newGear);
+    setCooldown(user, 'crafting');
     await user.save();
 
     const embed = new EmbedBuilder()
@@ -853,11 +963,14 @@ export async function handleButton(interaction) {
         }
       });
 
+
       targetGear.equipped = true;
       user.stats.atk += targetGear.stats.atk;
       user.stats.def += targetGear.stats.def;
       user.stats.maxHp += targetGear.stats.maxHp;
-      user.stats.hp = user.stats.maxHp;
+      // Mặc giáp làm tăng thể chất -> được cộng đúng phần HP tối đa tăng thêm,
+      // KHÔNG hồi đầy máu (nếu không sẽ thành nút hồi máu vô hạn).
+      user.stats.hp = Math.min(user.stats.maxHp, (user.stats.hp || 0) + targetGear.stats.maxHp);
     } else {
       targetGear.equipped = false;
       user.stats.atk = Math.max(10, user.stats.atk - targetGear.stats.atk);
@@ -891,21 +1004,72 @@ export async function handleButton(interaction) {
     const user = await User.findOne({ userId: targetUserId });
     if (!user || !user.equipments[idx]) return interaction.reply({ content: `❌ Trang bị không tồn tại!`, ephemeral: true });
 
-    const gear = user.equipments[idx];
-    const costLinhThach = (gear.enhanceLevel + 1) * 150;
-    const costNguyenThach = Math.floor(gear.enhanceLevel / 3) + 1;
 
-    if (user.currencies.linhThach < costLinhThach || (user.currencies.nguyenThach || 0) < costNguyenThach) {
+    const gear = user.equipments[idx];
+    const lv = gear.enhanceLevel || 0;
+
+    // ── GIỚI HẠN CƯỜNG HÓA ──
+    if (lv >= MAX_ENHANCE_LEVEL) {
       return interaction.reply({
-        content: `❌ Không đủ tài nguyên cường hóa! Cần **${costLinhThach.toLocaleString()} Linh Thạch** + **${costNguyenThach} Nguyên Thạch** (Hiện có: \`${user.currencies.linhThach}\` LT | \`${user.currencies.nguyenThach || 0}\` NT).`,
+        content: `🔒 **[${gear.name}]** đã đạt cấp cường hóa tối đa **+${MAX_ENHANCE_LEVEL}** — vật chất phàm tục không thể chịu thêm linh khí nữa!`,
         ephemeral: true
       });
     }
 
+    // Chi phí tăng theo cấp số nhân để cân với sức mạnh tăng kép 8%
+    const costLinhThach = Math.floor(150 * Math.pow(1.55, lv));
+    const costNguyenThach = Math.floor(lv / 2) + 1;
+    const successRate = getEnhanceSuccessRate(lv);
+
+    if (user.currencies.linhThach < costLinhThach || (user.currencies.nguyenThach || 0) < costNguyenThach) {
+      return interaction.reply({
+        content: `❌ Không đủ tài nguyên cường hóa! Cần **${costLinhThach.toLocaleString()} Linh Thạch** + **${costNguyenThach} Nguyên Thạch** (Hiện có: \`${user.currencies.linhThach.toLocaleString()}\` LT | \`${user.currencies.nguyenThach || 0}\` NT).`,
+        ephemeral: true
+      });
+    }
+
+    // Nguyên liệu bị tiêu hao dù thành công hay thất bại
     user.currencies.linhThach -= costLinhThach;
     user.currencies.nguyenThach -= costNguyenThach;
 
-    gear.enhanceLevel += 1;
+    // ── PHÁN ĐỊNH THÀNH BẠI ──
+    if (Math.random() > successRate) {
+      let downgradeMsg = '';
+      // Từ +10 trở lên, thất bại có 20% nguy cơ tụt 1 cấp
+      if (lv >= 10 && Math.random() < 0.20) {
+        const dAtk = Math.max(2, Math.floor(gear.stats.atk / 1.08 * 0.08) + 1);
+        const dDef = Math.max(1, Math.floor(gear.stats.def / 1.08 * 0.08) + 1);
+        const dHp = Math.max(10, Math.floor(gear.stats.maxHp / 1.08 * 0.08) + 5);
+
+        gear.enhanceLevel = lv - 1;
+        gear.stats.atk = Math.max(1, gear.stats.atk - dAtk);
+        gear.stats.def = Math.max(0, gear.stats.def - dDef);
+        gear.stats.maxHp = Math.max(0, gear.stats.maxHp - dHp);
+
+        if (gear.equipped) {
+          user.stats.atk = Math.max(10, user.stats.atk - dAtk);
+          user.stats.def = Math.max(5, user.stats.def - dDef);
+          user.stats.maxHp = Math.max(100, user.stats.maxHp - dHp);
+          user.stats.hp = Math.min(user.stats.maxHp, user.stats.hp);
+        }
+        downgradeMsg = `\n\n💔 **Linh văn trên thân binh nứt vỡ!** Cấp cường hóa tụt xuống **+${gear.enhanceLevel}**.`;
+      }
+
+      await user.save();
+
+      const failEmbed = new EmbedBuilder()
+        .setTitle(`💥 [CƯỜNG HÓA THẤT BẠI] - ${gear.name} (+${lv})`)
+        .setColor('#D32F2F')
+        .setDescription(
+          `Búa thần giáng xuống, nhưng linh khí phản phệ bắn tung tóe!\n` +
+          `Nguyên liệu hóa thành tro bụi: \`-${costLinhThach.toLocaleString()} LT\` | \`-${costNguyenThach} NT\`.${downgradeMsg}\n\n` +
+          `🎲 *Tỉ lệ thành công ở cấp +${lv} là **${Math.round(successRate * 100)}%** — đạo hữu hãy thử lại!*`
+        );
+      return interaction.update({ embeds: [failEmbed], components: [] });
+    }
+
+    // ── THÀNH CÔNG ──
+    gear.enhanceLevel = lv + 1;
     const atkBoost = Math.max(2, Math.floor(gear.stats.atk * 0.08) + 1);
     const defBoost = Math.max(1, Math.floor(gear.stats.def * 0.08) + 1);
     const hpBoost = Math.max(10, Math.floor(gear.stats.maxHp * 0.08) + 5);
@@ -918,21 +1082,27 @@ export async function handleButton(interaction) {
       user.stats.atk += atkBoost;
       user.stats.def += defBoost;
       user.stats.maxHp += hpBoost;
-      user.stats.hp = user.stats.maxHp;
+      // Tăng HP tối đa thì được cộng đúng phần tăng thêm, không hồi đầy máu
+      user.stats.hp = Math.min(user.stats.maxHp, (user.stats.hp || 0) + hpBoost);
     }
 
     await user.save();
+
+    const nextRate = gear.enhanceLevel >= MAX_ENHANCE_LEVEL
+      ? '🔒 Đã đạt cấp tối đa'
+      : `${Math.round(getEnhanceSuccessRate(gear.enhanceLevel) * 100)}% (chi phí ${Math.floor(150 * Math.pow(1.55, gear.enhanceLevel)).toLocaleString()} LT)`;
 
     const embed = new EmbedBuilder()
       .setTitle(`✨ [CƯỜNG HÓA THÀNH CÔNG] - ${gear.name} (+${gear.enhanceLevel})`)
       .setColor('#FFD700')
       .setDescription(
         `Thần binh phát sáng hào quang rực rỡ!\n` +
-        `Trang bị **[${gear.name}]** đã tăng lên cấp **+${gear.enhanceLevel}**!\n\n` +
-        `📈 **Chỉ số gia tăng:**\n` +
-        `🗡️ ATK: \`+${gear.stats.atk}\` (+${atkBoost})\n` +
-        `🛡️ DEF: \`+${gear.stats.def}\` (+${defBoost})\n` +
-        `❤️ HP: \`+${gear.stats.maxHp}\` (+${hpBoost})`
+        `Trang bị **[${gear.name}]** đã tăng lên cấp **+${gear.enhanceLevel}/${MAX_ENHANCE_LEVEL}**!\n\n` +
+        `📈 **Chỉ số hiện tại:**\n` +
+        `🗡️ ATK: \`${gear.stats.atk}\` (+${atkBoost})\n` +
+        `🛡️ DEF: \`${gear.stats.def}\` (+${defBoost})\n` +
+        `❤️ HP: \`${gear.stats.maxHp}\` (+${hpBoost})\n\n` +
+        `🎲 **Lần cường hóa kế tiếp:** ${nextRate}`
       );
 
     return interaction.update({ embeds: [embed], components: [] });

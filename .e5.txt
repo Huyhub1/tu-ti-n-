@@ -1,0 +1,36 @@
+@@@BLOCK
+@@@FILE src/handlers/commandHandler.js
+@@@FIND
+import { executeChotroi, executeBan, executeBandan, executeMua } from '../commands/prefix/market.js';
+@@@REPLACE
+import { executeChotroi, executeBan, executeBandan, executeMua, executeHuyban } from '../commands/prefix/market.js';
+@@@END
+@@@BLOCK
+@@@FILE src/handlers/commandHandler.js
+@@@FIND
+      case 'chotroi':
+      case 'market':
+      case 'cho':
+        return executeChotroi(message);
+@@@REPLACE
+      case 'chotroi':
+      case 'market':
+      case 'cho':
+        return executeChotroi(message, args);
+@@@END
+@@@BLOCK
+@@@FILE src/handlers/commandHandler.js
+@@@FIND
+      case 'mua':
+      case 'buy':
+        return executeMua(message, args);
+@@@REPLACE
+      case 'mua':
+      case 'buy':
+        return executeMua(message, args);
+
+      case 'huyban':
+      case 'thuhoi':
+      case 'unlist':
+        return executeHuyban(message, args);
+@@@END

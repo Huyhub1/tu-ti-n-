@@ -1,5 +1,7 @@
 import { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+
 import { User } from '../../database/models/User.js';
+import { checkCooldown, formatWait } from '../../utils/cooldown.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -13,7 +15,15 @@ export async function executeDucphapbao(message) {
   const userId = message.author.id;
   const user = await User.findOne({ userId });
 
+
   if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
+
+  const cd = checkCooldown(user, 'crafting');
+  if (!cd.ready) {
+    return message.reply({
+      content: `🔥 Lò đúc còn đang nguội, chân hỏa chưa nhóm lại được! Vui lòng chờ **${formatWait(cd.waitTime)}**.`
+    });
+  }
 
   const recipes = recipesConfig.recipes;
 

@@ -1,5 +1,7 @@
 import { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+
 import { User } from '../../database/models/User.js';
+import { checkCooldown, formatWait, checkBattleReady } from '../../utils/cooldown.js';
 import { dungeonCombatSessions } from './dungeon.js';
 import fs from 'fs';
 import path from 'path';
@@ -31,9 +33,25 @@ export async function executeSanthu(message) {
 
   if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
 
+
   if (combatSessions[userId]) {
     return message.reply({
       content: `⚔️ Đạo hữu đang trong trận chiến với **[${combatSessions[userId].beastName}]**! Hãy hoàn thành trận đấu hiện tại trước khi bắt đầu cuộc đi săn mới.`
+    });
+  }
+
+  const cd = checkCooldown(user, 'hunting');
+  if (!cd.ready) {
+    return message.reply({
+      content: `⏳ Đạo hữu vừa đi săn về, khí huyết chưa ổn định! Vui lòng nghỉ thêm **${formatWait(cd.waitTime)}**.`
+    });
+  }
+
+  const battle = checkBattleReady(user);
+  if (!battle.ready) {
+    return message.reply({
+      content: `🩸 **Trọng thương chưa lành!** Máu hiện tại \`${battle.hp}/${battle.maxHp}\` — cần tối thiểu \`${battle.need}\` HP mới đủ sức xông trận.\n` +
+        `💊 Hãy dùng \`!uongdan hoi_xuan_dan\` để hồi phục, hoặc \`!tuluyen\` để vận công dưỡng thương.`
     });
   }
   if (dungeonCombatSessions && dungeonCombatSessions[userId]) {

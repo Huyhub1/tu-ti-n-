@@ -4,7 +4,8 @@ import { execute as profilePrefix } from '../commands/prefix/profile.js';
 import { executeTuluyen, executeDotpha } from '../commands/prefix/cultivate.js';
 import { executeTangkinhcac, executeLuyencong, executeDunghop } from '../commands/prefix/skills.js';
 import { executeLamcong } from '../commands/prefix/work.js';
-import { executeChotroi, executeBan, executeBandan, executeMua } from '../commands/prefix/market.js';
+
+import { executeChotroi, executeBan, executeBandan, executeMua, executeHuyban } from '../commands/prefix/market.js';
 import { executeLuyendan, executeUongdan } from '../commands/prefix/alchemy.js';
 import { executeKhieuchien } from '../commands/prefix/pvp.js';
 import { executeDaokhoang } from '../commands/prefix/mining.js';
@@ -165,10 +166,11 @@ export async function handlePrefixCommand(message, prefix = '!') {
       case 'cucuoc':
         return executeDothach(message, args);
 
+
       case 'chotroi':
       case 'market':
       case 'cho':
-        return executeChotroi(message);
+        return executeChotroi(message, args);
 
       case 'ban':
       case 'sell':
@@ -178,9 +180,15 @@ export async function handlePrefixCommand(message, prefix = '!') {
       case 'selldan':
         return executeBandan(message, args);
 
+
       case 'mua':
       case 'buy':
         return executeMua(message, args);
+
+      case 'huyban':
+      case 'thuhoi':
+      case 'unlist':
+        return executeHuyban(message, args);
 
       case 'luyendan':
       case 'alchemy':

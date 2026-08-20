@@ -1,0 +1,139 @@
+@@@BLOCK
+@@@FILE src/handlers/buttonHandler.js
+@@@FIND
+    // Trừ nguyên liệu
+    user.currencies.nguyenThach = (user.currencies.nguyenThach || 0) - recipe.requirements.nguyenThach;
+    user.currencies.linhThach -= recipe.requirements.linhThach;
+
+    recipe.requirements.items.forEach(req => {
+      const invItem = user.inventory.find(i => i.itemId === req.itemId);
+      if (invItem) {
+        invItem.quantity -= req.quantity;
+      }
+    });
+    user.inventory = user.inventory.filter(i => i.quantity > 0);
+@@@REPLACE
+    // ── KIỂM TRA ĐỦ NGUYÊN LIỆU TRƯỚC KHI TRỪ ──
+    const needLT = recipe.requirements.linhThach || 0;
+    const needNT = recipe.requirements.nguyenThach || 0;
+    const haveLT = user.currencies.linhThach || 0;
+    const haveNT = user.currencies.nguyenThach || 0;
+    const missing = [];
+
+    if (haveLT < needLT) missing.push(`💎 Linh Thạch: cần \`${needLT.toLocaleString()}\` (thiếu \`${(needLT - haveLT).toLocaleString()}\`)`);
+    if (haveNT < needNT) missing.push(`🔮 Nguyên Thạch: cần \`${needNT}\` (thiếu \`${needNT - haveNT}\`)`);
+
+    for (const req of (recipe.requirements.items || [])) {
+      const invItem = user.inventory.find(i => i.itemId === req.itemId);
+      const have = invItem ? invItem.quantity : 0;
+      if (have < req.quantity) {
+        missing.push(`📦 ${req.name || req.itemId}: cần \`${req.quantity}\` (thiếu \`${req.quantity - have}\`)`);
+      }
+    }
+
+    if (missing.length > 0) {
+      return interaction.reply({
+        content: `❌ **Nguyên liệu không đủ để khởi lò!**\n\n${missing.join('\n')}\n\n` +
+          `💡 *Săn quái (\`!santhu\`) để lấy Yêu Đan, đào khoáng (\`!daokhoang\`) để lấy Nguyên Thạch.*`,
+        ephemeral: true
+      });
+    }
+
+    // Đủ điều kiện → trừ nguyên liệu
+    user.currencies.nguyenThach = haveNT - needNT;
+    user.currencies.linhThach = haveLT - needLT;
+
+    for (const req of (recipe.requirements.items || [])) {
+      const invItem = user.inventory.find(i => i.itemId === req.itemId);
+      invItem.quantity -= req.quantity;
+    }
+    user.inventory = user.inventory.filter(i => i.quantity > 0);
+@@@END
+@@@BLOCK
+@@@FILE src/handlers/buttonHandler.js
+@@@FIND
+    if (user && skillId) {
+      const userSkill = user.skills.find(s => s.skillId === skillId);
+      if (userSkill) {
+        skillName = userSkill.name;
+        skillRarity = userSkill.rarity;
+        skillMastery = userSkill.mastery;
+        userSkill.mastery = Math.min(100, userSkill.mastery + 1);
+        await user.save();
+      }
+    }
+
+    const skillCost = SKILL_MANA_COST[skillRarity] || 25;
+    if (session.userMp < skillCost) {
+      return interaction.reply({ content: `⚠️ Không đủ Linh Lực (cần **${skillCost} MP**, hiện có **${session.userMp} MP**)! Hãy đánh thường để tích lũy chân khí.`, ephemeral: true });
+    }
+
+    session.userMp -= skillCost;
+@@@REPLACE
+    // Chỉ ĐỌC thông tin công pháp ở bước này — chưa cộng thuần thục
+    let activeSkill = null;
+    if (user && skillId) {
+      activeSkill = user.skills.find(s => s.skillId === skillId) || null;
+      if (activeSkill) {
+        skillName = activeSkill.name;
+        skillRarity = activeSkill.rarity;
+        skillMastery = activeSkill.mastery;
+      }
+    }
+
+    const skillCost = SKILL_MANA_COST[skillRarity] || 25;
+    if (session.userMp < skillCost) {
+      return interaction.reply({ content: `⚠️ Không đủ Linh Lực (cần **${skillCost} MP**, hiện có **${session.userMp} MP**)! Hãy đánh thường để tích lũy chân khí.`, ephemeral: true });
+    }
+
+    session.userMp -= skillCost;
+
+    // Đủ MP và đòn đánh đã thực sự tung ra → mới cộng độ thuần thục
+    if (activeSkill) {
+      activeSkill.mastery = Math.min(100, activeSkill.mastery + 1);
+    }
+@@@END
+@@@BLOCK
+@@@FILE src/handlers/buttonHandler.js
+@@@FIND
+    if (user && skillId) {
+      const userSkill = user.skills.find(s => s.skillId === skillId);
+      if (userSkill) {
+        skillName = userSkill.name;
+        skillRarity = userSkill.rarity;
+        skillMastery = userSkill.mastery;
+        userSkill.mastery = Math.min(100, userSkill.mastery + 1);
+        await user.save();
+      }
+    }
+
+    const skillCost = DUNGEON_SKILL_MANA_COST[skillRarity] || 25;
+    if (session.userMp < skillCost) {
+      return interaction.reply({ content: `⚠️ Không đủ Linh Lực (cần **${skillCost} MP**, hiện có **${session.userMp} MP**)! Hãy đánh thường để tích lũy chân khí.`, ephemeral: true });
+    }
+
+    session.userMp -= skillCost;
+@@@REPLACE
+    // Chỉ ĐỌC thông tin công pháp ở bước này — chưa cộng thuần thục
+    let activeSkill = null;
+    if (user && skillId) {
+      activeSkill = user.skills.find(s => s.skillId === skillId) || null;
+      if (activeSkill) {
+        skillName = activeSkill.name;
+        skillRarity = activeSkill.rarity;
+        skillMastery = activeSkill.mastery;
+      }
+    }
+
+    const skillCost = DUNGEON_SKILL_MANA_COST[skillRarity] || 25;
+    if (session.userMp < skillCost) {
+      return interaction.reply({ content: `⚠️ Không đủ Linh Lực (cần **${skillCost} MP**, hiện có **${session.userMp} MP**)! Hãy đánh thường để tích lũy chân khí.`, ephemeral: true });
+    }
+
+    session.userMp -= skillCost;
+
+    // Đủ MP và đòn đánh đã thực sự tung ra → mới cộng độ thuần thục
+    if (activeSkill) {
+      activeSkill.mastery = Math.min(100, activeSkill.mastery + 1);
+    }
+@@@END
