@@ -26,3 +26,8 @@ desktop.ini
 # Tài nguyên thô (không cần khi chạy bot, ~77MB) - vẫn giữ trên ổ đĩa
 Tai nguyen/
 *.fla
+
+# File tam thoi cua cong cu va (khong phai ma nguon)
+.patch.mjs
+.ins*.mjs
+.e*.txt

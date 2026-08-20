@@ -1,5 +1,7 @@
+
 import { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { User } from '../../database/models/User.js';
+import { getFactionBuffs } from '../../services/factionService.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -108,8 +110,11 @@ export async function executeUongdan(message, args) {
     return message.reply({ content: `❌ Không tìm thấy đan dược hợp lệ trong túi đồ! Gõ \`!uongdan\` để xem danh sách.` });
   }
 
+
   const pillConfig = getPillById(pillItem.itemId);
-  const healAmount = pillConfig ? pillConfig.healHp : 200;
+  // Buff Chính Đạo: +15% hiệu quả hồi phục của đan dược
+  const potionBonus = getFactionBuffs(user.faction).potionEffectBonus;
+  const healAmount = Math.floor((pillConfig ? pillConfig.healHp : 200) * (1 + potionBonus));
   const expAmount = pillConfig ? Math.floor(pillConfig.expGain * (user.talent.expMultiplier || 1.0)) : 100;
 
   // Áp dụng hiệu quả đan dược

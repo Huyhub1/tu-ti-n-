@@ -8,7 +8,9 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
 const factionsConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/factions.json'), 'utf8'));
+import { getFactionBuffs } from '../../services/factionService.js';
 
 const CULTIVATE_COOLDOWN_SECONDS = 10; // Đặt đúng 10s delay cho mỗi lần tu luyện
 
@@ -54,7 +56,10 @@ export async function cultivate(user) {
     }
   }
 
+
   // Hệ số Pháp Bảo & Binh Khí Đang Đeo (Nội Tại VIP)
+  // Nội tại nằm ở equipmentSchema.passives.expBonus — đồ đúc/thưởng chưa có
+  // trường này thì bonus = 0, đúng như thiết kế.
   let gearExpBonus = 0;
   const equippedGears = (user.equipments || []).filter(e => e.equipped);
   for (const g of equippedGears) {
@@ -63,11 +68,8 @@ export async function cultivate(user) {
     }
   }
 
-  // Hệ số Ma Đạo
-  let factionBonus = 1.0;
-  if (user.faction === 'MA_DAO') {
-    factionBonus = 1.20; // +20% EXP Ma Đạo
-  }
+  // Hệ số Trận Doanh (đọc từ config thay vì số cứng)
+  const factionBonus = 1 + getFactionBuffs(user.faction).cultivateExpBonus;
 
   const finalExp = Math.floor(baseExpGain * talentMult * (1 + skillExpBonus + coreExpBonus + sectExpBonus + gearExpBonus) * factionBonus);
 

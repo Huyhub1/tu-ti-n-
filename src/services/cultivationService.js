@@ -1,6 +1,8 @@
+
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { getFactionBuffs } from './factionService.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -131,8 +133,9 @@ export function attemptBreakthrough(user) {
     user.stats.atk += currentRealm.atkGain || 10;
     user.stats.def += currentRealm.defGain || 5;
 
+
     const nextStageName = stageNames[nextLayer - 1] || 'Sơ Kỳ';
-    user.realm.name = `${currentRealm.name} ${nextStageName}`;
+    user.realm.name = getRealmDisplayName(currentRealm.id, nextLayer, user.isLuyenKhiVanTang);
 
     return {
       success: true,
@@ -195,11 +198,16 @@ export function attemptBreakthrough(user) {
     };
   }
 
-  // Tính tỉ lệ thành công
+
+  // Tính tỉ lệ thành công.
+  // Buff trận doanh là hệ số NHÂN tương đối, không phải cộng thẳng:
+  // cộng thẳng +0.25 vào Nguyên Anh (0.25) sẽ thành 0.50 — gấp đôi, quá lệch.
   let successRate = currentRealm.breakSuccessRate || 0.60;
-  if (user.faction === 'CHINH_DAO') {
-    successRate += 0.25; // Buff Chính Đạo
+  const factionBuffs = getFactionBuffs(user.faction);
+  if (factionBuffs.breakSuccessBonus > 0) {
+    successRate *= (1 + factionBuffs.breakSuccessBonus);
   }
+  successRate = Math.min(0.95, successRate);
 
   const roll = Math.random();
   if (roll <= successRate) {
@@ -233,8 +241,9 @@ export function attemptBreakthrough(user) {
         `🗡️ **Thuộc tính cộng thêm:** \`+${core.atkBonus} ATK\` | \`+${core.defBonus} DEF\` | \`+${core.hpBonus} HP\` | \`+${(core.critBonus * 100).toFixed(0)}% Bạo Kích\`!`;
     }
 
+
     user.realm.id = nextRealm.id;
-    user.realm.name = `${nextRealm.name} Sơ Kỳ`;
+    user.realm.name = getRealmDisplayName(nextRealm.id, 1, false);
     user.realm.layer = 1;
     user.realm.exp = 0;
     user.realm.maxExp = calculateMaxExp(nextRealm.id, 1, false);

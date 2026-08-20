@@ -1,7 +1,10 @@
 import { EmbedBuilder } from 'discord.js';
-import { User } from '../../database/models/User.js';
 
-const MINING_COOLDOWN_SECONDS = 45; // 45s delay cho mỗi lần đào khoáng
+import { User } from '../../database/models/User.js';
+import { getFactionBuffs } from '../../services/factionService.js';
+import { COOLDOWNS, formatWait } from '../../utils/cooldown.js';
+
+const MINING_COOLDOWN_SECONDS = COOLDOWNS.mining;
 
 export async function executeDaokhoang(message) {
   const userId = message.author.id;
@@ -13,9 +16,9 @@ export async function executeDaokhoang(message) {
   if (user.cooldowns.mining) {
     const elapsedSeconds = Math.floor((now - new Date(user.cooldowns.mining)) / 1000);
     if (elapsedSeconds < MINING_COOLDOWN_SECONDS) {
-      const waitTime = MINING_COOLDOWN_SECONDS - elapsedSeconds;
+
       return message.reply({
-        content: `⏳ Đạo hữu vừa khai thác mỏ cạn kiệt thể lực! Vui lòng nghỉ ngơi thêm **${waitTime}s**.`
+        content: `⏳ Đạo hữu vừa khai thác mỏ cạn kiệt thể lực! Vui lòng nghỉ ngơi thêm **${formatWait(MINING_COOLDOWN_SECONDS - elapsedSeconds)}**.`
       });
     }
   }
@@ -34,6 +37,13 @@ export async function executeDaokhoang(message) {
     nguyenThachGained = Math.floor(Math.random() * 3) + 1; // 1 - 3 viên
   }
 
+
+  // Buff Tán Tu: +20% Nguyên Thạch khai thác
+  const miningBonus = getFactionBuffs(user.faction).miningBonus;
+  if (miningBonus > 0) {
+    nguyenThachGained = Math.max(nguyenThachGained, Math.round(nguyenThachGained * (1 + miningBonus)));
+  }
+
   user.currencies.linhThach += linhThachGained;
   user.currencies.nguyenThach = (user.currencies.nguyenThach || 0) + nguyenThachGained;
   user.cooldowns.mining = now;
@@ -48,7 +58,8 @@ export async function executeDaokhoang(message) {
       `🔮 Thu hoạch: **+${nguyenThachGained} Nguyên Thạch** ${roll <= 0.10 ? '🔥 **[BẠO KÍCH MỎ THẦN!]**' : ''}\n` +
       `💎 Kèm theo: **+${linhThachGained} Linh Thạch**\n\n` +
       `💰 **Tổng tài sản:** \`${user.currencies.nguyenThach.toLocaleString()} Nguyên Thạch\` | \`${user.currencies.linhThach.toLocaleString()} Linh Thạch\`\n` +
-      `⏱️ *Thời gian hồi chiêu: 45 giây*`
+
+      `⏱️ *Thời gian hồi chiêu: ${MINING_COOLDOWN_SECONDS} giây*`
     );
 
   await message.reply({ embeds: [embed] });

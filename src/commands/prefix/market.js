@@ -1,6 +1,8 @@
 import { EmbedBuilder } from 'discord.js';
 import { User } from '../../database/models/User.js';
+
 import { MarketItem } from '../../database/models/MarketItem.js';
+import { getFactionBuffs } from '../../services/factionService.js';
 
 // Thuế chợ 5%: người bán nhận 95% giá niêm yết. Đây là "lỗ hổng thoát Linh Thạch"
 // duy nhất của nền kinh tế, không có nó thì LT chỉ tăng chứ không bao giờ giảm.
@@ -9,6 +11,13 @@ export const MARKET_TAX_RATE = 0.05;
 export const MARKET_MIN_PRICE = 10;
 export const MARKET_MAX_PRICE = 10_000_000;
 export const MARKET_MAX_LISTINGS = 10; // Số gian hàng tối đa mỗi tu sĩ
+
+
+/** Số Linh Thạch người bán thực nhận sau thuế chợ (Tán Tu miễn thuế). */
+function netPayout(seller, price) {
+  const exempt = getFactionBuffs(seller?.faction).marketTaxExempt >= 1;
+  return exempt ? price : price - Math.floor(price * MARKET_TAX_RATE);
+}
 
 function parsePrice(raw) {
   const n = parseInt(String(raw).replace(/[.,_]/g, ''), 10);
@@ -138,7 +147,8 @@ export async function executeBan(message, args) {
     .setDescription(
       `Đạo hữu đã niêm yết bí kíp **[${skillToSell.name}]** lên Chợ Trời!\n\n` +
       `💎 Giá niêm yết: **${price.toLocaleString()} Linh Thạch**\n` +
-      `🏦 Thực nhận sau thuế ${Math.round(MARKET_TAX_RATE * 100)}%: **${Math.floor(price * (1 - MARKET_TAX_RATE)).toLocaleString()} Linh Thạch**\n` +
+
+      `🏦 Thực nhận khi bán được: **${netPayout(user, price).toLocaleString()} Linh Thạch**\n` +
       `🏷️ Mã mặt hàng: \`${newMarketItem.shortId}\``
     );
 
@@ -227,7 +237,8 @@ export async function executeBandan(message, args) {
     .setDescription(
       `Đạo hữu đã niêm yết **x${quantity} [${snapshot.name}]** lên Chợ Trời!\n\n` +
       `💎 Tổng giá bán: **${price.toLocaleString()} Linh Thạch**\n` +
-      `🏦 Thực nhận sau thuế ${Math.round(MARKET_TAX_RATE * 100)}%: **${Math.floor(price * (1 - MARKET_TAX_RATE)).toLocaleString()} Linh Thạch**\n` +
+
+      `🏦 Thực nhận khi bán được: **${netPayout(user, price).toLocaleString()} Linh Thạch**\n` +
       `🏷️ Mã mặt hàng: \`${newMarketItem.shortId}\``
     );
 
@@ -402,8 +413,11 @@ export async function executeMua(message, args) {
     return message.reply({ content: `❌ Giao dịch gặp sự cố, Linh Thạch đã được hoàn lại. Vui lòng thử lại.` });
   }
 
-  // 4) Trả tiền người bán (trừ thuế chợ)
-  const tax = Math.floor(item.price * MARKET_TAX_RATE);
+
+  // 4) Trả tiền người bán (trừ thuế chợ; Tán Tu được miễn thuế)
+  const seller = await User.findOne({ userId: item.sellerId }).select('faction').lean();
+  const taxExempt = getFactionBuffs(seller?.faction).marketTaxExempt >= 1;
+  const tax = taxExempt ? 0 : Math.floor(item.price * MARKET_TAX_RATE);
   const payout = item.price - tax;
   await User.updateOne({ userId: item.sellerId }, { $inc: { 'currencies.linhThach': payout } }).catch((err) => {
     console.error('[market:mua] Không cộng được tiền cho người bán:', err);
@@ -414,8 +428,11 @@ export async function executeMua(message, args) {
     .setColor('#4CAF50')
     .setDescription(
       `Đạo hữu đã mua thành công **[${item.itemName}]** với giá **${item.price.toLocaleString()} Linh Thạch**!\n\n` +
+
       `${deliveryNotice}\n` +
-      `🏦 *Người bán nhận **${payout.toLocaleString()} LT** (thuế chợ ${Math.round(MARKET_TAX_RATE * 100)}%: ${tax.toLocaleString()} LT).*`
+      (taxExempt
+        ? `🏦 *Người bán là Tán Tu nên được **miễn thuế chợ**, nhận trọn **${payout.toLocaleString()} LT**.*`
+        : `🏦 *Người bán nhận **${payout.toLocaleString()} LT** (thuế chợ ${Math.round(MARKET_TAX_RATE * 100)}%: ${tax.toLocaleString()} LT).*`)
     );
 
   await message.reply({ embeds: [embed] });

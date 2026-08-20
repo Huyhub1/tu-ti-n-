@@ -9,12 +9,13 @@
       "buffs": {
         "breakSuccessBonus": 0.25,
         "luckBonus": 15,
-        "demonicDmgResist": 0.20,
+        "damageResist": 0.1,
         "potionEffectBonus": 0.15
       },
       "currency": "congDuc",
       "currencyName": "Điểm Công Đức",
-      "starterSkill": "hao_nhien_kiem_quyet"
+      "starterSkill": "hao_nhien_kiem_quyet",
+      "buffText": "+25% tỉ lệ đột phá · +15 Khí Vận · giảm 10% sát thương nhận · +15% hiệu quả đan dược"
     },
     "MA_DAO": {
       "id": "MA_DAO",
@@ -23,14 +24,15 @@
       "color": "#E91E63",
       "desc": "Sát Phạt Đoạt Mệnh - Cá lớn nuốt cá bé, cắn nuốt huyết khí, lực chiến bùng nổ.",
       "buffs": {
-        "expKillBonus": 0.20,
+        "expKillBonus": 0.2,
+        "cultivateExpBonus": 0.1,
         "critDmgBonus": 0.25,
-        "dropRateBonus": 0.15,
-        "pillageBonus": 0.30
+        "dropRateBonus": 0.15
       },
       "currency": "taTam",
       "currencyName": "Điểm Tà Tâm",
-      "starterSkill": "huyet_khi_ma_quyet"
+      "starterSkill": "huyet_khi_ma_quyet",
+      "buffText": "+20% EXP săn quái · +10% EXP tu luyện · +25% sát thương chí mạng · +15% tỉ lệ rơi bảo vật"
     },
     "TAN_TU": {
       "id": "TAN_TU",
@@ -39,15 +41,16 @@
       "color": "#00BCD4",
       "desc": "Tiêu Dao Du Tán / Ngụy Quân Tử - Không màng phe phái, linh hoạt, buôn bán trục lợi khắp hai giới.",
       "buffs": {
-        "dodgeBonus": 0.25,
-        "fleeBonus": 0.30,
-        "moneyWorkBonus": 0.20,
-        "marketDiscount": 0.15
+        "moneyWorkBonus": 0.2,
+        "marketTaxExempt": 1.0,
+        "dodgeChance": 0.1,
+        "miningBonus": 0.2
       },
       "currency": "linhThach",
       "currencyName": "Linh Thạch",
       "starterSkill": "tieu_dao_du_bo",
-      "specialTrait": "mask_toggle"
+      "specialTrait": "mask_toggle",
+      "buffText": "+20% Linh Thạch làm công · miễn thuế Chợ Trời khi bán · 10% né đòn · +20% Nguyên Thạch đào khoáng"
     }
   }
 }

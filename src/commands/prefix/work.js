@@ -1,6 +1,9 @@
 import { EmbedBuilder } from 'discord.js';
 import { User } from '../../database/models/User.js';
+
 import { getAllSkills } from '../../services/skillService.js';
+import { getFactionBuffs } from '../../services/factionService.js';
+import { COOLDOWNS, formatWait } from '../../utils/cooldown.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -9,7 +12,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const jobsConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/jobs.json'), 'utf8'));
 
-const WORK_COOLDOWN_SECONDS = 30; // 30s mỗi lần làm việc
+
+const WORK_COOLDOWN_SECONDS = COOLDOWNS.work;
 
 export async function executeLamcong(message) {
   const userId = message.author.id;
@@ -23,7 +27,8 @@ export async function executeLamcong(message) {
     if (elapsedSeconds < WORK_COOLDOWN_SECONDS) {
       const waitTime = WORK_COOLDOWN_SECONDS - elapsedSeconds;
       return message.reply({
-        content: `⏳ Đạo hữu vừa làm việc vất vả, hãy nghỉ ngơi dưỡng sức thêm **${waitTime}s** rồi hẵng tiếp tục!`
+
+        content: `⏳ Đạo hữu vừa làm việc vất vả, hãy nghỉ ngơi dưỡng sức thêm **${formatWait(waitTime)}** rồi hẵng tiếp tục!`
       });
     }
   }
@@ -33,10 +38,10 @@ export async function executeLamcong(message) {
   const job = jobs[Math.floor(Math.random() * jobs.length)];
   let moneyEarned = Math.floor(Math.random() * (job.maxMoney - job.minMoney + 1)) + job.minMoney;
 
-  // Buff Tán Tu (+20% tiền)
-  if (user.faction === 'TAN_TU') {
-    moneyEarned = Math.floor(moneyEarned * 1.20);
-  }
+
+  // Buff Tán Tu: +20% Linh Thạch (đọc từ config)
+  const moneyBonus = getFactionBuffs(user.faction).moneyWorkBonus;
+  if (moneyBonus > 0) moneyEarned = Math.floor(moneyEarned * (1 + moneyBonus));
 
   user.currencies.linhThach += moneyEarned;
   user.cooldowns.work = now;

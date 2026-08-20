@@ -3,7 +3,8 @@ import { User } from '../database/models/User.js';
 import { MarketItem } from '../database/models/MarketItem.js';
 import { Sect } from '../database/models/Sect.js';
 import { cultivate } from '../commands/prefix/cultivate.js';
-import { attemptBreakthrough } from '../services/cultivationService.js';
+
+import { attemptBreakthrough, getRealmDisplayName, calculateMaxExp } from '../services/cultivationService.js';
 import { getSkillById, getAllSkills } from '../services/skillService.js';
 import { combatSessions, createCombatEmbed, createCombatButtons, SKILL_MANA_COST, GEAR_MANA_COST } from '../commands/prefix/hunting.js';
 import { dungeonCombatSessions, createDungeonCombatEmbed, createDungeonCombatButtons, DUNGEON_SKILL_MANA_COST, DUNGEON_GEAR_MANA_COST } from '../commands/prefix/dungeon.js';
@@ -14,6 +15,7 @@ import { getPillById } from '../commands/prefix/alchemy.js';
 
 import { dokiepSessions, createDokiepEmbed, createDokiepButtons } from '../commands/prefix/dokiep.js';
 import { setCooldown } from '../utils/cooldown.js';
+import { getFactionBuffs, getCritMultiplier, applyIncomingDamage } from '../services/factionService.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -146,13 +148,17 @@ export async function handleButton(interaction) {
       });
     }
 
+
+    // Quà gia nhập lấy theo config để không lệch với bảng buff hiển thị
+    const joinBuffs = getFactionBuffs(faction);
+    user.stats.luck = (user.stats.luck || 10) + (joinBuffs.luckBonus || 0);
+
     if (faction === 'CHINH_DAO') {
       user.currencies.congDuc = 20;
-      user.stats.luck = 25;
     }
     if (faction === 'MA_DAO') {
       user.currencies.taTam = 30;
-      user.stats.critRate = 0.15;
+      user.stats.critRate = Math.max(user.stats.critRate || 0.05, 0.15);
     }
 
     await user.save();
@@ -162,7 +168,9 @@ export async function handleButton(interaction) {
       .setColor(factionData.color || '#4CAF50')
       .setDescription(
         `Chúc mừng đạo hữu **${user.username}** đã quy vị về **${factionData.name}**!\n\n` +
+
         `📖 **Tôn Chỉ:** ${factionData.desc}\n` +
+        `⚡ **Đặc quyền:** ${factionData.buffText || 'Đang cập nhật'}\n` +
         `🎁 **Bí Kíp Khởi Đầu:** Đã tiếp nhận **[${starterSkillInfo ? starterSkillInfo.name : 'Cơ Bản Quyết'}]** vào Tàng Kinh Các.\n\n` +
         `👉 **Hãy gõ \`!tupan\` để mở Bảng Tu Chân và bắt đầu con đường xưng bá!**`
       );
@@ -215,7 +223,11 @@ export async function handleButton(interaction) {
     setCooldown(user, 'hunting');
     await user.save();
 
+    const huntBuffs = getFactionBuffs(user.faction);
+
     combatSessions[targetUserId] = {
+      factionBuffs: huntBuffs,
+      lastDodged: false,
       userId: targetUserId,
       userName: user.daoName || user.username,
       userHp: user.stats.hp || 100,
@@ -233,9 +245,10 @@ export async function handleButton(interaction) {
       beastMaxHp: beast.hp,
       beastAtk: beast.atk,
       beastDef: beast.def,
-      exp: beast.exp,
+      exp: Math.floor(beast.exp * (1 + huntBuffs.expKillBonus)),
       linhThach: beast.linhThach,
       nguyenThach: beast.nguyenThach,
+      gearDropRate: Math.min(0.60, 0.15 * (1 + huntBuffs.dropRateBonus)),
       lastActionTime: Date.now(),
       lastLog: `⚔️ **${user.daoName || user.username}** rút vũ khí xông vào chiến đấu với **${beast.name}**!`
     };
@@ -291,7 +304,7 @@ export async function handleButton(interaction) {
         }
 
         // Tỉ lệ rớt trang bị Bậc 4 (Huyền Giai)
-        gearDropMsg = checkHuyenGiaiDrop(user, 0.15);
+        gearDropMsg = checkHuyenGiaiDrop(user, session.gearDropRate ?? 0.15);
         u_syncCombatStats(user, session);
         await user.save();
       }
@@ -301,9 +314,12 @@ export async function handleButton(interaction) {
       return interaction.update({ embeds: [embed], components: [] });
     }
 
-    const beastDmg = Math.max(4, Math.floor(session.beastAtk * (0.9 + Math.random() * 0.2) - session.userDef * 0.4));
+    const beastDmg = applyIncomingDamage(session, Math.max(4, Math.floor(session.beastAtk * (0.9 + Math.random() * 0.2) - session.userDef * 0.4)));
     session.userHp = Math.max(0, session.userHp - beastDmg);
-    logText += `\n👹 **${session.beastName}** gầm thét vồ tới, cắn xé gây **${beastDmg} sát thương** lên bạn!`;
+    logText += session.lastDodged
+      ? `
+💨 **${session.userName}** thân pháp phiêu hốt, né sạch đòn phản kích của **${session.beastName}**!`
+      : `\n👹 **${session.beastName}** gầm thét vồ tới, cắn xé gây **${beastDmg} sát thương** lên bạn!`;
 
     if (session.userHp <= 0) {
       delete combatSessions[targetUserId];
@@ -370,7 +386,7 @@ export async function handleButton(interaction) {
     const baseMult = RARITY_MULTIPLIERS[skillRarity] || 1.35;
     const masteryMult = 1 + (skillMastery / 300);
     const isCrit = Math.random() <= (session.critRate + 0.15);
-    const finalMult = (baseMult * masteryMult) * (isCrit ? 1.35 : 1.0);
+    const finalMult = (baseMult * masteryMult) * (isCrit ? getCritMultiplier(session.factionBuffs) : 1.0);
 
     const userDmg = Math.max(8, Math.floor(session.userAtk * finalMult - session.beastDef * 0.3));
     session.beastHp = Math.max(0, session.beastHp - userDmg);
@@ -384,7 +400,7 @@ export async function handleButton(interaction) {
         user.realm.exp += session.exp;
         user.currencies.linhThach += session.linhThach;
         user.currencies.nguyenThach = (user.currencies.nguyenThach || 0) + session.nguyenThach;
-        gearDropMsg = checkHuyenGiaiDrop(user, 0.15);
+        gearDropMsg = checkHuyenGiaiDrop(user, session.gearDropRate ?? 0.15);
         u_syncCombatStats(user, session);
         await user.save();
       }
@@ -394,9 +410,12 @@ export async function handleButton(interaction) {
       return interaction.update({ embeds: [embed], components: [] });
     }
 
-    const beastDmg = Math.max(4, Math.floor(session.beastAtk * (0.9 + Math.random() * 0.2) - session.userDef * 0.4));
+    const beastDmg = applyIncomingDamage(session, Math.max(4, Math.floor(session.beastAtk * (0.9 + Math.random() * 0.2) - session.userDef * 0.4)));
     session.userHp = Math.max(0, session.userHp - beastDmg);
-    logText += `\n👹 **${session.beastName}** giãy giụa phản kích gây **${beastDmg} sát thương**!`;
+    logText += session.lastDodged
+      ? `
+💨 **${session.userName}** thân pháp phiêu hốt, né sạch đòn phản kích của **${session.beastName}**!`
+      : `\n👹 **${session.beastName}** giãy giụa phản kích gây **${beastDmg} sát thương**!`;
 
     if (session.userHp <= 0) {
       delete combatSessions[targetUserId];
@@ -464,7 +483,7 @@ export async function handleButton(interaction) {
         user.realm.exp += session.exp;
         user.currencies.linhThach += session.linhThach;
         user.currencies.nguyenThach = (user.currencies.nguyenThach || 0) + session.nguyenThach;
-        gearDropMsg = checkHuyenGiaiDrop(user, 0.15);
+        gearDropMsg = checkHuyenGiaiDrop(user, session.gearDropRate ?? 0.15);
         u_syncCombatStats(user, session);
         await user.save();
       }
@@ -474,9 +493,12 @@ export async function handleButton(interaction) {
       return interaction.update({ embeds: [embed], components: [] });
     }
 
-    const beastDmg = Math.max(4, Math.floor(session.beastAtk * (0.9 + Math.random() * 0.2) - session.userDef * 0.4));
+    const beastDmg = applyIncomingDamage(session, Math.max(4, Math.floor(session.beastAtk * (0.9 + Math.random() * 0.2) - session.userDef * 0.4)));
     session.userHp = Math.max(0, session.userHp - beastDmg);
-    logText += `\n👹 **${session.beastName}** hoảng loạn cắn trả gây **${beastDmg} sát thương**!`;
+    logText += session.lastDodged
+      ? `
+💨 **${session.userName}** thân pháp phiêu hốt, né sạch đòn phản kích của **${session.beastName}**!`
+      : `\n👹 **${session.beastName}** hoảng loạn cắn trả gây **${beastDmg} sát thương**!`;
 
     if (session.userHp <= 0) {
       delete combatSessions[targetUserId];
@@ -547,7 +569,11 @@ export async function handleButton(interaction) {
     setCooldown(user, 'dungeon');
     await user.save();
 
+    const dgBuffs = getFactionBuffs(user.faction);
+
     dungeonCombatSessions[targetUserId] = {
+      factionBuffs: dgBuffs,
+      lastDodged: false,
       userId: targetUserId,
       userName: user.daoName || user.username,
       userHp: user.stats.hp || 100,
@@ -566,11 +592,12 @@ export async function handleButton(interaction) {
       bossMaxHp: dungeon.boss.hp,
       bossAtk: dungeon.boss.atk,
       bossDef: dungeon.boss.def,
-      exp: dungeon.exp,
+      exp: Math.floor(dungeon.exp * (1 + dgBuffs.expKillBonus)),
       linhThach: dungeon.linhThach,
       nguyenThachMin: dungeon.nguyenThachMin,
       nguyenThachMax: dungeon.nguyenThachMax,
-      rareDropRate: dungeon.rareDropRate,
+      rareDropRate: Math.min(0.80, (dungeon.rareDropRate || 0) * (1 + dgBuffs.dropRateBonus)),
+      gearDropRate: Math.min(0.75, 0.30 * (1 + dgBuffs.dropRateBonus)),
       lastActionTime: Date.now(),
       lastLog: `⛩️ **${user.daoName || user.username}** bước vào trận nhãn, đối đầu trực tiếp với Thủ Lĩnh **${dungeon.boss.name}**!`
     };
@@ -628,7 +655,7 @@ export async function handleButton(interaction) {
         }
 
         // Tỉ lệ rớt trang bị Bậc 4 (Huyền Giai) từ Boss (30%)
-        const gearDropMsg = checkHuyenGiaiDrop(user, 0.30);
+        const gearDropMsg = checkHuyenGiaiDrop(user, session.gearDropRate ?? 0.30);
         dropMsg += gearDropMsg;
 
         u_syncCombatStats(user, session);
@@ -640,9 +667,12 @@ export async function handleButton(interaction) {
       return interaction.update({ embeds: [embed], components: [] });
     }
 
-    const bossDmg = Math.max(8, Math.floor(session.bossAtk * (0.9 + Math.random() * 0.2) - session.userDef * 0.35));
+    const bossDmg = applyIncomingDamage(session, Math.max(8, Math.floor(session.bossAtk * (0.9 + Math.random() * 0.2) - session.userDef * 0.35)));
     session.userHp = Math.max(0, session.userHp - bossDmg);
-    logText += `\n👹 **${session.bossName}** vung trượng đập nát hư không, giáng xuống **${bossDmg} sát thương**!`;
+    logText += session.lastDodged
+      ? `
+💨 **${session.userName}** thân pháp phiêu hốt, né sạch đòn phản kích của **${session.bossName}**!`
+      : `\n👹 **${session.bossName}** vung trượng đập nát hư không, giáng xuống **${bossDmg} sát thương**!`;
 
     if (session.userHp <= 0) {
       delete dungeonCombatSessions[targetUserId];
@@ -709,7 +739,7 @@ export async function handleButton(interaction) {
     const baseMult = RARITY_MULTIPLIERS[skillRarity] || 1.35;
     const masteryMult = 1 + (skillMastery / 300);
     const isCrit = Math.random() <= (session.critRate + 0.15);
-    const finalMult = (baseMult * masteryMult) * (isCrit ? 1.35 : 1.0);
+    const finalMult = (baseMult * masteryMult) * (isCrit ? getCritMultiplier(session.factionBuffs) : 1.0);
 
     const userDmg = Math.max(15, Math.floor(session.userAtk * finalMult - session.bossDef * 0.25));
     session.bossHp = Math.max(0, session.bossHp - userDmg);
@@ -723,7 +753,7 @@ export async function handleButton(interaction) {
         user.realm.exp += session.exp;
         user.currencies.linhThach += session.linhThach;
         user.currencies.nguyenThach = (user.currencies.nguyenThach || 0) + session.nguyenThachMax;
-        dropMsg = checkHuyenGiaiDrop(user, 0.30);
+        dropMsg = checkHuyenGiaiDrop(user, session.gearDropRate ?? 0.30);
         u_syncCombatStats(user, session);
         await user.save();
       }
@@ -733,9 +763,12 @@ export async function handleButton(interaction) {
       return interaction.update({ embeds: [embed], components: [] });
     }
 
-    const bossDmg = Math.max(10, Math.floor(session.bossAtk * (0.9 + Math.random() * 0.2) - session.userDef * 0.35));
+    const bossDmg = applyIncomingDamage(session, Math.max(10, Math.floor(session.bossAtk * (0.9 + Math.random() * 0.2) - session.userDef * 0.35)));
     session.userHp = Math.max(0, session.userHp - bossDmg);
-    logText += `\n👹 **${session.bossName}** gào thét phản công gây **${bossDmg} sát thương**!`;
+    logText += session.lastDodged
+      ? `
+💨 **${session.userName}** thân pháp phiêu hốt, né sạch đòn phản kích của **${session.bossName}**!`
+      : `\n👹 **${session.bossName}** gào thét phản công gây **${bossDmg} sát thương**!`;
 
     if (session.userHp <= 0) {
       delete dungeonCombatSessions[targetUserId];
@@ -803,7 +836,7 @@ export async function handleButton(interaction) {
         user.realm.exp += session.exp;
         user.currencies.linhThach += session.linhThach;
         user.currencies.nguyenThach = (user.currencies.nguyenThach || 0) + session.nguyenThachMax;
-        dropMsg = checkHuyenGiaiDrop(user, 0.30);
+        dropMsg = checkHuyenGiaiDrop(user, session.gearDropRate ?? 0.30);
         u_syncCombatStats(user, session);
         await user.save();
       }
@@ -813,9 +846,12 @@ export async function handleButton(interaction) {
       return interaction.update({ embeds: [embed], components: [] });
     }
 
-    const bossDmg = Math.max(10, Math.floor(session.bossAtk * (0.9 + Math.random() * 0.2) - session.userDef * 0.35));
+    const bossDmg = applyIncomingDamage(session, Math.max(10, Math.floor(session.bossAtk * (0.9 + Math.random() * 0.2) - session.userDef * 0.35)));
     session.userHp = Math.max(0, session.userHp - bossDmg);
-    logText += `\n👹 **${session.bossName}** gào thét cuồng nộ đánh trả gây **${bossDmg} sát thương**!`;
+    logText += session.lastDodged
+      ? `
+💨 **${session.userName}** thân pháp phiêu hốt, né sạch đòn phản kích của **${session.bossName}**!`
+      : `\n👹 **${session.bossName}** gào thét cuồng nộ đánh trả gây **${bossDmg} sát thương**!`;
 
     if (session.userHp <= 0) {
       delete dungeonCombatSessions[targetUserId];
@@ -1795,8 +1831,10 @@ export async function handleButton(interaction) {
         protectionMsg = `\n\n🛡️ **HỘ MẠCH ĐAN PHÁT HUY TÁC DỤNG:** Dược lực thần kỳ tự động vỡ ra che chở đan điền, cứu đạo hữu một mạng khỏi phế bỏ tu vi (Chỉ hao hụt 15% Tu Vi)!`;
       } else {
         // TỤT TU VI: Rơi từ Kim Đan Đỉnh Phong xuống Kim Đan Trung Kỳ
+
         user.realm.layer = 2;
-        user.realm.name = 'Kim Đan Kỳ [Trung Kỳ]';
+        user.realm.name = getRealmDisplayName('kim_dan', 2, false);
+        user.realm.maxExp = calculateMaxExp('kim_dan', 2, false);
         user.realm.exp = 0;
         protectionMsg = `\n\n💀 Không có bảo dược hộ mệnh, Kim Đan bị lôi kiếp đánh nứt toác, tu vi bị đánh tụt thẳng về **Kim Đan Kỳ [Trung Kỳ]**!`;
       }
@@ -1826,11 +1864,12 @@ export async function handleButton(interaction) {
     // 4. VƯỢT QUA 3 ĐẠO THIÊN LÔI - THÀNH CÔNG VỠ ĐAN HÓA ANH!
     delete dokiepSessions[targetUserId];
 
+
     user.realm.id = 'nguyen_anh';
-    user.realm.name = 'Nguyên Anh Kỳ';
+    user.realm.name = getRealmDisplayName('nguyen_anh', 1, false);
     user.realm.layer = 1;
     user.realm.exp = 0;
-    user.realm.maxExp = 2500000;
+    user.realm.maxExp = calculateMaxExp('nguyen_anh', 1, false);
     user.stats.maxHp += 2000;
     user.stats.hp = user.stats.maxHp;
     user.stats.atk += 300;
