@@ -6,7 +6,9 @@ import { cultivate } from '../commands/prefix/cultivate.js';
 
 
 import { attemptBreakthrough, getRealmDisplayName, calculateUserMaxExp } from '../services/cultivationService.js';
+
 import { getUserTalentPerks } from '../services/talentService.js';
+import { spendResources } from '../services/economyService.js';
 import { getSkillById, getAllSkills } from '../services/skillService.js';
 import { combatSessions, createCombatEmbed, createCombatButtons, SKILL_MANA_COST, GEAR_MANA_COST } from '../commands/prefix/hunting.js';
 import { dungeonCombatSessions, createDungeonCombatEmbed, createDungeonCombatButtons, DUNGEON_SKILL_MANA_COST, DUNGEON_GEAR_MANA_COST } from '../commands/prefix/dungeon.js';
@@ -954,7 +956,8 @@ export async function handleButton(interaction) {
 
     if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
 
-    const user = await User.findOne({ userId: targetUserId });
+
+    let user = await User.findOne({ userId: targetUserId });
     if (!user) return interaction.reply({ content: `❌ Chưa tạo nhân vật!`, ephemeral: true });
 
     const recipe = recipesConfig.recipes.find(r => r.id === recipeId);
@@ -987,15 +990,26 @@ export async function handleButton(interaction) {
       });
     }
 
-    // Đủ điều kiện → trừ nguyên liệu
-    user.currencies.nguyenThach = haveNT - needNT;
-    user.currencies.linhThach = haveLT - needLT;
 
-    for (const req of (recipe.requirements.items || [])) {
-      const invItem = user.inventory.find(i => i.itemId === req.itemId);
-      invItem.quantity -= req.quantity;
+    // Đủ điều kiện → trừ nguyên liệu bằng một lệnh atomic có điều kiện $gte.
+    // Kiểm tra ở trên chỉ để báo lỗi cho đẹp; nó không chống được hai cú bấm
+    // sát nhau vì giữa lúc đọc và lúc ghi vẫn còn khe hở.
+    const spent = await spendResources(targetUserId, {
+      linhThach: needLT,
+      nguyenThach: needNT,
+      items: (recipe.requirements.items || []).map(r => ({ itemId: r.itemId, quantity: r.quantity }))
+    });
+
+    if (!spent) {
+      return interaction.reply({
+        content: `❌ Nguyên liệu vừa thay đổi (đạo hữu bấm quá nhanh hoặc đã dùng ở nơi khác) — lò không khởi được. Gõ \`!ducphapbao\` để thử lại!`,
+        ephemeral: true
+      });
     }
-    user.inventory = user.inventory.filter(i => i.quantity > 0);
+
+    // Từ đây phải làm việc trên bản đã trừ; nếu save() cái document cũ thì
+    // mảng inventory cũ sẽ đè ngược lại và nguyên liệu coi như được hoàn.
+    user = spent;
 
     const baseGear = equipmentConfig.equipments.find(e => e.id === recipe.targetEquipmentId);
     const newGear = {
@@ -1103,11 +1117,12 @@ export async function handleButton(interaction) {
 
     if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
 
-    const user = await User.findOne({ userId: targetUserId });
+
+    let user = await User.findOne({ userId: targetUserId });
     if (!user || !user.equipments[idx]) return interaction.reply({ content: `❌ Trang bị không tồn tại!`, ephemeral: true });
 
 
-    const gear = user.equipments[idx];
+    let gear = user.equipments[idx];
     const lv = gear.enhanceLevel || 0;
 
     // ── GIỚI HẠN CƯỜNG HÓA ──
@@ -1130,9 +1145,23 @@ export async function handleButton(interaction) {
       });
     }
 
-    // Nguyên liệu bị tiêu hao dù thành công hay thất bại
-    user.currencies.linhThach -= costLinhThach;
-    user.currencies.nguyenThach -= costNguyenThach;
+
+    // Nguyên liệu bị tiêu hao dù thành công hay thất bại. Trừ atomic để spam
+    // nút không thể cường hóa nhiều lần bằng một lần tiền.
+    const spentEnhance = await spendResources(targetUserId, {
+      linhThach: costLinhThach,
+      nguyenThach: costNguyenThach
+    });
+
+    if (!spentEnhance) {
+      return interaction.reply({
+        content: `❌ Tài nguyên vừa thay đổi — không đủ để cường hóa! Cần **${costLinhThach.toLocaleString()} Linh Thạch** + **${costNguyenThach} Nguyên Thạch**.`,
+        ephemeral: true
+      });
+    }
+
+    user = spentEnhance;
+    gear = user.equipments[idx];
 
     // ── PHÁN ĐỊNH THÀNH BẠI ──
     if (Math.random() > successRate) {
@@ -1813,7 +1842,8 @@ export async function handleButton(interaction) {
     const [, pillId, targetUserId] = customId.split('::');
     if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Đây không phải lò luyện đan của bạn!`, ephemeral: true });
 
-    const user = await User.findOne({ userId: clickerId });
+
+    let user = await User.findOne({ userId: clickerId });
     const pill = getPillById(pillId);
     if (!pill || !user) return interaction.reply({ content: `❌ Lỗi nạp dữ liệu đan dược!`, ephemeral: true });
 
@@ -1826,18 +1856,25 @@ export async function handleButton(interaction) {
       return interaction.reply({ content: `❌ Dược liệu không đủ để khởi hỏa luyện đan!`, ephemeral: true });
     }
 
-    // Trừ nguyên liệu
-    linhThaoItem.quantity -= pill.recipe.linhThao;
-    if (linhThaoItem.quantity <= 0) {
-      user.inventory = user.inventory.filter(i => i.itemId !== 'linh_thao');
+
+    // Trừ nguyên liệu atomic: kiểm tra ở trên không chặn được hai cú bấm sát
+    // nhau, mà lò đan là chỗ dễ nhân bản đan dược nhất.
+    const spentBrew = await spendResources(clickerId, {
+      linhThach: pill.recipe.linhThach,
+      items: [
+        { itemId: 'linh_thao', quantity: pill.recipe.linhThao },
+        { itemId: yeuDanItem.itemId, quantity: pill.recipe.yeuDanCount }
+      ]
+    });
+
+    if (!spentBrew) {
+      return interaction.reply({
+        content: `❌ Dược liệu vừa thay đổi — lò đan tắt lửa! Gõ \`!luyendan\` để mở lại lò.`,
+        ephemeral: true
+      });
     }
 
-    yeuDanItem.quantity -= pill.recipe.yeuDanCount;
-    if (yeuDanItem.quantity <= 0) {
-      user.inventory = user.inventory.filter(i => i !== yeuDanItem);
-    }
-
-    user.currencies.linhThach -= pill.recipe.linhThach;
+    user = spentBrew;
 
     // Thêm đan vào inventory
     const existingPill = user.inventory.find(i => i.itemId === pill.id);

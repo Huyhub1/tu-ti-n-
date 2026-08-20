@@ -34,3 +34,5 @@ Tai nguyen/
 
 # Cong cu va tam thoi
 .fx*.mjs
+.t*.mjs
+.o.txt

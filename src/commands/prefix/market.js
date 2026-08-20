@@ -84,28 +84,28 @@ export async function executeChotroi(message, args = []) {
 }
 
 // Đăng bán Công Pháp
-export async function executeBan(message, args) {
-  const user = await User.findOne({ userId: message.author.id });
-  if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
 
-  if (args.length < 2) {
-    return message.reply({
-      content: `❌ Cú pháp đúng: \`!ban <số_thứ_tự_công_pháp> <giá_linh_thạch>\`\nVí dụ: \`!ban 1 500\``
-    });
-  }
-
-  const skillIdx = parseInt(args[0], 10) - 1;
-  const price = parsePrice(args[1]);
-
+/**
+ * Niêm yết một bí kíp trong Tàng Kinh Các lên Chợ Trời.
+ *
+ * Tách ra dùng chung cho `!ban` và modal "Đăng bán" ở `!tangkinhcac`. Modal
+ * trước đây tự viết lại một bản riêng: không kiểm tra giá trần/giá sàn, không
+ * đếm số gian hàng, xóa bí kíp TRƯỚC khi tạo gian hàng (lỗi mạng là mất
+ * trắng), và quên chép `rarity`/`category`/`mastery` sang gian hàng nên mọi
+ * bí kíp bán qua nút bấm đều bị tụt về phẩm Hoàng Giai khi tới tay người mua.
+ *
+ * @returns {Promise<{ok: boolean, message?: string, embed?: EmbedBuilder}>}
+ */
+export async function listSkillForSale(user, skillIdx, price) {
   if (isNaN(skillIdx) || skillIdx < 0 || skillIdx >= user.skills.length) {
-    return message.reply({ content: `❌ Số thứ tự công pháp không hợp lệ! Hãy gõ \`!tangkinhcac\` để xem danh sách.` });
+    return { ok: false, message: `❌ Số thứ tự công pháp không hợp lệ! Hãy gõ \`!tangkinhcac\` để xem danh sách.` };
   }
 
   const priceError = validatePrice(price);
-  if (priceError) return message.reply({ content: priceError });
+  if (priceError) return { ok: false, message: priceError };
 
   const slotError = await checkListingSlot(user.userId);
-  if (slotError) return message.reply({ content: slotError });
+  if (slotError) return { ok: false, message: slotError };
 
   const skillToSell = user.skills[skillIdx];
 
@@ -124,11 +124,12 @@ export async function executeBan(message, args) {
     desc: `Bí kíp phẩm cấp ${skillToSell.rarity}`
   });
 
+
   try {
     await newMarketItem.save();
   } catch (err) {
     console.error('[market:ban] Không tạo được gian hàng:', err);
-    return message.reply({ content: `❌ Chợ Trời đang trục trặc, chưa niêm yết được. Bí kíp vẫn còn nguyên trong Tàng Kinh Các.` });
+    return { ok: false, message: `❌ Chợ Trời đang trục trặc, chưa niêm yết được. Bí kíp vẫn còn nguyên trong Tàng Kinh Các.` };
   }
 
   try {
@@ -138,7 +139,7 @@ export async function executeBan(message, args) {
     // Hoàn tác gian hàng để không nhân bản vật phẩm
     console.error('[market:ban] Lỗi xóa bí kíp, hoàn tác gian hàng:', err);
     await MarketItem.deleteOne({ _id: newMarketItem._id }).catch(() => {});
-    return message.reply({ content: `❌ Giao dịch thất bại, đã hoàn tác. Vui lòng thử lại.` });
+    return { ok: false, message: `❌ Giao dịch thất bại, đã hoàn tác. Vui lòng thử lại.` };
   }
 
   const embed = new EmbedBuilder()
@@ -147,12 +148,27 @@ export async function executeBan(message, args) {
     .setDescription(
       `Đạo hữu đã niêm yết bí kíp **[${skillToSell.name}]** lên Chợ Trời!\n\n` +
       `💎 Giá niêm yết: **${price.toLocaleString()} Linh Thạch**\n` +
-
       `🏦 Thực nhận khi bán được: **${netPayout(user, price).toLocaleString()} Linh Thạch**\n` +
       `🏷️ Mã mặt hàng: \`${newMarketItem.shortId}\``
     );
 
-  await message.reply({ embeds: [embed] });
+  return { ok: true, embed };
+}
+
+export async function executeBan(message, args) {
+  const user = await User.findOne({ userId: message.author.id });
+  if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
+
+  if (args.length < 2) {
+    return message.reply({
+      content: `❌ Cú pháp đúng: \`!ban <số_thứ_tự_công_pháp> <giá_linh_thạch>\`\nVí dụ: \`!ban 1 500\``
+    });
+  }
+
+  const result = await listSkillForSale(user, parseInt(args[0], 10) - 1, parsePrice(args[1]));
+  if (!result.ok) return message.reply({ content: result.message });
+
+  await message.reply({ embeds: [result.embed] });
 }
 
 // Đăng bán Đan Dược
@@ -316,41 +332,42 @@ export async function executeHuyban(message, args) {
   });
 }
 
-// Mua hàng trên Chợ Trời
-export async function executeMua(message, args) {
-  const user = await User.findOne({ userId: message.author.id });
-  if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
 
-  if (args.length < 1) {
-    return message.reply({ content: `❌ Cú pháp đúng: \`!mua <mã_mặt_hàng>\` (Ví dụ: \`!mua abc123\`)` });
+/**
+ * Toàn bộ nghiệp vụ mua một gian hàng: trừ tiền -> khoá hàng -> giao hàng ->
+ * trả tiền người bán. Mỗi bước đều atomic và có đường hoàn tác.
+ *
+ * Tách ra dùng chung vì `selectMenuHandler` từng chép lại một bản rút gọn tự
+ * viết: `findOne` rồi `save()` mà không hề khoá gian hàng, nên hai người bấm
+ * mua cùng lúc thì cả hai cùng nhận được hàng và người bán được cộng tiền hai
+ * lần — in tiền ra từ hư không. Bản đó còn quên thu thuế chợ, ép mọi bí kíp về
+ * phẩm `HOANG_GIAI`, không xử lý đan dược và không chặn mua trùng bí kíp.
+ *
+ * @returns {Promise<{ok: boolean, code: string, message: string, deliveryNotice?: string, payout?: number, tax?: number, taxExempt?: boolean}>}
+ */
+export async function purchaseListing(buyerId, item) {
+  if (!item || !item.active) {
+    return { ok: false, code: 'GONE', message: `❌ Mặt hàng này đã được bán hoặc không còn tồn tại!` };
   }
 
-  const shortId = args[0].trim();
-  const item = await findListing(shortId);
-
-  if (!item) {
-    return message.reply({ content: `❌ Không tìm thấy mặt hàng với mã **${shortId}** trên Chợ Trời!` });
-  }
-
-  if (item.sellerId === user.userId) {
-    return message.reply({ content: `❌ Đạo hữu không thể tự mua mặt hàng của chính mình!` });
-  }
-
-  if ((user.currencies.linhThach || 0) < item.price) {
-    return message.reply({
-      content: `❌ Không đủ Linh Thạch! Cần **${item.price.toLocaleString()}** Linh Thạch (Hiện có: **${(user.currencies.linhThach || 0).toLocaleString()}**).`
-    });
+  if (item.sellerId === buyerId) {
+    return { ok: false, code: 'SELF', message: `❌ Đạo hữu không thể tự mua mặt hàng của chính mình!` };
   }
 
   // 1) Trừ tiền người mua bằng Atomic Update (chặn chi âm khi spam nhiều lệnh)
   const paid = await User.findOneAndUpdate(
-    { userId: user.userId, 'currencies.linhThach': { $gte: item.price } },
+    { userId: buyerId, 'currencies.linhThach': { $gte: item.price } },
     { $inc: { 'currencies.linhThach': -item.price } },
     { new: true }
   );
 
+
   if (!paid) {
-    return message.reply({ content: `❌ Không đủ Linh Thạch (số dư vừa thay đổi). Vui lòng thử lại!` });
+    return {
+      ok: false,
+      code: 'NO_FUNDS',
+      message: `❌ Không đủ Linh Thạch! Cần **${item.price.toLocaleString()}** Linh Thạch để mua **[${item.itemName}]**.`
+    };
   }
 
   // 2) Khóa gian hàng bằng Atomic Update chống Race Condition
@@ -361,14 +378,15 @@ export async function executeMua(message, args) {
 
   if (!lockedItem) {
     // Người khác nhanh tay hơn -> hoàn tiền ngay
-    await User.updateOne({ userId: user.userId }, { $inc: { 'currencies.linhThach': item.price } }).catch(() => {});
-    return message.reply({ content: `❌ Mặt hàng này vừa được một tu sĩ khác nhanh tay mua mất! Linh Thạch đã được hoàn lại.` });
+
+    await User.updateOne({ userId: buyerId }, { $inc: { 'currencies.linhThach': item.price } }).catch(() => {});
+    return { ok: false, code: 'TAKEN', message: `❌ Mặt hàng này vừa được một tu sĩ khác nhanh tay mua mất! Linh Thạch đã được hoàn lại.` };
   }
 
   // 3) Giao hàng
   let deliveryNotice = '';
   try {
-    const buyer = await User.findOne({ userId: user.userId });
+    const buyer = await User.findOne({ userId: buyerId });
 
     if (item.itemType === 'DAN_DUOC') {
       const existing = buyer.inventory.find(i => i.itemId === item.skillId);
@@ -403,14 +421,15 @@ export async function executeMua(message, args) {
     await buyer.save();
   } catch (err) {
     // Giao hàng hỏng -> hoàn tiền và mở lại gian hàng, tuyệt đối không nuốt tiền
-    await User.updateOne({ userId: user.userId }, { $inc: { 'currencies.linhThach': item.price } }).catch(() => {});
+
+    await User.updateOne({ userId: buyerId }, { $inc: { 'currencies.linhThach': item.price } }).catch(() => {});
     await MarketItem.updateOne({ _id: item._id }, { $set: { active: true } }).catch(() => {});
 
     if (err.message === 'DUPLICATE_SKILL') {
-      return message.reply({ content: `❌ Đạo hữu đã sở hữu bí kíp **[${item.itemName}]** rồi! Giao dịch đã hủy, Linh Thạch được hoàn lại.` });
+      return { ok: false, code: 'DUPLICATE', message: `❌ Đạo hữu đã sở hữu bí kíp **[${item.itemName}]** rồi! Giao dịch đã hủy, Linh Thạch được hoàn lại.` };
     }
     console.error('[market:mua] Lỗi giao hàng, đã hoàn tác:', err);
-    return message.reply({ content: `❌ Giao dịch gặp sự cố, Linh Thạch đã được hoàn lại. Vui lòng thử lại.` });
+    return { ok: false, code: 'DELIVERY', message: `❌ Giao dịch gặp sự cố, Linh Thạch đã được hoàn lại. Vui lòng thử lại.` };
   }
 
 
@@ -423,17 +442,45 @@ export async function executeMua(message, args) {
     console.error('[market:mua] Không cộng được tiền cho người bán:', err);
   });
 
-  const embed = new EmbedBuilder()
+
+  return { ok: true, code: 'OK', message: '', deliveryNotice, payout, tax, taxExempt };
+}
+
+/**
+ * Dựng embed báo mua thành công, dùng chung cho `!mua` và menu chọn mua để hai
+ * đường không bao giờ mô tả cùng một giao dịch bằng hai con số khác nhau.
+ */
+export function buildPurchaseEmbed(item, result) {
+  return new EmbedBuilder()
     .setTitle(`🎉 [GIAO DỊCH THÀNH CÔNG]`)
     .setColor('#4CAF50')
     .setDescription(
       `Đạo hữu đã mua thành công **[${item.itemName}]** với giá **${item.price.toLocaleString()} Linh Thạch**!\n\n` +
-
-      `${deliveryNotice}\n` +
-      (taxExempt
-        ? `🏦 *Người bán là Tán Tu nên được **miễn thuế chợ**, nhận trọn **${payout.toLocaleString()} LT**.*`
-        : `🏦 *Người bán nhận **${payout.toLocaleString()} LT** (thuế chợ ${Math.round(MARKET_TAX_RATE * 100)}%: ${tax.toLocaleString()} LT).*`)
+      `${result.deliveryNotice}\n` +
+      (result.taxExempt
+        ? `🏦 *Người bán là Tán Tu nên được **miễn thuế chợ**, nhận trọn **${result.payout.toLocaleString()} LT**.*`
+        : `🏦 *Người bán nhận **${result.payout.toLocaleString()} LT** (thuế chợ ${Math.round(MARKET_TAX_RATE * 100)}%: ${result.tax.toLocaleString()} LT).*`)
     );
+}
 
-  await message.reply({ embeds: [embed] });
+// Mua hàng trên Chợ Trời
+export async function executeMua(message, args) {
+  const user = await User.findOne({ userId: message.author.id });
+  if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
+
+  if (args.length < 1) {
+    return message.reply({ content: `❌ Cú pháp đúng: \`!mua <mã_mặt_hàng>\` (Ví dụ: \`!mua abc123\`)` });
+  }
+
+  const shortId = args[0].trim();
+  const item = await findListing(shortId);
+
+  if (!item) {
+    return message.reply({ content: `❌ Không tìm thấy mặt hàng với mã **${shortId}** trên Chợ Trời!` });
+  }
+
+  const result = await purchaseListing(user.userId, item);
+  if (!result.ok) return message.reply({ content: result.message });
+
+  await message.reply({ embeds: [buildPurchaseEmbed(item, result)] });
 }

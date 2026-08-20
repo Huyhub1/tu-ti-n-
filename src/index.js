@@ -1,13 +1,11 @@
 import 'dotenv/config';
-import { Client, GatewayIntentBits, REST, Routes, EmbedBuilder } from 'discord.js';
+import { Client, GatewayIntentBits, REST, Routes } from 'discord.js';
 import chalk from 'chalk';
 import { connectDB } from './database/connect.js';
 import { handleSlashCommand, handlePrefixCommand } from './handlers/commandHandler.js';
 import { handleButton } from './handlers/buttonHandler.js';
 import { handleSelectMenu } from './handlers/selectMenuHandler.js';
-import { User } from './database/models/User.js';
-import { MarketItem } from './database/models/MarketItem.js';
-import { Sect } from './database/models/Sect.js';
+import { handleModalSubmit } from './handlers/modalHandler.js';
 import { data as startData } from './commands/slash/start.js';
 import { data as helpData } from './commands/slash/help.js';
 
@@ -63,117 +61,7 @@ client.on('interactionCreate', async (interaction) => {
     } else if (interaction.isStringSelectMenu()) {
       await handleSelectMenu(interaction);
     } else if (interaction.isModalSubmit()) {
-      const customId = interaction.customId;
-      if (customId.startsWith('modal_sell_submit::') || customId.startsWith('modal_sell_submit_')) {
-        let skillIdx, targetUserId;
-        if (customId.includes('::')) {
-          const parts = customId.split('::');
-          const itemKey = parts[1]; // skill_0
-          skillIdx = parseInt(itemKey.replace('skill_', ''), 10);
-          targetUserId = parts[2];
-        } else {
-          const parts = customId.split('_');
-          targetUserId = parts[parts.length - 1];
-          skillIdx = parseInt(parts[parts.length - 2], 10);
-        }
-
-        if (interaction.user.id !== targetUserId) {
-          return interaction.reply({ content: `⚠️ Thao tác này không thuộc về bạn!`, ephemeral: true });
-        }
-
-        const priceStr = interaction.fields.getTextInputValue('sell_price_input');
-        const price = parseInt(priceStr, 10);
-
-        if (isNaN(price) || price <= 0) {
-          return interaction.reply({ content: `❌ Giá bán phải là một số nguyên dương hợp lệ!`, ephemeral: true });
-        }
-
-        const user = await User.findOne({ userId: targetUserId });
-        if (!user || isNaN(skillIdx) || skillIdx < 0 || skillIdx >= user.skills.length) {
-          return interaction.reply({ content: `❌ Công pháp không còn tồn tại trong Tàng Kinh Các!`, ephemeral: true });
-        }
-
-        const skillToSell = user.skills[skillIdx];
-        user.skills.splice(skillIdx, 1);
-        await user.save();
-
-        const newMarketItem = new MarketItem({
-          sellerId: user.userId,
-          sellerName: user.daoName || user.username,
-          itemName: skillToSell.name,
-          itemType: 'BI_KIP',
-          skillId: skillToSell.skillId,
-          price: price,
-          desc: `Bí kíp phẩm cấp ${skillToSell.rarity}`
-        });
-
-        await newMarketItem.save();
-
-        const embed = new EmbedBuilder()
-          .setTitle(`🏪 [ĐĂNG BÁN THÀNH CÔNG]`)
-          .setColor('#4CAF50')
-          .setDescription(
-            `Đạo hữu đã niêm yết bí kíp **[${skillToSell.name}]** lên Chợ Trời!\n\n` +
-            `💎 Giá niêm yết: **${price.toLocaleString()} Linh Thạch**\n` +
-            `Người chơi khác có thể xem và mua trực tiếp tại Chợ Trời.`
-          );
-
-        return interaction.reply({ embeds: [embed] });
-      }
-
-      if (customId.startsWith('modal_sect_donate::')) {
-        const parts = customId.split('::');
-        const sectId = parts[1];
-        const targetUserId = parts[2];
-
-        if (interaction.user.id !== targetUserId) {
-          return interaction.reply({ content: `⚠️ Thao tác này không thuộc về bạn!`, ephemeral: true });
-        }
-
-        const amountStr = interaction.fields.getTextInputValue('sect_donate_amount_input');
-        const amount = parseInt(amountStr, 10);
-
-        if (isNaN(amount) || amount <= 0) {
-          return interaction.reply({ content: `❌ Số Linh Thạch cống hiến phải là một số nguyên dương hợp lệ!`, ephemeral: true });
-        }
-
-        const user = await User.findOne({ userId: targetUserId });
-        const sect = await Sect.findById(sectId);
-
-        if (!user || !sect) {
-          return interaction.reply({ content: `❌ Dữ liệu người chơi hoặc môn phái không tồn tại!`, ephemeral: true });
-        }
-
-        if (user.currencies.linhThach < amount) {
-          return interaction.reply({
-            content: `❌ Đạo hữu không đủ ${amount.toLocaleString()} Linh Thạch để cống hiến! (Hiện có: ${user.currencies.linhThach.toLocaleString()} LT)`,
-            ephemeral: true
-          });
-        }
-
-        user.currencies.linhThach -= amount;
-        sect.treasury.linhThach += amount;
-
-        const member = sect.members.find(m => m.userId === targetUserId);
-        const gainedContrib = Math.floor(amount / 2);
-        if (member) {
-          member.contribution = (member.contribution || 0) + gainedContrib;
-        }
-
-        await user.save();
-        await sect.save();
-
-        const embed = new EmbedBuilder()
-          .setTitle(`💎 [CỐNG HIẾN MÔN PHÁI THÀNH CÔNG]`)
-          .setColor('#4CAF50')
-          .setDescription(
-            `Đạo hữu **${user.daoName || user.username}** đã quyên góp thành công **${amount.toLocaleString()} Linh Thạch** vào Ngân Khố **[${sect.name}]**!\n\n` +
-            `✨ Nhận được: **+${gainedContrib.toLocaleString()} Điểm Cống Hiến**\n` +
-            `💰 Ngân Khố Tông Môn hiện tại: **${sect.treasury.linhThach.toLocaleString()} Linh Thạch**`
-          );
-
-        return interaction.reply({ embeds: [embed] });
-      }
+      await handleModalSubmit(interaction);
     }
   } catch (error) {
     console.error(chalk.red(`[Interaction Error]: ${error.message}`));

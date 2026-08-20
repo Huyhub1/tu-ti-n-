@@ -5,7 +5,9 @@ import { createHelpSelectMenuRow } from '../commands/slash/help.js';
 import { createPublicGearListEmbed, createPublicGearSelectMenu, createPublicGearButtons } from '../commands/prefix/baovat.js';
 import { createTopEmbed, createTopSelectMenu } from '../commands/prefix/top.js';
 import { getPillById, createAlchemySelectMenu } from '../commands/prefix/alchemy.js';
+
 import { combatSessions } from '../commands/prefix/hunting.js';
+import { purchaseListing, buildPurchaseEmbed } from '../commands/prefix/market.js';
 import { dungeonCombatSessions } from '../commands/prefix/dungeon.js';
 import fs from 'fs';
 import path from 'path';
@@ -510,51 +512,22 @@ export async function handleSelectMenu(interaction) {
     const user = await User.findOne({ userId: clickerId });
     if (!user) return interaction.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!`, ephemeral: true });
 
+
     const item = await MarketItem.findById(marketItemId);
-    if (!item || !item.active) {
+    if (!item) {
       return interaction.reply({ content: `❌ Mặt hàng này đã được bán hoặc không còn tồn tại!`, ephemeral: true });
     }
 
-    if (item.sellerId === user.userId) {
-      return interaction.reply({ content: `❌ Bạn không thể tự mua mặt hàng của chính mình!`, ephemeral: true });
+    // Đi chung một đường với `!mua`: khoá gian hàng bằng atomic update, thu
+    // thuế chợ, giữ đúng phẩm cấp gốc và hoàn tiền nếu giao hàng hỏng. Bản tự
+    // viết cũ ở đây cho phép hai người cùng mua một món và trả tiền người bán
+    // hai lần.
+    const result = await purchaseListing(user.userId, item);
+    if (!result.ok) {
+      return interaction.reply({ content: result.message, ephemeral: true });
     }
 
-    if (user.currencies.linhThach < item.price) {
-      return interaction.reply({
-        content: `❌ Không đủ Linh Thạch! Cần **${item.price.toLocaleString()}** Linh Thạch (Hiện có: **${user.currencies.linhThach.toLocaleString()}**).`,
-        ephemeral: true
-      });
-    }
-
-    user.currencies.linhThach -= item.price;
-    user.skills.push({
-      skillId: item.skillId || 'co_ban_dan_khi_quyet',
-      name: item.itemName,
-      category: 'tam_phap',
-      rarity: 'HOANG_GIAI',
-      mastery: 10,
-      equipped: false
-    });
-    await user.save();
-
-    const seller = await User.findOne({ userId: item.sellerId });
-    if (seller) {
-      seller.currencies.linhThach += item.price;
-      await seller.save();
-    }
-
-    item.active = false;
-    await item.save();
-
-    const embed = new EmbedBuilder()
-      .setTitle(`🎉 [MUA HÀNG THÀNH CÔNG]`)
-      .setColor('#4CAF50')
-      .setDescription(
-        `Đạo hữu đã mua thành công bí kíp **[${item.itemName}]** với giá **${item.price.toLocaleString()} Linh Thạch**!\n` +
-        `Bí kíp đã được cất vào **Kho Bí Kíp** (\`!choden\`).`
-      );
-
-    return interaction.update({ embeds: [embed], components: [] });
+    return interaction.update({ embeds: [buildPurchaseEmbed(item, result)], components: [] });
   }
 
   // 6. Xử lý Menu Lò Luyện Đan

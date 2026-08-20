@@ -90,7 +90,24 @@ export async function executeLaptongmon(message, args) {
     return message.reply({ content: `❌ Tên Tông Môn **${sectName}** đã tồn tại trong thiên hạ!` });
   }
 
-  user.currencies.linhThach -= SECT_COST;
+
+  // Trừ tiền atomic TRƯỚC khi dựng sơn môn. Gõ `!laptongmon` hai lần thật
+  // nhanh với hai cái tên khác nhau thì trước đây cả hai đều lập được bang mà
+  // chỉ mất một lần tiền. Điều kiện `sectId: null` cũng chặn luôn trường hợp
+  // vừa được mời vào bang khác giữa chừng.
+  // Cố ý KHÔNG sửa `user.currencies` trong bộ nhớ: `user.save()` bên dưới chỉ
+  // ghi `sectId`/`sectRole`, nếu chạm vào số dư nó sẽ đè ngược giá trị cũ.
+  const paidSect = await User.findOneAndUpdate(
+    { userId: user.userId, sectId: null, 'currencies.linhThach': { $gte: SECT_COST } },
+    { $inc: { 'currencies.linhThach': -SECT_COST } },
+    { new: true }
+  );
+
+  if (!paidSect) {
+    return message.reply({
+      content: `❌ Không đủ **${SECT_COST} Linh Thạch** để khai sơn lập phái (hoặc đạo hữu vừa gia nhập một tông môn khác). Vui lòng thử lại!`
+    });
+  }
 
   const newSect = new Sect({
     name: sectName,
@@ -107,7 +124,18 @@ export async function executeLaptongmon(message, args) {
     }]
   });
 
-  await newSect.save();
+
+  try {
+    await newSect.save();
+  } catch (err) {
+    // Tên bị người khác chiếm mất trong tích tắc chẳng hạn -> hoàn tiền ngay,
+    // tuyệt đối không nuốt Linh Thạch của người chơi.
+    await User.updateOne({ userId: user.userId }, { $inc: { 'currencies.linhThach': SECT_COST } }).catch(() => {});
+    console.error('[sect:laptongmon] Không tạo được tông môn, đã hoàn Linh Thạch:', err);
+    return message.reply({
+      content: `❌ Khai sơn lập phái thất bại (tên tông môn có thể vừa bị người khác chiếm). **${SECT_COST} Linh Thạch** đã được hoàn lại.`
+    });
+  }
 
   user.sectId = newSect._id;
   user.sectRole = 'LEADER';
@@ -206,6 +234,74 @@ export async function executeMoivaobang(message, args) {
 }
 
 // 4. Lệnh Cống Hiến Linh Thạch: !conghien <số_lượng>
+
+/** Trần một lần cống hiến — chặn lỗi gõ nhầm kiểu `!conghien 999999999`. */
+export const MAX_DONATE_PER_TIME = 10_000_000;
+
+/**
+ * Chuyển Linh Thạch từ túi tu sĩ vào ngân khố tông môn.
+ *
+ * Dùng chung cho `!conghien` và modal cống hiến ở `!tongmon` — hai đường
+ * trước đây là hai bản chép tay riêng biệt, cùng mắc lỗi `findOne` → sửa bộ
+ * nhớ → `save()`: spam cùng lúc thì ngân khố nhận nhiều hơn số Linh Thạch
+ * thực sự bị trừ khỏi người chơi.
+ *
+ * @returns {Promise<{ok: boolean, message?: string, embed?: EmbedBuilder}>}
+ */
+export async function donateToSect(user, sect, amount) {
+  if (isNaN(amount) || amount <= 0) {
+    return { ok: false, message: `❌ Số Linh Thạch cống hiến phải là một số nguyên dương hợp lệ!` };
+  }
+
+  if (amount > MAX_DONATE_PER_TIME) {
+    return { ok: false, message: `❌ Mỗi lần chỉ cống hiến tối đa **${MAX_DONATE_PER_TIME.toLocaleString()} Linh Thạch**.` };
+  }
+
+  // Trừ atomic trước, nạp ngân khố sau; hỏng ở bước nào cũng hoàn tác được.
+  const paid = await User.findOneAndUpdate(
+    { userId: user.userId, 'currencies.linhThach': { $gte: amount } },
+    { $inc: { 'currencies.linhThach': -amount } },
+    { new: true }
+  );
+
+  if (!paid) {
+    return {
+      ok: false,
+      message: `❌ Đạo hữu không đủ **${amount.toLocaleString()} Linh Thạch** để cống hiến! (Hiện có: **${(user.currencies?.linhThach || 0).toLocaleString()}**)`
+    };
+  }
+
+  const contribGain = Math.floor(amount / 2);
+
+  const updatedSect = await Sect.findOneAndUpdate(
+    { _id: sect._id },
+    { $inc: { 'treasury.linhThach': amount } },
+    { new: true }
+  ).catch(() => null);
+
+  if (!updatedSect) {
+    await User.updateOne({ userId: user.userId }, { $inc: { 'currencies.linhThach': amount } }).catch(() => {});
+    return { ok: false, message: `❌ Ngân khố tông môn không nhận được Linh Thạch — giao dịch đã hoàn tác.` };
+  }
+
+  await Sect.updateOne(
+    { _id: sect._id, 'members.userId': user.userId },
+    { $inc: { 'members.$.contribution': contribGain } }
+  ).catch((err) => console.error('[sect:conghien] Không cộng được điểm cống hiến:', err));
+
+  const embed = new EmbedBuilder()
+    .setTitle(`💎 [CỐNG HIẾN MÔN PHÁI]`)
+    .setColor('#4CAF50')
+    .setDescription(
+      `Đạo hữu **${user.daoName || user.username}** đã quyên góp **${amount.toLocaleString()} Linh Thạch** vào Ngân Khố **[${sect.name}]**!\n\n` +
+      `✨ Nhận được: **+${contribGain.toLocaleString()} Điểm Cống Hiến**\n` +
+      `💰 Ngân Khố Tông Môn hiện tại: **${(updatedSect.treasury?.linhThach || 0).toLocaleString()} Linh Thạch**\n` +
+      `💎 Số dư còn lại của đạo hữu: **${(paid.currencies.linhThach || 0).toLocaleString()} Linh Thạch**`
+    );
+
+  return { ok: true, embed };
+}
+
 export async function executeConghien(message, args) {
   const user = await User.findOne({ userId: message.author.id });
   if (!user || !user.sectId) return message.reply({ content: `❌ Bạn chưa gia nhập môn phái!` });
@@ -218,31 +314,10 @@ export async function executeConghien(message, args) {
     return message.reply({ content: `❌ Cú pháp đúng: \`!conghien <số_linh_thạch>\` (Ví dụ: \`!conghien 200\`)` });
   }
 
-  if (user.currencies.linhThach < amount) {
-    return message.reply({ content: `❌ Đạo hữu không đủ ${amount.toLocaleString()} Linh Thạch! (Hiện có: ${user.currencies.linhThach.toLocaleString()})` });
-  }
+  const result = await donateToSect(user, sect, amount);
+  if (!result.ok) return message.reply({ content: result.message });
 
-  user.currencies.linhThach -= amount;
-  sect.treasury.linhThach += amount;
-
-  const member = sect.members.find(m => m.userId === user.userId);
-  if (member) {
-    member.contribution = (member.contribution || 0) + Math.floor(amount / 2);
-  }
-
-  await user.save();
-  await sect.save();
-
-  const embed = new EmbedBuilder()
-    .setTitle(`💎 [CỐNG HIẾN MÔN PHÁI]`)
-    .setColor('#4CAF50')
-    .setDescription(
-      `Đạo hữu **${user.daoName || user.username}** đã quyên góp **${amount.toLocaleString()} Linh Thạch** vào Ngân Khố **[${sect.name}]**!\n\n` +
-      `✨ Nhận được: **+${Math.floor(amount / 2)} Điểm Cống Hiến**\n` +
-      `💰 Ngân Khố Tông Môn hiện tại: **${sect.treasury.linhThach.toLocaleString()} Linh Thạch**`
-    );
-
-  await message.reply({ embeds: [embed] });
+  await message.reply({ embeds: [result.embed] });
 }
 
 // 5. Lệnh Nhiệm Vụ Môn Phái: !nhiemvubang
