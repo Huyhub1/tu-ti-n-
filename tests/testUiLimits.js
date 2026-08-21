@@ -278,6 +278,7 @@ console.log(chalk.yellow(`[Thiên Cơ Các — màn hình !capnhat]`));
   });
 
   const chDay = (bat) => ({ bat, phutMoiLan: 1440, remote: LONG, nhanh: LONG });
+  const BAN_RON_DAY = { tong: 999, chiTiet: Array.from({ length: 30 }, (_, i) => ({ ten: `${LONG}-${i}`, so: 33 })) };
 
   let soKhung = 0;
   for (const sach of [true, false]) {
@@ -287,12 +288,17 @@ console.log(chalk.yellow(`[Thiên Cơ Các — màn hình !capnhat]`));
           for (const daRaHieu of [true, false]) {
             for (const daXoaCachLy of [true, false]) {
               for (const batTuDong of [true, false]) {
+                // Sổ bận rộn thêm một ô nữa vào embed đúng lúc nó đã đầy nhất
+                // (sắp kéo + đang cách ly + cây bẩn), nên phải quét cả hai
+                // trạng thái chứ không chỉ lúc vắng người.
+                for (const banRon of [null, BAN_RON_DAY]) {
                 const nhan = `capnhat sach=${sach} moi=${coMoi} cachly=${cachLy} ` +
-                  `giamsat=${giamSat} rahieu=${daRaHieu} goCachLy=${daXoaCachLy} tudong=${batTuDong}`;
+                  `giamsat=${giamSat} rahieu=${daRaHieu} goCachLy=${daXoaCachLy} tudong=${batTuDong} ` +
+                  `banron=${banRon ? banRon.tong : 0}`;
                 let payload;
                 try {
                   payload = renderCapnhatView(khoDay(sach), tinDay(coMoi, cachLy), chDay(batTuDong),
-                    { daRaHieu, giamSat, daXoaCachLy });
+                    { daRaHieu, giamSat, daXoaCachLy, banRon });
                 } catch (e) {
                   fail(`${nhan}: ném lỗi khi dựng — ${e.message}`);
                   continue;
@@ -300,6 +306,7 @@ console.log(chalk.yellow(`[Thiên Cơ Các — màn hình !capnhat]`));
                 if (!payload.embeds) { fail(`${nhan}: không dựng được embed`); continue; }
                 checkView(nhan, { embed: payload.embeds[0], components: payload.components });
                 soKhung++;
+                }
               }
             }
           }

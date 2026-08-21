@@ -38,8 +38,9 @@ import {
   timCapNhat,
   keoVeVaKiemTra
 } from '../src/services/updateService.js';
-import { renderCapnhatView, coGiamSat } from '../src/commands/prefix/capnhat.js';
+import { renderCapnhatView, coGiamSat, SO_LUOT_HOAN_TOI_DA } from '../src/commands/prefix/capnhat.js';
 import { EMBED_LIMITS } from '../src/utils/embedLimits.js';
+import { dangKyNguonBanRon, demBanRon, moTaBanRon, xoaSoBanRon } from '../src/utils/banRon.js';
 
 let passed = 0;
 let total = 0;
@@ -426,6 +427,68 @@ async function main() {
     const khongPhaiKho = renderCapnhatView({ laKho: false, lyDo: `hỏng vì ${MA}` }, null, chDay, {});
     assert(!!khongPhaiKho.content && !khongPhaiKho.content.includes(MA),
       'thư mục không phải kho git thì trả lời gọn, vẫn che mã truy cập');
+  }
+
+  // ── [11] Không tắt bot khi còn người đang đánh dở ──
+  console.log(chalk.yellow(`\n[11] Sổ bận rộn — chặn cập nhật cắt ngang trận đấu:`));
+  {
+    xoaSoBanRon();
+    assert(demBanRon().tong === 0, 'sổ rỗng thì không ai bận — cập nhật đi tiếp như cũ');
+
+    // Chưa module nào đăng ký thì vẫn phải cho cập nhật chạy. Mặc định phải là
+    // CHO PHÉP: đăng ký hỏng mà lại chặn cứng thì bản vá không bao giờ lên được.
+    dangKyNguonBanRon('săn thú', () => 2);
+    dangKyNguonBanRon('phó bản', () => 1);
+    const ban = demBanRon();
+    assert(ban.tong === 3, 'cộng đúng tổng qua nhiều nguồn');
+    assert(moTaBanRon(ban) === 'săn thú 2, phó bản 1', 'mô tả gọn đủ tên từng nguồn');
+
+    dangKyNguonBanRon('săn thú', () => 5);
+    assert(demBanRon().tong === 6, 'đăng ký lại cùng tên thì ghi đè, không cộng dồn');
+
+    dangKyNguonBanRon('nguồn hỏng', () => { throw new Error('ném giữa chừng'); });
+    assert(demBanRon().tong === 6, 'một nguồn ném lỗi không kéo sập cả phép đếm');
+
+    dangKyNguonBanRon('không phải hàm', null);
+    assert(demBanRon().chiTiet.length === 2, 'đăng ký sai kiểu thì bỏ qua, không vỡ');
+
+    // Con số này phải hữu hạn, nếu không một phòng đông người thay nhau đánh
+    // liên tục sẽ khoá cứng đường cập nhật mãi mãi.
+    assert(Number.isInteger(SO_LUOT_HOAN_TOI_DA) && SO_LUOT_HOAN_TOI_DA > 0 && SO_LUOT_HOAN_TOI_DA <= 24,
+      'trần số lượt hoãn là số nguyên dương và không quá 24 lượt');
+
+    // Người đang bận phải hiện ra trên màn hình !capnhat, nhưng chỉ khi sắp kéo.
+    const khoSach = {
+      laKho: true, nhanh: 'master', commit: 'c'.repeat(40), ngan: 'ccccccc',
+      chuThich: 'Bản gần nhất', nguoi: 'Ai Đó', luc: new Date().toISOString(),
+      sach: true, banBan: []
+    };
+    const tinMoi = { coMoi: true, soCommit: 2, dich: 'origin/master', danhSach: ['abc1 A', 'abc2 B'], biCachLy: null };
+    const chSach = { bat: true, phutMoiLan: 5, remote: 'origin', nhanh: 'master' };
+    const banMau = { tong: 3, chiTiet: [{ ten: 'phó bản', so: 3 }] };
+
+    const oCua = (p) => (p.embeds[0].data.fields || []).map(f => f.name).join('|');
+
+    assert(/giữa chừng/.test(oCua(renderCapnhatView(khoSach, tinMoi, chSach, { daRaHieu: true, banRon: banMau }))),
+      'sắp kéo mà còn người bận thì !capnhat có cảnh báo');
+
+    assert(!/giữa chừng/.test(oCua(renderCapnhatView(khoSach, tinMoi, chSach, { daRaHieu: false, banRon: banMau }))),
+      'chỉ xem thì không cảnh báo — có tắt bot đâu mà dọa');
+
+    assert(!/giữa chừng/.test(oCua(renderCapnhatView(khoSach, tinMoi, chSach, { daRaHieu: true, banRon: { tong: 0, chiTiet: [] } }))),
+      'không còn ai bận thì không hiện ô thừa');
+
+    // Ô cảnh báo cũng phải chịu được dữ liệu bẩn như mọi ô khác: tên nguồn là
+    // hằng số trong code hôm nay, nhưng ô nào quên truncate cũng NÉM LỖI chứ
+    // không cắt bớt — và lỗi đó giết cả lệnh !capnhat.
+    const banDai = { tong: 9, chiTiet: Array.from({ length: 40 }, () => ({ ten: 'x'.repeat(80), so: 9 })) };
+    let vo = null;
+    try {
+      JSON.stringify(renderCapnhatView(khoSach, tinMoi, chSach, { daRaHieu: true, banRon: banDai }));
+    } catch (e) { vo = e; }
+    assert(!vo, `tên nguồn dài bất thường vẫn không làm vỡ embed${vo ? ': ' + vo.message : ''}`);
+
+    xoaSoBanRon();
   }
 
   console.log(chalk.bold.magenta(`\n======================================================`));

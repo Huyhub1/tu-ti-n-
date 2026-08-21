@@ -3,6 +3,7 @@ import { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMe
 import { User } from '../../database/models/User.js';
 import { checkCooldown, formatWait, checkBattleReady } from '../../utils/cooldown.js';
 import { meetsRequirement, requirementLabel } from '../../utils/power.js';
+import { dangKyNguonBanRon } from '../../utils/banRon.js';
 import { dungeonCombatSessions } from './dungeon.js';
 import fs from 'fs';
 import path from 'path';
@@ -14,6 +15,10 @@ const monstersConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../../co
 
 // Lưu trạng thái trận đánh đang diễn ra trong RAM: combatSessions[userId]
 export const combatSessions = {};
+
+// Cho vòng tự cập nhật biết còn ai đang giữa trận, để nó đừng tắt bot ngay lúc
+// đó. Người chơi đã bị trừ hồi chiêu 30 giây rồi — cắt ngang là mất trắng lượt.
+dangKyNguonBanRon('săn thú', () => Object.keys(combatSessions).length);
 
 // Tự động dọn dẹp các phiên chiến đấu không tương tác quá 10 phút (giải phóng RAM)
 // `.unref()` ở cuối để bộ đếm không giữ tiến trình Node sống: bot vẫn chạy nhờ

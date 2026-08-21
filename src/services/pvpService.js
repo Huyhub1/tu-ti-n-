@@ -6,6 +6,7 @@ import { User } from '../database/models/User.js';
 import { getFactionBuffs, getCritMultiplier } from './factionService.js';
 import { getUserTalentPerks } from './talentService.js';
 import { battlePower } from '../utils/power.js';
+import { dangKyNguonBanRon } from '../utils/banRon.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -93,6 +94,15 @@ export function releaseChallenge(challengerId, targetId) {
 
 // Dọn rác định kỳ phòng khi cả hai bên bỏ mặc chiến thư
 setInterval(() => purgeExpired(), 5 * 60 * 1000).unref?.();
+
+// Chiến thư treo nhẹ hơn một trận đang đánh dở, nhưng vẫn không nên bốc hơi
+// giữa lúc hai bên đang cân nhắc mức cược. Đếm theo BẢN GHI chứ không theo số
+// khoá: mỗi chiến thư nằm dưới hai khoá (người gửi và người nhận), đếm khoá là
+// gấp đôi con số thật. Bản thân sổ này tự hết hạn nên không kẹt được lâu.
+dangKyNguonBanRon('chiến thư', () => {
+  purgeExpired();
+  return new Set(pendingChallenges.values()).size;
+});
 
 // ── Mô phỏng giao đấu theo lượt ─────────────────────────────────────
 

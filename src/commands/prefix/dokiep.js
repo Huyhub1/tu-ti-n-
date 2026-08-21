@@ -1,6 +1,7 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { User } from '../../database/models/User.js';
 import { Sect } from '../../database/models/Sect.js';
+import { dangKyNguonBanRon } from '../../utils/banRon.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -12,6 +13,10 @@ const realmsConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../../conf
 // Lưu trữ phiên độ kiếp theo thời gian thực
 
 export const dokiepSessions = {};
+
+// Độ kiếp là khoảnh khắc quan trọng nhất của một nhân vật. Tắt bot giữa chừng
+// để cập nhật thì không có cách nào đền bù cho ra hồn.
+dangKyNguonBanRon('độ kiếp', () => Object.keys(dokiepSessions).length);
 
 // Dọn phiên độ kiếp bị bỏ dở (người chơi tắt máy giữa chừng). Không có bước
 // này thì mỗi phiên treo vĩnh viễn trong RAM và người chơi cũng bị kẹt luôn

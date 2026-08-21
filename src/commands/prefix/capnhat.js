@@ -17,6 +17,7 @@ import { EmbedBuilder } from 'discord.js';
 
 import { isAdmin } from './admin.js';
 import { truncate, EMBED_LIMITS } from '../../utils/embedLimits.js';
+import { demBanRon, moTaBanRon } from '../../utils/banRon.js';
 import {
   EXIT_UPDATE,
   che,
@@ -30,6 +31,17 @@ import {
 
 /** Chờ chừng này trước khi thoát, để tin nhắn kịp bay tới Discord. */
 const HOAN_TRUOC_KHI_THOAT_MS = 2500;
+
+/**
+ * Số lượt soát tối đa được phép hoãn vì còn người đang giữa trận.
+ *
+ * Phải có trần: trận đấu trong RAM tự dọn sau 10 phút không thao tác, nhưng
+ * một phòng đông người thay phiên nhau đánh liên tục thì sổ bận rộn không bao
+ * giờ rỗng — không có trần là bản vá không bao giờ lên được máy chủ. Sáu lượt
+ * ở chu kỳ mặc định 5 phút là nửa tiếng; hết nửa tiếng thì cập nhật vẫn đi,
+ * chấp nhận làm phiền số ít người còn đang đánh.
+ */
+export const SO_LUOT_HOAN_TOI_DA = 6;
 
 /** Bot có đang được tiến trình bọc ngoài trông chừng không. */
 export function coGiamSat(env = process.env) {
@@ -46,7 +58,7 @@ function mocThoiGian(iso) {
  * nhận kết quả đã có sẵn. Tách ra để bộ kiểm thử trần giao diện dựng được nó mà
  * không cần kho git thật lẫn mạng.
  */
-export function renderCapnhatView(kho, tin, cauHinh, { daRaHieu = false, giamSat = true, daXoaCachLy = false } = {}) {
+export function renderCapnhatView(kho, tin, cauHinh, { daRaHieu = false, giamSat = true, daXoaCachLy = false, banRon = null } = {}) {
   const phienBan = docPhienBan();
 
   if (!kho?.laKho) {
@@ -143,6 +155,22 @@ export function renderCapnhatView(kho, tin, cauHinh, { daRaHieu = false, giamSat
     inline: false
   });
 
+  // Vòng tự động thì tự biết đợi. Còn quản trị gõ tay `!capnhat` là cố ý muốn
+  // cập nhật ngay, nên đây chỉ cảnh báo chứ không chặn — nhưng phải cảnh báo,
+  // vì con số này quyết định có nên bấm bây giờ hay đợi năm phút nữa.
+  if (daRaHieu && banRon?.tong > 0) {
+    embed.addFields({
+      name: '⚠️ Còn người đang giữa chừng',
+      value: truncate(
+        `**${banRon.tong}** đạo hữu đang dở việc (${moTaBanRon(banRon)}). Tắt bot lúc này là ` +
+        `họ mất lượt và mất luôn hồi chiêu đã trừ.\n` +
+        `👉 *Không gấp thì để vòng tự động lo — nó biết đợi tới lúc vắng người.*`,
+        EMBED_LIMITS.fieldValue
+      ),
+      inline: false
+    });
+  }
+
   embed.setFooter({ text: truncate('Chỉ tua nhanh · cây bẩn thì không đụng · bản mới hỏng thì tự quay lui', EMBED_LIMITS.footer) });
 
   return { embeds: [embed] };
@@ -194,7 +222,7 @@ export async function executeCapnhat(message, args = []) {
 
   await dangCho.edit({
     content: '',
-    ...renderCapnhatView(kho, tin, cauHinh, { daRaHieu: seKeo, giamSat, daXoaCachLy })
+    ...renderCapnhatView(kho, tin, cauHinh, { daRaHieu: seKeo, giamSat, daXoaCachLy, banRon: demBanRon() })
   });
 
   if (seKeo) {
@@ -225,15 +253,49 @@ export function batTuDongKiemTra(client) {
 
   const chuKy = cauHinh.phutMoiLan * 60_000;
 
+  // Đếm số lượt đã hoãn vì còn người đang đánh, và nhớ đã báo trước chưa để
+  // khỏi nhắn cùng một câu vào kênh mỗi 5 phút suốt nửa tiếng.
+  let soLuotDaHoan = 0;
+  let daBaoTruoc = false;
+
   const soat = async () => {
     try {
       const tin = await timCapNhat(cauHinh);
-      if (!tin.coMoi) return;
+      if (!tin.coMoi) {
+        // Không còn gì để kéo — có thể quản trị đã tự cập nhật tay, hoặc commit
+        // hỏng vừa bị gỡ. Trả bộ đếm về 0 để lần sau lại được hoãn đủ suất.
+        soLuotDaHoan = 0;
+        daBaoTruoc = false;
+        return;
+      }
 
       const kho = await trangThaiKho(cauHinh);
       if (!kho.sach) {
         console.warn(`[Cập nhật] Có ${tin.soCommit} commit mới nhưng máy chủ đang có file sửa dở — bỏ qua lượt này.`);
         return;
+      }
+
+      // Trận đấu, phó bản và độ kiếp nằm trong RAM: tắt bot là mất sạch, mà
+      // người chơi thì đã bị trừ hồi chiêu rồi. Đợi họ đánh xong đã.
+      const ban = demBanRon();
+      if (ban.tong > 0 && soLuotDaHoan < SO_LUOT_HOAN_TOI_DA) {
+        soLuotDaHoan++;
+        console.log(
+          `[Cập nhật] Có ${tin.soCommit} commit mới nhưng còn ${ban.tong} người giữa chừng ` +
+          `(${moTaBanRon(ban)}) — hoãn lượt ${soLuotDaHoan}/${SO_LUOT_HOAN_TOI_DA}.`
+        );
+        if (!daBaoTruoc) {
+          daBaoTruoc = true;
+          await baoKenhSapCapNhat(client, cauHinh, ban);
+        }
+        return;
+      }
+
+      if (ban.tong > 0) {
+        console.warn(
+          `[Cập nhật] Đã hoãn đủ ${SO_LUOT_HOAN_TOI_DA} lượt mà vẫn còn ${ban.tong} người ` +
+          `(${moTaBanRon(ban)}) — cập nhật luôn, không đợi nữa.`
+        );
       }
 
       await baoKenh(client, cauHinh, tin);
@@ -251,6 +313,32 @@ export function batTuDongKiemTra(client) {
   hen.unref?.();
   setTimeout(soat, 30_000).unref?.();
   return hen;
+}
+
+/**
+ * Báo trước rằng có bản mới nhưng bot đang đợi mọi người đánh xong.
+ *
+ * Chỉ nhắn đúng một lần cho mỗi đợt chờ. Người đang đánh dở biết mà kết thúc
+ * sớm, người sắp bắt đầu biết mà khoan vào phó bản.
+ */
+async function baoKenhSapCapNhat(client, cauHinh, ban) {
+  if (!cauHinh.kenhBaoTin) return;
+  try {
+    const kenh = await client.channels.fetch(cauHinh.kenhBaoTin);
+    if (!kenh?.isTextBased?.()) return;
+    const toiDaPhut = SO_LUOT_HOAN_TOI_DA * cauHinh.phutMoiLan;
+    await kenh.send({
+      content: truncate(
+        `⏳ **Sắp bế quan cập nhật** — có bản mới, nhưng còn **${ban.tong}** đạo hữu đang giữa chừng ` +
+        `(${moTaBanRon(ban)}).\n` +
+        `Bot sẽ đợi tới khi sân đấu vắng người, chậm nhất là **${toiDaPhut} phút** nữa.\n` +
+        `👉 *Đang đánh dở thì kết thúc sớm giúp; khoan vào phó bản mới trong lúc này.*`,
+        EMBED_LIMITS.description
+      )
+    });
+  } catch (e) {
+    console.warn(`[Cập nhật] Không báo trước được vào kênh ${cauHinh.kenhBaoTin}: ${che(e?.message || e)}`);
+  }
 }
 
 /** Nhắn vào kênh đã khai trong .env rằng bot sắp tắt để cập nhật. */

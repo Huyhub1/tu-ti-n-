@@ -3,6 +3,7 @@ import { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMe
 import { User } from '../../database/models/User.js';
 import { checkCooldown, formatWait, checkBattleReady } from '../../utils/cooldown.js';
 import { meetsRequirement, requirementLabel } from '../../utils/power.js';
+import { dangKyNguonBanRon } from '../../utils/banRon.js';
 
 import { combatSessions, pickCombatSkills, pickCombatGears, trimButtonLabel } from './hunting.js';
 import fs from 'fs';
@@ -15,6 +16,10 @@ const dungeonsConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../../co
 
 // Lưu trạng thái ải phó bản đang chiến đấu: dungeonCombatSessions[userId]
 export const dungeonCombatSessions = {};
+
+// Phó bản là chỗ đắt nhất để bị cắt ngang: hồi chiêu tới 120 giây, và người
+// chơi thường đã đánh qua vài ải mới tới boss.
+dangKyNguonBanRon('phó bản', () => Object.keys(dungeonCombatSessions).length);
 
 // Tự động dọn dẹp các phiên chiến đấu phó bản không tương tác quá 10 phút (giải phóng RAM)
 // `.unref()` ở cuối để bộ đếm không giữ tiến trình Node sống: bot vẫn chạy nhờ
