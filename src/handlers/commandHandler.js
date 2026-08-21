@@ -266,13 +266,13 @@ export async function handlePrefixCommand(message, prefix = '!') {
       case 'dotpha':
       case 'break':
       case 'breakthrough':
-        return await executeDotpha(message);
+        return await executeDotpha(message, args);
 
       case 'dokiep':
       case 'thienkiep':
       case 'loikiep':
       case 'tribulation':
-        return await executeDokiep(message);
+        return await executeDokiep(message, args);
 
       case 'santhu':
       case 'hunt':

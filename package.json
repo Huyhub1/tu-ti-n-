@@ -15,11 +15,12 @@
     "test:race": "node tests/testRaceConditions.js",
     "test:sanitize": "node tests/testSanitize.js",
     "audit": "node scripts/auditCodebase.js",
-    "check:release": "npm run audit && npm test && npm run test:e2e && npm run test:ui && npm run test:sanitize && npm run test:tutorial && npm run test:power && npm run test:update && npm run smoke:tanthu && npm run test:race",
+    "check:release": "npm run audit && npm test && npm run test:e2e && npm run test:ui && npm run test:sanitize && npm run test:tutorial && npm run test:power && npm run test:update && npm run test:dotpha && npm run smoke:tanthu && npm run test:race",
     "test:tutorial": "node tests/testTutorial.js",
     "test:power": "node tests/testBattlePower.js",
     "smoke:tanthu": "node tests/smokeTanthu.js",
-    "test:update": "node tests/testUpdateService.js"
+    "test:update": "node tests/testUpdateService.js",
+    "test:dotpha": "node tests/testDotpha.js"
   },
   "dependencies": {
     "chalk": "^5.3.0",

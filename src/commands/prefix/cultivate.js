@@ -3,7 +3,7 @@ import { User } from '../../database/models/User.js';
 import { Sect } from '../../database/models/Sect.js';
 
 
-import { attemptBreakthrough, calculateUserMaxExp } from '../../services/cultivationService.js';
+import { attemptBreakthrough, calculateUserMaxExp, sapDanhCuocDotPha, tiLeDotPhaThucTe } from '../../services/cultivationService.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -17,6 +17,8 @@ import { getFactionBuffs } from '../../services/factionService.js';
 import { COOLDOWNS, claimCooldown, cooldownLine } from '../../utils/cooldown.js';
 import { repeatRow } from '../../utils/repeatButton.js';
 import { tutorialNudge } from '../../services/tutorialService.js';
+import { canhBaoThieuHoMach, laXacNhan, demHoMachDan } from '../../utils/hoMachDan.js';
+import { truncate, EMBED_LIMITS } from '../../utils/embedLimits.js';
 
 const CULTIVATE_COOLDOWN_SECONDS = COOLDOWNS.cultivate;
 
@@ -182,32 +184,84 @@ export async function executeTuluyen(message) {
   await message.reply(await buildTuluyenView(message.author.id));
 }
 
-export async function executeDotpha(message) {
+/** Người chơi có đang đứng trước ngã rẽ Trúc Cơ / Nén Khí không? */
+export function dangDungTruocNgaRe(user) {
+  return user?.realm?.id === 'luyen_khi'
+    && user?.realm?.layer === 4
+    && !user?.isLuyenKhiVanTang
+    && user?.realm?.exp >= user?.realm?.maxExp;
+}
+
+/**
+ * Màn hình chọn nhánh ở Luyện Khí Đỉnh Phong.
+ *
+ * Đây là chỗ DUY NHẤT người chơi thật sự ra quyết định, nên mọi cảnh báo phải
+ * nằm ngay tại đây chứ không phải sau khi đã bấm: nút Trúc Cơ đánh cược tức
+ * thì, còn nút Nén Khí là lựa chọn MỘT CHIỀU, không có đường lui.
+ */
+export function buildNgaReView(user) {
+  const tiLe = Math.round(tiLeDotPhaThucTe(user) * 100);
+
+  const embed = new EmbedBuilder()
+    .setTitle(truncate('⚡ [NGÃ RẼ ĐẠI ĐẠO] - Luyện Khí Đỉnh Phong', EMBED_LIMITS.title))
+    .setColor('#FF9800')
+    .setDescription(truncate(
+      `Đạo hữu đã đạt tới cảnh giới **Luyện Khí Đỉnh Phong**, đứng trước 2 sự lựa chọn lớn:\n\n` +
+      `1. ⚡ **Đột Phá Trúc Cơ Kỳ** — *tỉ lệ thành công **${tiLe}%***\n` +
+      `   - Vượt Lôi Kiếp, đúc Đạo Cơ, thọ nguyên tăng 200 năm, mở khóa ngự kiếm phi hành.\n` +
+      `   - Trượt thì tụt 1 tầng, EXP còn 40% — nhưng vẫn còn đường cày lại.\n\n` +
+      `2. ⚔️ **Vạn Cổ Luyện Khí (Kế Thừa Từ Dương - 100k Năm)** — *chắc chắn thành công*\n` +
+      `   - Từ chối Trúc Cơ, tiếp tục **Nén Khí Hải** lên Luyện Khí Tầng 5 ➜ 50.\n` +
+      `   - Pháp lực tích trữ vô cùng tận, **miễn nhiễm 100% Thiên Kiếp Lôi Phạt**, 1 đấm phá nát Kim Đan!\n` +
+      `   - ⛔ **Chọn rồi là VĨNH VIỄN:** không bao giờ quay lại đường Trúc Cơ ➜ Kim Đan ➜ Nguyên Anh được nữa.`,
+      EMBED_LIMITS.description
+    ));
+
+  if (demHoMachDan(user) < 1) {
+    embed.addFields({
+      name: '⚠️ Trong túi không có Hộ Mạch Đan',
+      value: truncate(
+        `Bấm **Đột Phá Trúc Cơ** lúc này là cược trắng: trượt là tụt tầng thật.\n` +
+        `Có Hộ Mạch Đan thì trượt vẫn **giữ nguyên cảnh giới**, chỉ hao 15% tu vi.\n` +
+        `👉 \`!luyendan ho_mach_dan\` — luyện được từ Luyện Khí tầng 2, nguyên liệu rẻ.`,
+        EMBED_LIMITS.fieldValue
+      ),
+      inline: false
+    });
+  }
+
+  const row = new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`btn_break_trucco_${user.userId}`).setLabel('⚡ Đột Phá Trúc Cơ').setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId(`btn_break_nenkhi_${user.userId}`).setLabel('⚔️ Nén Khí Hải (Từ Dương)').setStyle(ButtonStyle.Danger)
+  );
+
+  return { embeds: [embed], components: [row] };
+}
+
+export async function executeDotpha(message, args = []) {
   const user = await User.findOne({ userId: message.author.id });
   if (!user) {
     return message.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.` });
   }
 
-  // Nếu đang ở Luyện Khí Đỉnh Phong (layer 4) và chưa chọn nhánh Nén Khí
-  if (user.realm.id === 'luyen_khi' && user.realm.layer === 4 && !user.isLuyenKhiVanTang && user.realm.exp >= user.realm.maxExp) {
-    const embed = new EmbedBuilder()
-      .setTitle(`⚡ [NGÃ RẼ ĐẠI ĐẠO] - Luyện Khí Đỉnh Phong`)
-      .setColor('#FF9800')
-      .setDescription(
-        `Đạo hữu đã đạt tới cảnh giới **Luyện Khí Đỉnh Phong**, đứng trước 2 sự lựa chọn lớn:\n\n` +
-        `1. ⚡ **Đột Phá Trúc Cơ Kỳ:**\n` +
-        `   - Vượt Lôi Kiếp, đúc Đạo Cơ, thọ nguyên tăng 200 năm, mở khóa ngự kiếm phi hành.\n\n` +
-        `2. ⚔️ **Vạn Cổ Luyện Khí (Kế Thừa Từ Dương - 100k Năm):**\n` +
-        `   - Từ chối Trúc Cơ, tiếp tục **Nén Khí Hải** lên Luyện Khí Tầng 5 ➜ 50+.\n` +
-        `   - Pháp lực tích trữ vô cùng tận, **miễn nhiễm 100% Thiên Kiếp Lôi Phạt**, 1 đấm phá nát Kim Đan!`
-      );
+  // Ngã rẽ Luyện Khí Đỉnh Phong phải xét TRƯỚC: ở đây `!dotpha` không hề đánh
+  // cược, nó chỉ mở màn hình chọn nhánh. Chặn trước cửa này là bắt người chơi
+  // gõ `xacnhan` để... đọc một cái menu, rồi lại bị cảnh báo lần nữa ngay trên
+  // chính menu đó. Lời cảnh báo cho nhánh Trúc Cơ nằm sẵn trong màn hình ấy.
+  if (dangDungTruocNgaRe(user)) {
+    return message.reply(buildNgaReView(user));
+  }
 
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId(`btn_break_trucco_${user.userId}`).setLabel('⚡ Đột Phá Trúc Cơ').setStyle(ButtonStyle.Success),
-      new ButtonBuilder().setCustomId(`btn_break_nenkhi_${user.userId}`).setLabel('⚔️ Nén Khí Hải (Từ Dương)').setStyle(ButtonStyle.Danger)
-    );
-
-    return message.reply({ embeds: [embed], components: [row] });
+  // Chỉ chặn đúng lượt có tung xúc xắc. Lên tiểu cảnh giới và nhánh Nén Khí
+  // đều thắng 100%, doạ ở đó chỉ khiến người chơi ôm EXP đầy mà không dám bấm.
+  if (!laXacNhan(args) && sapDanhCuocDotPha(user)) {
+    const canhBao = canhBaoThieuHoMach(user, {
+      tieuDe: '⚠️ [KHOAN ĐÃ] — CHƯA CÓ HỘ MẠCH ĐAN MÀ ĐÒI ĐỘT PHÁ',
+      tiLe: tiLeDotPhaThucTe(user),
+      hauQua: 'Chân khí nghịch chuyển, **tụt xuống 1 tầng cảnh giới** và EXP chỉ còn 40% của tầng mới.',
+      lenhLieu: '!dotpha xacnhan'
+    });
+    if (canhBao) return message.reply({ embeds: [canhBao] });
   }
 
   const result = attemptBreakthrough(user);

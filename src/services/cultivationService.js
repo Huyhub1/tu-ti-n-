@@ -119,6 +119,74 @@ export function calculateUserMaxExp(user, realmId, layer, isLuyenKhiVanTang = fa
   return Math.max(1, Math.floor(base * (1 - discount)));
 }
 
+/**
+ * Tỉ lệ đột phá THỰC TẾ của nhân vật, tính cả buff trận doanh và Trúc Cơ Đan.
+ *
+ * Soi gương đúng phép tính trong `attemptBreakthrough` nhưng KHÔNG tiêu buff —
+ * dùng để hiển thị. Lấy thẳng `breakSuccessRate` trong config mà khoe với người
+ * chơi là nói sai: người Chính Đạo vừa uống Trúc Cơ Đan có tỉ lệ cao hơn hẳn.
+ */
+export function tiLeDotPhaThucTe(user) {
+  const config = getRealmsConfig();
+  const realm = config.realms.find(r => r.id === user?.realm?.id) || config.realms[0];
+
+  // Buff trận doanh là hệ số NHÂN tương đối, không phải cộng thẳng:
+  // cộng thẳng +0.25 vào Nguyên Anh (0.25) sẽ thành 0.50 — gấp đôi, quá lệch.
+  const goc = realm.breakSuccessRate || 0.60;
+  let rate = goc;
+
+  const factionBuffs = getFactionBuffs(user?.faction);
+  if (factionBuffs.breakSuccessBonus > 0) rate *= (1 + factionBuffs.breakSuccessBonus);
+
+  const breakBuff = user?.breakthroughBuff || 0;
+  if (breakBuff > 0) rate *= (1 + breakBuff);
+
+  // Trần 0.95 là để chặn buff thổi tỉ lệ lên gần chắc thắng. Nhưng config ghi
+  // thẳng 1.0 (Phàm Nhân ➜ Luyện Khí) là cố ý cho chắc thắng — kẹp nó xuống
+  // 0.95 nghĩa là ngay lần đột phá đầu đời, tân thủ vẫn có 5% ăn nguyên cái
+  // thông báo "BỊ CẮN TRẢ TỤT TU VI" đỏ lòm. Tôn trọng ý đồ của config.
+  if (goc >= 1) return 1;
+  return Math.min(0.95, rate);
+}
+
+/**
+ * `!dotpha` lần này có thật sự đánh cược cảnh giới không?
+ *
+ * Hầu hết các lần gõ `!dotpha` KHÔNG hề rủi ro: lên tiểu cảnh giới (Sơ Kỳ ➜
+ * Trung Kỳ ➜ Hậu Kỳ ➜ Đỉnh Phong) và nhánh Nén Khí Vạn Tầng đều thành công
+ * 100%. Chỉ nhánh 3 — vượt sang đại cảnh giới mới — mới tung xúc xắc.
+ *
+ * Phải soi đúng theo `attemptBreakthrough`, vì doạ người chơi ở một lượt chắc
+ * thắng còn tai hại hơn là im lặng: họ sẽ ngồi ôm EXP đầy mà không dám bấm.
+ */
+export function sapDanhCuocDotPha(user) {
+  const config = getRealmsConfig();
+  const realm = config.realms.find(r => r.id === user?.realm?.id);
+  if (!realm) return false;
+
+  // Chưa đầy tu vi thì `attemptBreakthrough` từ chối ngay, chưa tới lượt cược.
+  if (!(user?.realm?.exp >= user?.realm?.maxExp)) return false;
+
+  // Nhánh 1: còn tầng để lên trong cùng cảnh giới — chắc chắn thành công.
+  if ((user.realm.layer || 1) < realm.maxLayer) return false;
+
+  // Nhánh 2: Nén Khí Vạn Tầng — cũng chắc chắn thành công (hoặc chạm trần bản).
+  if (user.isLuyenKhiVanTang && realm.canCompress) return false;
+
+  // Hết nội dung của phiên bản: không cược gì cả, chỉ báo hết đường.
+  const nextRealmId = realm.nextRealmId;
+  if (!nextRealmId) return false;
+  if (!config.realms.some(r => r.id === nextRealmId)) return false;
+
+  // Kim Đan ➜ Nguyên Anh bị đá sang `!dokiep`, `!dotpha` không cược ở đây.
+  if (realm.id === 'kim_dan' && nextRealmId === 'nguyen_anh') return false;
+
+  // Phàm Nhân ➜ Luyện Khí có tỉ lệ 1.0: chắc thắng, đừng doạ.
+  if (tiLeDotPhaThucTe(user) >= 1) return false;
+
+  return true;
+}
+
 export function attemptBreakthrough(user) {
   const config = getRealmsConfig();
   const currentRealm = config.realms.find(r => r.id === user.realm.id) || config.realms[0];
@@ -217,23 +285,13 @@ export function attemptBreakthrough(user) {
   }
 
 
-  // Tính tỉ lệ thành công.
-  // Buff trận doanh là hệ số NHÂN tương đối, không phải cộng thẳng:
-  // cộng thẳng +0.25 vào Nguyên Anh (0.25) sẽ thành 0.50 — gấp đôi, quá lệch.
-  let successRate = currentRealm.breakSuccessRate || 0.60;
-  const factionBuffs = getFactionBuffs(user.faction);
-  if (factionBuffs.breakSuccessBonus > 0) {
-    successRate *= (1 + factionBuffs.breakSuccessBonus);
-  }
-  // Trúc Cơ Đan: cộng tương đối như buff trận doanh, và tiêu ngay dù thành
-  // hay bại — nếu chỉ tiêu khi thất bại thì uống một viên là buff vĩnh viễn.
-  const breakBuff = user.breakthroughBuff || 0;
-  if (breakBuff > 0) {
-    successRate *= (1 + breakBuff);
-    user.breakthroughBuff = 0;
-  }
+  // Dùng chung một hàm với con số khoe trên màn hình. Trước đây hai chỗ chép
+  // tay cùng phép tính, nên chỉ cần sửa lệch một bên là bot nói dối người chơi.
+  const successRate = tiLeDotPhaThucTe(user);
 
-  successRate = Math.min(0.95, successRate);
+  // Trúc Cơ Đan tiêu ngay dù thành hay bại — nếu chỉ tiêu khi thất bại thì
+  // uống một viên là có buff vĩnh viễn.
+  user.breakthroughBuff = 0;
 
   const roll = Math.random();
   if (roll <= successRate) {

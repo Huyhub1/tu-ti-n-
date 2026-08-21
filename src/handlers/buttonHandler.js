@@ -2,7 +2,7 @@ import { EmbedBuilder, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyl
 import { User } from '../database/models/User.js';
 import { MarketItem } from '../database/models/MarketItem.js';
 import { Sect } from '../database/models/Sect.js';
-import { cultivate, buildTuluyenView } from '../commands/prefix/cultivate.js';
+import { cultivate, buildTuluyenView, dangDungTruocNgaRe } from '../commands/prefix/cultivate.js';
 import { buildLamcongView } from '../commands/prefix/work.js';
 import { buildDaokhoangView } from '../commands/prefix/mining.js';
 
@@ -301,6 +301,55 @@ export async function handleButton(interaction) {
       content: (payload && payload.content) || `❌ Chưa lĩnh được, thử lại sau giây lát.`,
       flags: MessageFlags.Ephemeral
     });
+  }
+
+  // 0.5 Ngã rẽ Luyện Khí Đỉnh Phong — hai nút này TỪNG KHÔNG CÓ NGƯỜI XỬ LÝ.
+  //
+  // Hậu quả: `!dotpha` ở Luyện Khí Đỉnh Phong luôn trả về màn hình chọn nhánh,
+  // bấm nút thì Discord báo "interaction failed", và `attemptBreakthrough` không
+  // bao giờ chạy tới. Không một ai vượt qua nổi đại cảnh giới đầu tiên —
+  // `isLuyenKhiVanTang` cũng chẳng có chỗ nào trong `src/` đặt thành true.
+  // Đây là bức tường chặn đứng toàn bộ tiến trình game, nên đừng gỡ khối này.
+  if (customId.startsWith('btn_break_trucco_') || customId.startsWith('btn_break_nenkhi_')) {
+    const chonNenKhi = customId.startsWith('btn_break_nenkhi_');
+    const ownerId = customId.slice(chonNenKhi ? 'btn_break_nenkhi_'.length : 'btn_break_trucco_'.length);
+
+    if (clickerId !== ownerId) {
+      return interaction.reply({
+        content: `⚠️ Ngã rẽ đại đạo này không phải của đạo hữu! Gõ \`!dotpha\` để mở ngã rẽ của mình.`,
+        flags: MessageFlags.Ephemeral
+      });
+    }
+
+    const user = await User.findOne({ userId: ownerId });
+    if (!user) {
+      return interaction.reply({ content: `❌ Không tìm thấy dữ liệu nhân vật!`, flags: MessageFlags.Ephemeral });
+    }
+
+    // Đọc lại từ DB rồi mới kiểm tra: bảng nút cũ có thể nằm trong kênh cả
+    // tiếng đồng hồ, người chơi đã đột phá bằng đường khác từ lâu.
+    if (!dangDungTruocNgaRe(user)) {
+      return interaction.reply({
+        content: `⚠️ Ngã rẽ đã khép lại (cảnh giới hiện tại: **${user.realm.name}**). Gõ \`!dotpha\` để xem tình hình mới nhất.`,
+        flags: MessageFlags.Ephemeral
+      });
+    }
+
+    if (chonNenKhi) {
+      // Một chiều, không có đường lui — nhưng chắc thắng, nên không cần cảnh báo
+      // Hộ Mạch Đan. Lời cảnh báo "chọn rồi là vĩnh viễn" đã in trên màn hình.
+      user.isLuyenKhiVanTang = true;
+    }
+
+    const result = attemptBreakthrough(user);
+    await user.save();
+
+    const embed = new EmbedBuilder()
+      .setTitle(result.success ? `✨ [TIẾN CẢNH ĐỘT PHÁ]` : `💥 [ĐỘT PHÁ TRẮC TRỞ]`)
+      .setColor(result.success ? '#FFD700' : '#F44336')
+      .setDescription(result.message);
+
+    return interaction.update({ embeds: [embed], components: [] });
   }
 
   // 1. Xử lý Chọn Trận Doanh khi Khởi Đầu

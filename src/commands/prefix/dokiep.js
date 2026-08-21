@@ -2,6 +2,7 @@ import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'disc
 import { User } from '../../database/models/User.js';
 import { Sect } from '../../database/models/Sect.js';
 import { dangKyNguonBanRon } from '../../utils/banRon.js';
+import { canhBaoThieuHoMach, laXacNhan } from '../../utils/hoMachDan.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -93,7 +94,7 @@ function getProgressBar(current, max, length = 10) {
 }
 
 // Lệnh chính: !dokiep
-export async function executeDokiep(message) {
+export async function executeDokiep(message, args = []) {
   const userId = message.author.id;
   const user = await User.findOne({ userId });
   if (!user) return message.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.` });
@@ -117,6 +118,19 @@ export async function executeDokiep(message) {
   // Đang trong trận độ kiếp dở dang
   if (dokiepSessions[userId]) {
     return message.reply({ content: `⚡ Đạo hữu đang trong đại kiếp! Hãy chọn thao tác đối phó trên bảng điều khiển!` });
+  }
+
+  // Chặn đúng một nhịp nếu vào trận tay không. Kiểm sau các cửa trên để người
+  // chưa đủ điều kiện không phải đọc một bức tường cảnh báo chẳng liên quan.
+  if (!laXacNhan(args)) {
+    const canhBao = canhBaoThieuHoMach(user, {
+      tieuDe: '⚠️ [KHOAN ĐÃ] — CHƯA CÓ HỘ MẠCH ĐAN MÀ ĐÒI ĐỘ KIẾP',
+      tiLe: realmsConfig.realms.find(r => r.id === 'kim_dan')?.breakSuccessRate ?? 0.35,
+      hauQua: 'Kim Đan nứt toác, tu vi tụt thẳng từ **Đỉnh Phong** về **Trung Kỳ**, EXP về `0`. ' +
+        'Công sức hai tầng coi như đổ sông.',
+      lenhLieu: '!dokiep xacnhan'
+    });
+    if (canhBao) return message.reply({ embeds: [canhBao] });
   }
 
   // Tính toán chỉ số khởi tạo cho phiên độ kiếp

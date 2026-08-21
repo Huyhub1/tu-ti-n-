@@ -176,9 +176,11 @@ export async function executeUongdan(message, args) {
   if (pillConfig && pillConfig.breakBonus) {
     const before = user.breakthroughBuff || 0;
     user.breakthroughBuff = Math.min(0.30, before + pillConfig.breakBonus);
+    // Buff là hệ số NHÂN tương đối (xem `tiLeDotPhaThucTe`), nên viết "+30%"
+    // trơn là để người chơi hiểu nhầm 60% thành 90% — thật ra là 78%.
     breakText = user.breakthroughBuff > before
-      ? `\n⚡ **Tỉ lệ đột phá kế tiếp** \`+${Math.round(user.breakthroughBuff * 100)}%\` *(dùng một lần)*`
-      : `\n⚠️ *Dược lực trợ đột phá đã đạt trần +30%, viên này chỉ còn tác dụng hồi phục.*`;
+      ? `\n⚡ **Tỉ lệ đột phá kế tiếp** \`×${(1 + user.breakthroughBuff).toFixed(2)}\` *(tăng ${Math.round(user.breakthroughBuff * 100)}% so với tỉ lệ hiện có, dùng một lần)*`
+      : `\n⚠️ *Dược lực trợ đột phá đã đạt trần ×1.30, viên này chỉ còn tác dụng hồi phục.*`;
   }
 
   // Trừ số lượng đan dược

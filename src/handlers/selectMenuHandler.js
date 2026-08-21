@@ -94,13 +94,20 @@ export async function handleSelectMenu(interaction) {
           .setDescription(
             `• **Bế Quan (\`!tuluyen\` - Delay 10s):** Nhận EXP Tu Vi theo thời gian.\n` +
             `• **Đột Phá (\`!dotpha\`):** Khi EXP đầy, tiến hành đột phá cảnh giới.\n` +
-            `• **Thiên Lôi Độ Kiếp (\`!dokiep\`):** Khi đạt Kim Đan Đỉnh Phong viên mãn, lệnh \`!dotpha\` sẽ khóa lại, tu sĩ bắt buộc phải gõ \`!dokiep\` để nghênh chiến 3 Đạo Thiên Lôi xé trời phá đan hóa Nguyên Anh!\n` +
+            `   - Lên **tiểu cảnh giới** (Sơ Kỳ ➜ Trung Kỳ ➜ Hậu Kỳ ➜ Đỉnh Phong): **chắc chắn thành công**, cứ gõ thoải mái.\n` +
+            `   - Vượt sang **đại cảnh giới** mới: đây mới là canh bạc — Luyện Khí 60% · Trúc Cơ 45% · Nguyên Anh 25%.\n` +
+            `🛡️ **Hộ Mạch Đan — tấm lưới an toàn:** trượt mà có đan thì **giữ nguyên cảnh giới**, chỉ hao 15% tu vi; trượt tay không thì **tụt 1 tầng**, EXP còn 40%.\n` +
+            `   - Luyện được từ **Luyện Khí tầng 2** (\`!luyendan ho_mach_dan\`), nguyên liệu rẻ, \`!diemdanh\` cũng rơi.\n` +
+            `   - Vào canh bạc mà túi rỗng, bot sẽ chặn lại nhắc một nhịp. Cố tình liều thì gõ \`!dotpha xacnhan\`.\n` +
+            `• **Thiên Lôi Độ Kiếp (\`!dokiep\`):** Khi đạt Kim Đan Đỉnh Phong viên mãn, lệnh \`!dotpha\` sẽ khóa lại, tu sĩ bắt buộc phải gõ \`!dokiep\` để nghênh chiến 3 Đạo Thiên Lôi xé trời phá đan hóa Nguyên Anh! (liều tay không: \`!dokiep xacnhan\`)\n` +
             `*(⚡ Cách thức hóa giải và sinh tồn trước thiên uy là bí mật của Thiên Đạo, tu sĩ phải tự mình chuẩn bị và đúc kết kinh nghiệm sinh tử!)*\n\n` +
             `🌟 **2 Lối Đi Cảnh Giới Độc Đáo:**\n` +
             `1. **Lối Đi Truyền Thống:** Phàm Nhân ➜ Luyện Khí ➜ Trúc Cơ ➜ Kim Đan ➜ **Nguyên Anh Kỳ**.\n` +
             `2. **Lối Đi Vạn Cổ Luyện Khí (Kế thừa Từ Dương - 100k Năm):**\n` +
-            `   - Ở Luyện Khí Tầng 9, tiếp tục **Nén Khí Hải** lên Luyện Khí Tầng 10 ➜ 50+.\n` +
-            `   - **Ưu điểm:** Khí hải vô tận, tăng vọt HP và Sát Thương, **miễn nhiễm 100% Thiên Kiếp Lôi Phạt**!`
+            `   - Tại **Luyện Khí Đỉnh Phong**, gõ \`!dotpha\` sẽ hiện **Ngã Rẽ Đại Đạo** để chọn 1 trong 2 nhánh.\n` +
+            `   - Chọn Nén Khí Hải: **chắc chắn thành công**, đi tiếp Luyện Khí Tầng 5 ➜ 50.\n` +
+            `   - **Ưu điểm:** Khí hải vô tận, tăng vọt HP và Sát Thương, **miễn nhiễm 100% Thiên Kiếp Lôi Phạt**!\n` +
+            `   - ⛔ **Nhưng là lựa chọn MỘT CHIỀU:** chọn rồi thì vĩnh viễn không quay lại đường Trúc Cơ ➜ Kim Đan ➜ Nguyên Anh được nữa.`
           );
         break;
 

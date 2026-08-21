@@ -242,16 +242,17 @@ Buff nội tại **đúng theo `src/config/factions.json`**:
 `Phàm Nhân ➜ Luyện Khí Kỳ ➜ Trúc Cơ Kỳ ➜ Kim Đan Kỳ ➜ Nguyên Anh Kỳ`
 
 * `!tuluyen` — bế quan hấp thụ linh khí (hồi chiêu 10s)
-* `!dotpha` — công phá cảnh giới; **thất bại mà không có Hộ Mạch Đan sẽ bị tụt tầng**
-* **Nén Khí Từ Dương:** tại Luyện Khí Tầng 9 có thể chọn nén lên **Tầng 10 ➜ 50+**, tăng vọt HP/ATK và miễn nhiễm lôi kiếp
-* `!dokiep` — tại Kim Đan Đỉnh Phong phải nghênh chiến **3 đạo Thiên Lôi**, chọn 1 trong 4 chiến thuật mỗi đạo
+* `!dotpha` — công phá cảnh giới. Lên **tiểu cảnh giới** (Sơ Kỳ ➜ Đỉnh Phong) là **chắc chắn thành công**; chỉ khi vượt sang **đại cảnh giới** mới tung xúc xắc (Luyện Khí 60% · Trúc Cơ 45% · Nguyên Anh 25%)
+* **Hộ Mạch Đan** là lưới an toàn: trượt mà có đan thì **giữ nguyên cảnh giới**, chỉ hao 15% tu vi; **trượt tay không thì tụt 1 tầng**, EXP còn 40%. Vào canh bạc với túi rỗng, bot chặn lại nhắc một nhịp — cố tình liều thì gõ `!dotpha xacnhan`
+* **Ngã Rẽ Đại Đạo:** tại **Luyện Khí Đỉnh Phong**, `!dotpha` mở màn hình chọn nhánh — đột phá Trúc Cơ, hoặc **Nén Khí Từ Dương** lên **Tầng 5 ➜ 50** (chắc chắn thành công, miễn nhiễm lôi kiếp, nhưng là lựa chọn **một chiều**)
+* `!dokiep` — tại Kim Đan Đỉnh Phong phải nghênh chiến **3 đạo Thiên Lôi**, chọn 1 trong 4 chiến thuật mỗi đạo (liều tay không: `!dokiep xacnhan`)
 * **5 phẩm Kim Đan** (Hạ ➜ Trung ➜ Thượng ➜ Cực ➜ Thiên Đạo Vô Khuyết) quyết định tiềm lực hậu Nguyên Anh
 
 ### 🔮 4. Luyện đan & Chợ Trời
 * Nguyên liệu: `!lamcong` hái **Linh Thảo**, `!santhu` thu **Yêu Đan + Linh Thảo** (**20 loài yêu thú**, mỗi loài rơi một loại Yêu Đan riêng)
 * `!luyendan` — **10 phương thuốc** trải 5 phẩm cấp Hoàng ➜ Thần Giai. Mỗi phương có **ngưỡng cảnh giới** riêng, chưa đủ hỏa hầu thì khoá lò. `!uongdan` để dùng
 * Thuộc tính vĩnh viễn từ đan có **trần hấp thụ theo cảnh giới** — đột phá xong mới nới thêm được
-* **Trúc Cơ Đan** cộng **+30% tỉ lệ đột phá** cho lần `!dotpha` kế tiếp (dùng một lần, cộng dồn tối đa +30%)
+* **Trúc Cơ Đan** nhân tỉ lệ đột phá kế tiếp lên **×1,30** — tức tăng 30% *so với tỉ lệ đang có*, không phải cộng thẳng 30 điểm (60% ➜ 78%). Dùng một lần, cộng dồn tối đa ×1,30
 * **Chợ Trời:** `!chotroi` xem hàng · `!ban <stt> <giá>` bán công pháp · `!bandan <stt> <giá>` bán đan · `!mua <mã>` · `!huyban <mã>` gỡ hàng
 * Luật chợ: **thuế 5%** trừ vào tiền người bán (Tán Tu miễn) · giá **10 – 10.000.000** Linh Thạch · tối đa **10 gian hàng**/người
 
