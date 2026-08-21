@@ -59,10 +59,25 @@ export async function connectDB() {
     try {
       console.log(chalk.cyan(`[Database] Đang kết nối tới MongoDB... (lần ${attempt}/${MAX_RETRIES})`));
       await mongoose.connect(uri, {
-        serverSelectionTimeoutMS: 5000,
-        connectTimeoutMS: 10000,
+        // Hai mốc chờ dưới đây từng là 5s và 10s. Đo trên một đường truyền thật
+        // đi qua VPN cho thấy mốc đó quá sát: 20 lần bắt tay TCP liên tiếp tới
+        // Atlas thì KHÔNG lần nào sạch gói — 11 lần mất 1 gói SYN, 7 lần mất từ
+        // 2 gói trở lên, 2 lần chết hẳn. Windows truyền lại SYN sau 0,5s rồi
+        // 1,5s rồi 3,5s, nên chỉ một gói rơi đã ngốn ~4s trong ngân sách 10s.
+        // Đây không phải giả định: cùng lúc đó Google và Discord vẫn về trong
+        // 200ms, nên là hỏng ở chặng đường chứ không phải máy hay Atlas chậm.
+        //
+        // Nới ra không làm chậm máy khoẻ — đường tốt vẫn nối xong trong 50ms và
+        // trả về ngay. Nó chỉ quyết định bot chịu đựng được bao lâu trước khi
+        // bỏ cuộc, mà bỏ cuộc sớm trên mạng rớt gói thì thành vòng lặp sập:
+        // supervisor bật lại, lại rớt gói, lại sập. Thà chờ thêm vài giây.
+        serverSelectionTimeoutMS: 15000,
+        connectTimeoutMS: 30000,
         socketTimeoutMS: 45000,
         maxPoolSize: 50,
+        // Mở sẵn 10 kết nối lúc khởi động. Trên đường rớt gói đây là 10 lần
+        // gieo xúc xắc cùng lúc, nhưng driver tự thử lại ngầm và không làm hỏng
+        // lượt nào của người chơi, nên giữ nguyên để đỡ độ trễ lúc cao điểm.
         minPoolSize: 10,
         family: 4 // Ép IPv4 để tránh Windows DNS IPv6 delay 300ms
       });
@@ -79,5 +94,6 @@ export async function connectDB() {
 
   console.error(chalk.red(`[Database] 💀 Không thể kết nối MongoDB sau ${MAX_RETRIES} lần thử. Dừng bot.`));
   console.log(chalk.yellow(`[Database] 💡 Kiểm tra MONGODB_URI, whitelist IP trên Atlas, hoặc dịch vụ MongoDB local.`));
+  console.log(chalk.yellow(`[Database] 💡 Đang bật VPN/proxy? Chúng hay làm rớt gói tin tới Atlas — thử tắt rồi chạy lại.`));
   process.exit(1);
 }
