@@ -15,7 +15,10 @@
         "yeuDanName": "Yêu Đan Sơ Cấp",
         "yeuDanCount": 1,
         "linhThach": 30
-      }
+      },
+      "healPercent": 0.3,
+      "minRealmId": "pham_nhan",
+      "minLayer": 1
     },
     {
       "id": "tu_khi_dan",
@@ -32,7 +35,10 @@
         "yeuDanName": "Yêu Đan Sơ Cấp",
         "yeuDanCount": 1,
         "linhThach": 50
-      }
+      },
+      "healPercent": 0.08,
+      "minRealmId": "pham_nhan",
+      "minLayer": 1
     },
     {
       "id": "tay_tuy_dan",
@@ -41,7 +47,10 @@
       "tierName": "Huyền Giai",
       "healHp": 300,
       "expGain": 350,
-      "statBonus": { "atk": 10, "def": 5 },
+      "statBonus": {
+        "atk": 10,
+        "def": 5
+      },
       "desc": "Tẩy rửa gân cốt, phạt mao hoán tủy, tăng vĩnh viễn +10 ATK và +5 DEF cùng +350 EXP.",
       "recipe": {
         "linhThao": 5,
@@ -49,7 +58,10 @@
         "yeuDanName": "Yêu Đan Trung Cấp",
         "yeuDanCount": 2,
         "linhThach": 120
-      }
+      },
+      "healPercent": 0.12,
+      "minRealmId": "luyen_khi",
+      "minLayer": 1
     },
     {
       "id": "truc_co_dan",
@@ -58,7 +70,9 @@
       "tierName": "Huyền Giai",
       "healHp": 500,
       "expGain": 500,
-      "statBonus": { "maxHp": 200 },
+      "statBonus": {
+        "maxHp": 200
+      },
       "desc": "Linh đan trứ danh của Trúc Cơ Cảnh, gia tăng 30% tỉ lệ thành công khi đột phá và +500 EXP.",
       "recipe": {
         "linhThao": 8,
@@ -66,7 +80,11 @@
         "yeuDanName": "Yêu Đan Trung Cấp",
         "yeuDanCount": 3,
         "linhThach": 200
-      }
+      },
+      "healPercent": 0.18,
+      "minRealmId": "luyen_khi",
+      "minLayer": 3,
+      "breakBonus": 0.3
     },
     {
       "id": "kim_dan_dan",
@@ -75,7 +93,11 @@
       "tierName": "Địa Giai",
       "healHp": 1000,
       "expGain": 1200,
-      "statBonus": { "atk": 25, "maxHp": 500, "def": 15 },
+      "statBonus": {
+        "atk": 25,
+        "maxHp": 500,
+        "def": 15
+      },
       "desc": "Đan dược thượng phẩm cô đọng bản nguyên Kim Đan, tăng vĩnh viễn +25 ATK, +500 HP và +1200 EXP.",
       "recipe": {
         "linhThao": 15,
@@ -83,7 +105,10 @@
         "yeuDanName": "Yêu Đan Cao Cấp",
         "yeuDanCount": 4,
         "linhThach": 450
-      }
+      },
+      "healPercent": 0.25,
+      "minRealmId": "truc_co",
+      "minLayer": 3
     },
     {
       "id": "ho_mach_dan",
@@ -92,7 +117,9 @@
       "tierName": "Huyền Giai",
       "healHp": 800,
       "expGain": 300,
-      "statBonus": { "def": 10 },
+      "statBonus": {
+        "def": 10
+      },
       "desc": "Đan dược bảo hộ tâm mạch, khi độ kiếp hoặc đột phá thất bại không bị tổn thương căn cơ.",
       "recipe": {
         "linhThao": 6,
@@ -100,7 +127,102 @@
         "yeuDanName": "Yêu Đan Trung Cấp",
         "yeuDanCount": 2,
         "linhThach": 150
-      }
+      },
+      "healPercent": 0.22,
+      "minRealmId": "luyen_khi",
+      "minLayer": 2
+    },
+    {
+      "id": "dai_hoan_don",
+      "name": "Đại Hoàn Đan",
+      "tier": "DIA_GIAI",
+      "tierName": "Địa Giai",
+      "healHp": 1500,
+      "healPercent": 0.6,
+      "expGain": 600,
+      "statBonus": {},
+      "desc": "Đan cứu mạng của Kim Đan chân nhân: hồi tức thì 60% sinh mệnh tối đa (tối thiểu 1.500 HP).",
+      "recipe": {
+        "linhThao": 12,
+        "yeuDan": "yeu_dan_cao_cap",
+        "yeuDanName": "Yêu Đan Cao Cấp",
+        "yeuDanCount": 3,
+        "linhThach": 600
+      },
+      "minRealmId": "truc_co",
+      "minLayer": 1
+    },
+    {
+      "id": "nguyen_anh_dan",
+      "name": "Nguyên Anh Ngưng Hình Đan",
+      "tier": "DIA_GIAI",
+      "tierName": "Địa Giai",
+      "healHp": 2500,
+      "healPercent": 0.35,
+      "expGain": 6000,
+      "statBonus": {
+        "atk": 40,
+        "def": 20,
+        "maxHp": 800
+      },
+      "desc": "Trợ đan kết Nguyên Anh: +6.000 EXP, vĩnh viễn +40 ATK / +20 DEF / +800 Max HP.",
+      "recipe": {
+        "linhThao": 25,
+        "yeuDan": "yeu_dan_cao_cap",
+        "yeuDanName": "Yêu Đan Cao Cấp",
+        "yeuDanCount": 6,
+        "linhThach": 1500
+      },
+      "minRealmId": "kim_dan",
+      "minLayer": 3
+    },
+    {
+      "id": "hoa_than_dan",
+      "name": "Hóa Thần Tẩy Nguyên Đan",
+      "tier": "THIEN_GIAI",
+      "tierName": "Thiên Giai",
+      "healHp": 6000,
+      "healPercent": 0.5,
+      "expGain": 20000,
+      "statBonus": {
+        "atk": 90,
+        "def": 45,
+        "maxHp": 1800
+      },
+      "desc": "Rửa sạch tạp chất trong Nguyên Anh: +20.000 EXP, vĩnh viễn +90 ATK / +45 DEF / +1.800 Max HP.",
+      "recipe": {
+        "linhThao": 40,
+        "yeuDan": "yeu_dan_thuong_pham",
+        "yeuDanName": "Yêu Đan Thượng Phẩm",
+        "yeuDanCount": 10,
+        "linhThach": 5000
+      },
+      "minRealmId": "nguyen_anh",
+      "minLayer": 1
+    },
+    {
+      "id": "cuu_chuyen_hoan_hon_dan",
+      "name": "Cửu Chuyển Hoàn Hồn Đan",
+      "tier": "THAN_GIAI",
+      "tierName": "Thần Giai",
+      "healHp": 15000,
+      "healPercent": 1,
+      "expGain": 60000,
+      "statBonus": {
+        "atk": 200,
+        "def": 100,
+        "maxHp": 4000
+      },
+      "desc": "Thần đan trong truyền thuyết, cải tử hoàn sinh: hồi đầy máu, +60.000 EXP, vĩnh viễn +200 ATK / +100 DEF / +4.000 Max HP.",
+      "recipe": {
+        "linhThao": 50,
+        "yeuDan": "yeu_dan_cuc_pham",
+        "yeuDanName": "Yêu Đan Cực Phẩm",
+        "yeuDanCount": 18,
+        "linhThach": 15000
+      },
+      "minRealmId": "nguyen_anh",
+      "minLayer": 3
     }
   ]
 }

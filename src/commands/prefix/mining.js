@@ -3,33 +3,40 @@ import { EmbedBuilder } from 'discord.js';
 import { User } from '../../database/models/User.js';
 import { getFactionBuffs } from '../../services/factionService.js';
 
-import { COOLDOWNS, formatWait, claimCooldown } from '../../utils/cooldown.js';
+import { COOLDOWNS, formatWait, claimCooldown, cooldownLine } from '../../utils/cooldown.js';
+import { repeatRow } from '../../utils/repeatButton.js';
+import { tutorialNudge } from '../../services/tutorialService.js';
 
 const MINING_COOLDOWN_SECONDS = COOLDOWNS.mining;
 
-export async function executeDaokhoang(message) {
-
-  const userId = message.author.id;
+/**
+ * Chạy một lượt đào khoáng rồi dựng sẵn nguyên gói tin nhắn để hiển thị.
+ *
+ * Tách khỏi executeDaokhoang để nút 'Đào tiếp' và lệnh gõ tay đi chung một
+ * đường, kể cả các nhánh báo lỗi hồi chiêu.
+ *
+ * Trả { content } khi không chạy được, { embeds, components } khi thành công.
+ */
+export async function buildDaokhoangView(userId) {
   let user = await User.findOne({ userId });
 
-  if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
+  if (!user) return { content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.` };
 
   const now = new Date();
   if (user.cooldowns.mining) {
     const elapsedSeconds = Math.floor((now - new Date(user.cooldowns.mining)) / 1000);
     if (elapsedSeconds < MINING_COOLDOWN_SECONDS) {
 
-      return message.reply({
+      return {
         content: `⏳ Đạo hữu vừa khai thác mỏ cạn kiệt thể lực! Vui lòng nghỉ ngơi thêm **${formatWait(MINING_COOLDOWN_SECONDS - elapsedSeconds)}**.`
-
-      });
+      };
     }
   }
 
   // Chiếm lượt nguyên tử — chặn spam song song nhân đôi khoáng sản.
-  const claimed = await claimCooldown(User, userId, 'mining');
+  const claimed = await claimCooldown(User, userId, 'mining', {}, { $inc: { 'counters.mining': 1 } });
   if (!claimed) {
-    return message.reply({ content: `⏳ Đạo hữu vung cuốc quá nhanh, địa mạch chưa kịp tụ khoáng! Chờ thêm giây lát.` });
+    return { content: `⏳ Đạo hữu vung cuốc quá nhanh, địa mạch chưa kịp tụ khoáng! Chờ thêm giây lát.` };
   }
   user = claimed;
 
@@ -69,8 +76,13 @@ export async function executeDaokhoang(message) {
       `💎 Kèm theo: **+${linhThachGained} Linh Thạch**\n\n` +
       `💰 **Tổng tài sản:** \`${user.currencies.nguyenThach.toLocaleString()} Nguyên Thạch\` | \`${user.currencies.linhThach.toLocaleString()} Linh Thạch\`\n` +
 
-      `⏱️ *Thời gian hồi chiêu: ${MINING_COOLDOWN_SECONDS} giây*`
+      cooldownLine('mining', user.cooldowns.mining) +
+      tutorialNudge(user)
     );
 
-  await message.reply({ embeds: [embed] });
+  return { embeds: [embed], components: repeatRow('daokhoang', userId) };
+}
+
+export async function executeDaokhoang(message) {
+  await message.reply(await buildDaokhoangView(message.author.id));
 }

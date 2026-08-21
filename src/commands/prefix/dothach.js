@@ -1,7 +1,7 @@
 import { EmbedBuilder } from 'discord.js';
 import { User } from '../../database/models/User.js';
 import { getAllSkills } from '../../services/skillService.js';
-import { COOLDOWNS, formatWait } from '../../utils/cooldown.js';
+import { COOLDOWNS, formatWait, cooldownLine } from '../../utils/cooldown.js';
 
 const DOTHACH_COOLDOWN_SECONDS = COOLDOWNS.dothach;
 
@@ -44,7 +44,7 @@ export async function executeDothach(message, args) {
   const userId = message.author.id;
   const user = await User.findOne({ userId });
 
-  if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
+  if (!user) return message.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.` });
 
   const now = new Date();
   if (user.cooldowns?.dothach) {
@@ -191,7 +191,7 @@ export async function executeDothach(message, args) {
     .setDescription(
       `${desc}\n\n` +
       `💰 **Tài sản hiện tại:** \`${(updated.currencies.nguyenThach || 0).toLocaleString()} Nguyên Thạch\` | \`${(updated.currencies.linhThach || 0).toLocaleString()} Linh Thạch\`\n` +
-      `⏱️ *Thời gian hồi chiêu: ${DOTHACH_COOLDOWN_SECONDS} giây · Cược tối đa ${DOTHACH_MAX_BET.toLocaleString()} LT*`
+      cooldownLine('dothach', updated.cooldowns.dothach, 'Cược tối đa ' + DOTHACH_MAX_BET.toLocaleString() + ' LT')
     );
 
   await message.reply({ embeds: [embed] });

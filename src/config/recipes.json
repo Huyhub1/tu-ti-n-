@@ -9,10 +9,16 @@
         "linhThach": 120,
         "nguyenThach": 1,
         "items": [
-          { "itemId": "yeu_dan_linh_tho_tinh", "name": "Yêu Đan [Linh Thỏ Tinh]", "quantity": 1 }
+          {
+            "itemId": "yeu_dan_linh_tho_tinh",
+            "name": "Yêu Đan [Linh Thỏ Tinh]",
+            "quantity": 1
+          }
         ]
       },
-      "desc": "Kiếm thép đúc từ quặng ngoại môn kết hợp linh khí Linh Thỏ, nhẹ bén cho đệ tử nhập môn."
+      "desc": "Kiếm thép đúc từ quặng ngoại môn kết hợp linh khí Linh Thỏ, nhẹ bén cho đệ tử nhập môn.",
+      "minRealmId": "pham_nhan",
+      "minLayer": 1
     },
     {
       "id": "recipe_cung_tien_moc_thi",
@@ -23,10 +29,16 @@
         "linhThach": 140,
         "nguyenThach": 1,
         "items": [
-          { "itemId": "yeu_dan_linh_tho_tinh", "name": "Yêu Đan [Linh Thỏ Tinh]", "quantity": 1 }
+          {
+            "itemId": "yeu_dan_linh_tho_tinh",
+            "name": "Yêu Đan [Linh Thỏ Tinh]",
+            "quantity": 1
+          }
         ]
       },
-      "desc": "Cung làm từ gỗ cổ thụ trăm năm sau núi, dùng gân thỏ linh thiêng làm dây cung bắn cực nhanh."
+      "desc": "Cung làm từ gỗ cổ thụ trăm năm sau núi, dùng gân thỏ linh thiêng làm dây cung bắn cực nhanh.",
+      "minRealmId": "pham_nhan",
+      "minLayer": 1
     },
     {
       "id": "recipe_dan_hoang_cuc",
@@ -37,10 +49,16 @@
         "linhThach": 180,
         "nguyenThach": 2,
         "items": [
-          { "itemId": "yeu_dan_linh_tho_tinh", "name": "Yêu Đan [Linh Thỏ Tinh]", "quantity": 2 }
+          {
+            "itemId": "yeu_dan_linh_tho_tinh",
+            "name": "Yêu Đan [Linh Thỏ Tinh]",
+            "quantity": 2
+          }
         ]
       },
-      "desc": "Pháp bảo ngưng tụ từ 2 Yêu Đan Linh Thỏ đeo ở đai lưng giúp tĩnh tâm tăng 5% EXP."
+      "desc": "Pháp bảo ngưng tụ từ 2 Yêu Đan Linh Thỏ đeo ở đai lưng giúp tĩnh tâm tăng 5% EXP.",
+      "minRealmId": "pham_nhan",
+      "minLayer": 1
     },
     {
       "id": "recipe_trong_kiem_huyen_kim",
@@ -51,10 +69,16 @@
         "linhThach": 350,
         "nguyenThach": 3,
         "items": [
-          { "itemId": "yeu_dan_thach_giap_tru", "name": "Yêu Đan [Thạch Giáp Dã Trư]", "quantity": 2 }
+          {
+            "itemId": "yeu_dan_thach_giap_tru",
+            "name": "Yêu Đan [Thạch Giáp Dã Trư]",
+            "quantity": 2
+          }
         ]
       },
-      "desc": "Lấy da bọc đá của Dã Trư cùng 2 Yêu Đan nung đúc thành cự kiếm ngàn cân không mài bén."
+      "desc": "Lấy da bọc đá của Dã Trư cùng 2 Yêu Đan nung đúc thành cự kiếm ngàn cân không mài bén.",
+      "minRealmId": "luyen_khi",
+      "minLayer": 1
     },
     {
       "id": "recipe_luoi_an_nguyet_ao_vu",
@@ -65,10 +89,16 @@
         "linhThach": 400,
         "nguyenThach": 4,
         "items": [
-          { "itemId": "yeu_dan_u_anh_hac_bao", "name": "Yêu Đan [U Ảnh Hắc Báo]", "quantity": 2 }
+          {
+            "itemId": "yeu_dan_u_anh_hac_bao",
+            "name": "Yêu Đan [U Ảnh Hắc Báo]",
+            "quantity": 2
+          }
         ]
       },
-      "desc": "Lưỡi đao bóng đêm hấp thu tốc độ của Hắc Báo, xuất đao vô thanh vô tức dưới ánh trăng."
+      "desc": "Lưỡi đao bóng đêm hấp thu tốc độ của Hắc Báo, xuất đao vô thanh vô tức dưới ánh trăng.",
+      "minRealmId": "luyen_khi",
+      "minLayer": 2
     },
     {
       "id": "recipe_kiem_ly_hoa",
@@ -79,24 +109,36 @@
         "linhThach": 450,
         "nguyenThach": 5,
         "items": [
-          { "itemId": "yeu_dan_xich_diem_lang", "name": "Yêu Đan [Xích Diễm Yêu Lang]", "quantity": 2 }
+          {
+            "itemId": "yeu_dan_xich_diem_lang",
+            "name": "Yêu Đan [Xích Diễm Yêu Lang]",
+            "quantity": 2
+          }
         ]
       },
-      "desc": "Dùng lửa nung trong Yêu Đan Sói Lửa tôi luyện kiếm khí rực cháy thiêu đốt vạn vật."
+      "desc": "Dùng lửa nung trong Yêu Đan Sói Lửa tôi luyện kiếm khí rực cháy thiêu đốt vạn vật.",
+      "minRealmId": "luyen_khi",
+      "minLayer": 3
     },
     {
       "id": "recipe_bua_ma_thien",
       "targetEquipmentId": "bua_ma_thien",
       "name": "Đúc [Búa Ma Thiên]",
-      "rarity": "HUYEN_GIAI",
+      "rarity": "DIA_GIAI",
       "requirements": {
-        "linhThach": 550,
-        "nguyenThach": 6,
+        "linhThach": 2800,
+        "nguyenThach": 22,
         "items": [
-          { "itemId": "yeu_dan_bach_dien_ho", "name": "Yêu Đan [Bạch Diện Cuồng Hùng]", "quantity": 2 }
+          {
+            "itemId": "yeu_dan_thanh_giao_hai_xa",
+            "name": "Yêu Đan [Thanh Giao Hải Xà]",
+            "quantity": 3
+          }
         ]
       },
-      "desc": "Chiến búa Ma Tộc tích tụ cự lực của Cuồng Hùng, bổ xuống một đòn làm nứt toác mặt đất."
+      "desc": "Búa nặng ngàn cân tôi trong nước biển sâu, vảy Thanh Giao Hải Xà nung chảy phủ lên đầu búa thành lớp giáp long lân.",
+      "minRealmId": "kim_dan",
+      "minLayer": 1
     },
     {
       "id": "recipe_dao_huyet_xich",
@@ -104,13 +146,19 @@
       "name": "Huyết Luyện [Đao Huyết Xích]",
       "rarity": "DIA_GIAI",
       "requirements": {
-        "linhThach": 800,
-        "nguyenThach": 8,
+        "linhThach": 3000,
+        "nguyenThach": 24,
         "items": [
-          { "itemId": "yeu_dan_bich_lan_huyet_mang", "name": "Yêu Đan [Bích Lân Huyết Mãng]", "quantity": 3 }
+          {
+            "itemId": "yeu_dan_huyet_nguyet_lang_vuong",
+            "name": "Yêu Đan [Huyết Nguyệt Lang Vương]",
+            "quantity": 3
+          }
         ]
       },
-      "desc": "Ngâm lưỡi đao trong huyết dịch Mãng Xà ngàn năm, đao chém ra kèm theo khả năng hút máu kẻ thù."
+      "desc": "Ngâm lưỡi đao trong huyết dịch Mãng Xà ngàn năm, đao chém ra kèm theo khả năng hút máu kẻ thù.",
+      "minRealmId": "truc_co",
+      "minLayer": 4
     },
     {
       "id": "recipe_dao_han_suong",
@@ -121,10 +169,16 @@
         "linhThach": 600,
         "nguyenThach": 6,
         "items": [
-          { "itemId": "yeu_dan_bang_tinh_tuyet_dieu", "name": "Yêu Đan [Băng Tinh Tuyết Điêu]", "quantity": 2 }
+          {
+            "itemId": "yeu_dan_bang_tinh_tuyet_dieu",
+            "name": "Yêu Đan [Băng Tinh Tuyết Điêu]",
+            "quantity": 2
+          }
         ]
       },
-      "desc": "Tôi luyện trong băng phách đỉnh tuyết sơn cùng Yêu Đan Tuyết Điêu, đao chém ra làn sương buốt giá."
+      "desc": "Tôi luyện trong băng phách đỉnh tuyết sơn cùng Yêu Đan Tuyết Điêu, đao chém ra làn sương buốt giá.",
+      "minRealmId": "truc_co",
+      "minLayer": 1
     },
     {
       "id": "recipe_thuong_am_sam_xanh",
@@ -135,10 +189,251 @@
         "linhThach": 750,
         "nguyenThach": 8,
         "items": [
-          { "itemId": "yeu_dan_loi_tinh_cuong_su", "name": "Yêu Đan [Lôi Tinh Cuồng Sư]", "quantity": 2 }
+          {
+            "itemId": "yeu_dan_loi_tinh_cuong_su",
+            "name": "Yêu Đan [Lôi Tinh Cuồng Sư]",
+            "quantity": 2
+          }
         ]
       },
-      "desc": "Thương dài dẫn lôi điện từ Yêu Đan Cuồng Sư, mỗi đòn đâm tóe ra sấm sét tê liệt."
+      "desc": "Thương dài dẫn lôi điện từ Yêu Đan Cuồng Sư, mỗi đòn đâm tóe ra sấm sét tê liệt.",
+      "minRealmId": "truc_co",
+      "minLayer": 4
+    },
+    {
+      "id": "recipe_song_nhan_hong_lien",
+      "targetEquipmentId": "song_nhan_hong_lien",
+      "name": "Huyết Đúc [Song Nhận Hồng Liên]",
+      "rarity": "DIA_GIAI",
+      "minRealmId": "truc_co",
+      "minLayer": 4,
+      "requirements": {
+        "linhThach": 3000,
+        "nguyenThach": 22,
+        "items": [
+          {
+            "itemId": "yeu_dan_huyet_nguyet_lang_vuong",
+            "name": "Yêu Đan [Huyết Nguyệt Lang Vương]",
+            "quantity": 3
+          }
+        ]
+      },
+      "desc": "Đôi đao cong nhuộm máu Lang Vương dưới trăng đỏ, vung lên nở ra đóa sen lửa cắt đứt tà khí."
+    },
+    {
+      "id": "recipe_ngoc_bang_han_chau",
+      "targetEquipmentId": "ngoc_bang_han_chau",
+      "name": "Ngưng Băng [Ngọc Băng Hàn Châu]",
+      "rarity": "DIA_GIAI",
+      "minRealmId": "kim_dan",
+      "minLayer": 1,
+      "requirements": {
+        "linhThach": 3200,
+        "nguyenThach": 24,
+        "items": [
+          {
+            "itemId": "yeu_dan_thanh_giao_hai_xa",
+            "name": "Yêu Đan [Thanh Giao Hải Xà]",
+            "quantity": 3
+          }
+        ]
+      },
+      "desc": "Hàn châu kết tinh từ nội đan giao long, tỏa băng khí bao bọc chủ nhân, đóng băng mọi đòn đánh chạm vào."
+    },
+    {
+      "id": "recipe_kiem_ba_thien",
+      "targetEquipmentId": "kiem_ba_thien",
+      "name": "Hỏa Luyện [Kiếm Bá Thiên]",
+      "rarity": "DIA_GIAI",
+      "minRealmId": "kim_dan",
+      "minLayer": 1,
+      "requirements": {
+        "linhThach": 3400,
+        "nguyenThach": 26,
+        "items": [
+          {
+            "itemId": "yeu_dan_hac_diem_ky_lan",
+            "name": "Yêu Đan [Hắc Diệm Kỳ Lân Thú]",
+            "quantity": 3
+          }
+        ]
+      },
+      "desc": "Thân kiếm rèn trong Hắc Diệm của Kỳ Lân Thú, chém ra một đạo lửa đen nuốt chửng cả chân khí đối thủ."
+    },
+    {
+      "id": "recipe_quat_can_khon",
+      "targetEquipmentId": "quat_can_khon",
+      "name": "Xếp Nan [Quạt Càn Khôn]",
+      "rarity": "DIA_GIAI",
+      "minRealmId": "kim_dan",
+      "minLayer": 2,
+      "requirements": {
+        "linhThach": 3600,
+        "nguyenThach": 28,
+        "items": [
+          {
+            "itemId": "yeu_dan_bat_ky_huyen_ho",
+            "name": "Yêu Đan [Bát Kỳ Huyễn Hồ]",
+            "quantity": 3
+          }
+        ]
+      },
+      "desc": "Nan quạt bện bằng tám chiếc đuôi Huyễn Hồ, mỗi lần phất là đảo lộn càn khôn, dựng ảo cảnh mê hoặc địch thủ."
+    },
+    {
+      "id": "recipe_than_kiem_tu_thanh",
+      "targetEquipmentId": "than_kiem_tu_thanh",
+      "name": "Thiên Đúc [Thần Kiếm Tử Thanh]",
+      "rarity": "THIEN_GIAI",
+      "minRealmId": "kim_dan",
+      "minLayer": 3,
+      "requirements": {
+        "linhThach": 14000,
+        "nguyenThach": 80,
+        "items": [
+          {
+            "itemId": "yeu_dan_thon_thien_thach_mang",
+            "name": "Yêu Đan [Thôn Thiên Thạch Mãng]",
+            "quantity": 4
+          }
+        ]
+      },
+      "desc": "Thần kiếm hấp thụ tinh huyết Thôn Thiên Thạch Mãng, ánh kiếm tím xanh xé rách không gian trong nửa nhịp thở."
+    },
+    {
+      "id": "recipe_riu_chien_thien_cuc",
+      "targetEquipmentId": "riu_chien_thien_cuc",
+      "name": "Cửu Luyện [Rìu Chiến Thiên Cực]",
+      "rarity": "THIEN_GIAI",
+      "minRealmId": "kim_dan",
+      "minLayer": 4,
+      "requirements": {
+        "linhThach": 16000,
+        "nguyenThach": 90,
+        "items": [
+          {
+            "itemId": "yeu_dan_cuu_dau_yeu_xa_vuong",
+            "name": "Yêu Đan [Cửu Đầu Yêu Xà Vương]",
+            "quantity": 4
+          }
+        ]
+      },
+      "desc": "Chín cái đầu Yêu Xà Vương bị chặt đứt nung thành lưỡi rìu, bổ xuống là một đường thiên cực chia đôi trời đất."
+    },
+    {
+      "id": "recipe_lo_luyen_dan_can_khon",
+      "targetEquipmentId": "lo_luyen_dan_can_khon",
+      "name": "Khai Lò [Lò Luyện Đan Càn Khôn]",
+      "rarity": "THIEN_GIAI",
+      "minRealmId": "nguyen_anh",
+      "minLayer": 1,
+      "requirements": {
+        "linhThach": 18000,
+        "nguyenThach": 100,
+        "items": [
+          {
+            "itemId": "yeu_dan_phan_thien_hoa_phuong",
+            "name": "Yêu Đan [Phần Thiên Hỏa Phượng]",
+            "quantity": 4
+          }
+        ]
+      },
+      "desc": "Lò đan nhóm bằng Phần Thiên chân hỏa của Hỏa Phượng, ngọn lửa vĩnh cửu không bao giờ tắt bên trong đỉnh lò."
+    },
+    {
+      "id": "recipe_an_tu_phuong_can_khon",
+      "targetEquipmentId": "an_tu_phuong_can_khon",
+      "name": "Trấn Ấn [Ấn Tứ Phương Càn Khôn]",
+      "rarity": "THIEN_GIAI",
+      "minRealmId": "nguyen_anh",
+      "minLayer": 2,
+      "requirements": {
+        "linhThach": 20000,
+        "nguyenThach": 110,
+        "items": [
+          {
+            "itemId": "yeu_dan_huyen_vu_tran_hai_quy",
+            "name": "Yêu Đan [Huyền Vũ Trấn Hải Quy]",
+            "quantity": 4
+          }
+        ]
+      },
+      "desc": "Ấn khắc từ mai Huyền Vũ trấn hải, đè xuống là bốn phương tám hướng tĩnh lặng, vạn pháp không thể xâm nhập."
+    },
+    {
+      "id": "recipe_gay_nhu_y_kim_co",
+      "targetEquipmentId": "gay_nhu_y_kim_co",
+      "name": "Thần Rèn [Gậy Như Ý Kim Cô]",
+      "rarity": "THAN_GIAI",
+      "minRealmId": "nguyen_anh",
+      "minLayer": 3,
+      "requirements": {
+        "linhThach": 60000,
+        "nguyenThach": 260,
+        "items": [
+          {
+            "itemId": "yeu_dan_thai_co_chuc_long",
+            "name": "Yêu Đan [Thái Cổ Chúc Long]",
+            "quantity": 6
+          },
+          {
+            "itemId": "yeu_dan_phan_thien_hoa_phuong",
+            "name": "Yêu Đan [Phần Thiên Hỏa Phượng]",
+            "quantity": 3
+          }
+        ]
+      },
+      "desc": "Định hải thần châm được Thái Cổ Chúc Long ngậm suốt vạn năm, dài ngắn tùy tâm, một gậy quét sạch chư thiên."
+    },
+    {
+      "id": "recipe_cung_ban_mat_troi",
+      "targetEquipmentId": "cung_ban_mat_troi",
+      "name": "Thần Rèn [Cung Bắn Mặt Trời Trảm Thần]",
+      "rarity": "THAN_GIAI",
+      "minRealmId": "nguyen_anh",
+      "minLayer": 4,
+      "requirements": {
+        "linhThach": 75000,
+        "nguyenThach": 300,
+        "items": [
+          {
+            "itemId": "yeu_dan_hon_don_ma_than_hong",
+            "name": "Yêu Đan [Hỗn Độn Ma Thần Hống]",
+            "quantity": 6
+          },
+          {
+            "itemId": "yeu_dan_huyen_vu_tran_hai_quy",
+            "name": "Yêu Đan [Huyền Vũ Trấn Hải Quy]",
+            "quantity": 3
+          }
+        ]
+      },
+      "desc": "Cung thần kéo bằng gân Ma Thần Hỗn Độn, mũi tên bay ra thiêu rụi cả một vầng dương, thần linh cũng phải né tránh."
+    },
+    {
+      "id": "recipe_chuong_hon_don",
+      "targetEquipmentId": "chuong_hon_don",
+      "name": "Thần Rèn [Chuông Hỗn Độn]",
+      "rarity": "THAN_GIAI",
+      "minRealmId": "nguyen_anh",
+      "minLayer": 4,
+      "requirements": {
+        "linhThach": 90000,
+        "nguyenThach": 340,
+        "items": [
+          {
+            "itemId": "yeu_dan_hon_don_ma_than_hong",
+            "name": "Yêu Đan [Hỗn Độn Ma Thần Hống]",
+            "quantity": 5
+          },
+          {
+            "itemId": "yeu_dan_thai_co_chuc_long",
+            "name": "Yêu Đan [Thái Cổ Chúc Long]",
+            "quantity": 5
+          }
+        ]
+      },
+      "desc": "Đại chung đúc từ hai khối nội đan viễn cổ, một tiếng ngân là hồn phách vạn dặm tan thành hư vô."
     }
   ]
 }

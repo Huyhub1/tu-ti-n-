@@ -2,6 +2,7 @@ import { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMe
 
 import { User } from '../../database/models/User.js';
 import { checkCooldown, formatWait } from '../../utils/cooldown.js';
+import { meetsRequirement, requirementLabel } from '../../utils/power.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -16,7 +17,7 @@ export async function executeDucphapbao(message) {
   const user = await User.findOne({ userId });
 
 
-  if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
+  if (!user) return message.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.` });
 
   const cd = checkCooldown(user, 'crafting');
   if (!cd.ready) {
@@ -25,14 +26,21 @@ export async function executeDucphapbao(message) {
     });
   }
 
-  const recipes = recipesConfig.recipes;
+  // 21 công thức mà nhồi hết vào một embed thì vừa vượt trần 6000 ký tự của
+  // Discord, vừa bắt tân thủ cuộn qua cả loạt thần binh còn cách họ ba cảnh
+  // giới. Chỉ bày những lò đã mở khoá, kèm hai công thức kế tiếp làm mục tiêu.
+  const allRecipes = recipesConfig.recipes;
+  const unlockedRecipes = allRecipes.filter(r => meetsRequirement(user, r));
+  const lockedRecipes = allRecipes.filter(r => !meetsRequirement(user, r)).slice(0, 2);
+  const recipes = unlockedRecipes.slice(-8).concat(lockedRecipes);
 
   const embed = new EmbedBuilder()
     .setTitle(`🔥 [LÒ ĐÚC PHÁP BẢO & THẦN BINH]`)
     .setColor('#FF5722')
     .setDescription(
       `Nơi tôi luyện chân hỏa, rèn đúc Thần Binh và Bản Mệnh Pháp Bảo viễn cổ.\n\n` +
-      `💰 **Tài nguyên hiện có:** \`${user.currencies.nguyenThach || 0} Nguyên Thạch\` | \`${user.currencies.linhThach.toLocaleString()} Linh Thạch\`\n\n` +
+      `💰 **Tài nguyên hiện có:** \`${user.currencies.nguyenThach || 0} Nguyên Thạch\` | \`${user.currencies.linhThach.toLocaleString()} Linh Thạch\`\n` +
+      `🧭 **Cảnh giới:** **${user.realm.name} · Tầng ${user.realm.layer}** — đã mở khoá **${unlockedRecipes.length}/${allRecipes.length}** công thức.\n\n` +
       `👉 **Hãy chọn Pháp Bảo muốn đúc ở menu bên dưới để xem công thức:**`
     );
 
@@ -41,18 +49,28 @@ export async function executeDucphapbao(message) {
     .setPlaceholder('👉 Chọn công thức đúc pháp bảo...');
 
   recipes.forEach((r, idx) => {
+    const locked = !meetsRequirement(user, r);
+    const mats = r.requirements.items.map(i => `\`${i.quantity}x ${i.name}\``).join(', ');
+
     embed.addFields({
-      name: `${idx + 1}. **${r.name}** [${r.rarity}]`,
-      value: `📜 Yêu cầu: \`${r.requirements.nguyenThach} Nguyên Thạch\` + \`${r.requirements.linhThach} LT\` + ${r.requirements.items.map(i => `\`${i.quantity}x ${i.name}\``).join(', ')}\n*${r.desc}*`,
+      name: `${locked ? '🔒' : '🔨'} ${r.name} [${r.rarity}]`,
+      value: locked
+        ? `⛔ *Cần đạt* **${requirementLabel(r)}** *— nguyên liệu chỉ rơi ra ở tầng yêu thú đó.*`
+        : `📜 \`${r.requirements.nguyenThach} NT\` + \`${r.requirements.linhThach.toLocaleString()} LT\` + ${mats}`,
       inline: false
     });
 
     selectMenu.addOptions(
       new StringSelectMenuOptionBuilder()
-        .setLabel(`${idx + 1}. ${r.name}`)
-        .setDescription(`Cần ${r.requirements.nguyenThach} NT + ${r.requirements.linhThach} LT`)
+        .setLabel(`${locked ? '🔒 ' : ''}${r.name}`.slice(0, 100))
+        .setDescription(
+          (locked
+            ? `Cần ${requirementLabel(r)}`
+            : `${r.requirements.nguyenThach} NT + ${r.requirements.linhThach.toLocaleString()} LT`
+          ).slice(0, 100)
+        )
         .setValue(r.id)
-        .setEmoji('🔨')
+        .setEmoji(locked ? '🔒' : '🔨')
     );
   });
 

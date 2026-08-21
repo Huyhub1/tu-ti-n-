@@ -15,7 +15,8 @@ import chalk from 'chalk';
 import { connectDB } from '../src/database/connect.js';
 import { User } from '../src/database/models/User.js';
 import { claimCooldown, COOLDOWNS } from '../src/utils/cooldown.js';
-import { spendResources, grantCurrencies } from '../src/services/economyService.js';
+import { spendResources, grantCurrencies, grantItems } from '../src/services/economyService.js';
+import { claimTutorialReward, TUTORIAL_QUESTS, TUTORIAL_TOTAL } from '../src/services/tutorialService.js';
 
 const PREFIX_ID = '__racetest_';
 let passed = 0;
@@ -135,6 +136,84 @@ async function main() {
     const after = await User.findOne({ userId: u.userId }).lean();
     assert(after.currencies.linhThach === 12500,
       `25 lần cộng 100 LT vào 10.000, kết quả ${after.currencies.linhThach} (mong đợi 12.500 — không mất lượt nào)`);
+  }
+
+  // ── 7. Nhiệm vụ tân thủ: một bước chỉ lĩnh thưởng được đúng một lần ──
+  //
+  // Đây là chỗ dễ in tiền nhất trong chuỗi: người chơi bấm nút 🎁 liên tiếp
+  // vài nhịp là đủ nhận trùng nếu cổng chặn không nằm ngay trong lệnh ghi.
+  console.log(chalk.yellow(`\n[5] Lĩnh thưởng nhiệm vụ tân thủ (claimTutorialReward)...`));
+  {
+    const q0 = TUTORIAL_QUESTS[0];
+    const u = await makeUser('tutorial', {
+      counters: { [q0.goal.key]: q0.goal.amount },
+      currencies: { linhThach: 0, nguyenThach: 0 }
+    });
+    const results = await Promise.all(
+      Array.from({ length: 15 }, () => claimTutorialReward(u.userId))
+    );
+    const ok = results.filter(r => r.ok).length;
+    const after = await User.findOne({ userId: u.userId }).lean();
+    assert(ok === 1, `bấm nút lĩnh thưởng 15 lần cùng lúc, lọt qua ${ok}/15 (mong đợi 1)`);
+    assert(after.tutorial.step === 1, `bước hiện tại = ${after.tutorial.step} (mong đợi 1, không nhảy cóc)`);
+    assert(after.currencies.linhThach === (q0.reward.linhThach || 0),
+      `nhận đúng ${after.currencies.linhThach} LT (mong đợi ${q0.reward.linhThach || 0} — không nhân đôi)`);
+  }
+
+  // Điều kiện chưa đạt thì không lệnh nào lọt, kể cả bắn song song.
+  {
+    const u = await makeUser('tutorial_chua_du', { counters: { cultivate: 0 } });
+    const results = await Promise.all(
+      Array.from({ length: 10 }, () => claimTutorialReward(u.userId))
+    );
+    const ok = results.filter(r => r.ok).length;
+    const after = await User.findOne({ userId: u.userId }).lean();
+    assert(ok === 0, `chưa đủ điều kiện, bắn 10 lệnh lọt qua ${ok}/10 (mong đợi 0)`);
+    assert(after.tutorial.step === 0, `bước vẫn đứng yên ở ${after.tutorial.step} (mong đợi 0)`);
+  }
+
+  // Người đã tốt nghiệp bấm lại thì phải bị chặn, không được cộng thêm gì.
+  {
+    const u = await makeUser('tutorial_xong', {
+      tutorial: { step: TUTORIAL_TOTAL, done: true },
+      currencies: { linhThach: 0, nguyenThach: 0 }
+    });
+    const r = await claimTutorialReward(u.userId);
+    const after = await User.findOne({ userId: u.userId }).lean();
+    assert(!r.ok && r.reason === 'ALL_DONE', `người đã tốt nghiệp bị chặn (lý do: ${r.reason})`);
+    assert(after.currencies.linhThach === 0, `không cộng thêm đồng nào (${after.currencies.linhThach} LT)`);
+  }
+
+  // ── 8. Cộng vật phẩm song song: một ngăn duy nhất, không mất lượt ──
+  // Điểm gãy nằm ở vật phẩm CHƯA có trong túi: mọi lệnh cùng thấy "chưa có"
+  // rồi cùng $push, đẻ ra nhiều ngăn trùng itemId. Từ đó về sau mọi phép cộng
+  // và trừ chỉ chạm được ngăn đầu tiên, phần còn lại thành hàng ma trong túi.
+  console.log(chalk.yellow(`\n[6] Cộng vật phẩm song song (grantItems)...`));
+  {
+    const u = await makeUser('grantitems');
+    const MOI = { itemId: '__race_item_moi', name: 'Vật Phẩm Thử', type: 'NGUYEN_LIEU', quantity: 2 };
+
+    await Promise.all(Array.from({ length: 12 }, () => grantItems(u.userId, [MOI])));
+    const sau = await User.findOne({ userId: u.userId }).lean();
+    const ngan = (sau.inventory || []).filter(i => i.itemId === MOI.itemId);
+
+    assert(ngan.length === 1,
+      `vật phẩm mới: 12 lệnh cùng lúc tạo ra ${ngan.length} ngăn (mong đợi 1, không trùng lặp)`);
+    assert(ngan.length === 1 && ngan[0].quantity === 24,
+      `vật phẩm mới: tổng số lượng ${ngan[0] ? ngan[0].quantity : 0} (mong đợi 24 — không mất lượt nào)`);
+
+    // Vật phẩm đã có sẵn ngăn thì đi thẳng nhánh $inc, kiểm luôn cho đủ cặp.
+    await Promise.all(Array.from({ length: 12 }, () => grantItems(u.userId, [{ itemId: 'linh_thao', name: 'Linh Thảo', quantity: 5 }])));
+    const sau2 = await User.findOne({ userId: u.userId }).lean();
+    const nganCu = (sau2.inventory || []).filter(i => i.itemId === 'linh_thao');
+    assert(nganCu.length === 1 && nganCu[0].quantity === 70,
+      `vật phẩm sẵn có: 10 + 12x5 = ${nganCu[0] ? nganCu[0].quantity : 0} trong ${nganCu.length} ngăn (mong đợi 70 trong 1 ngăn)`);
+
+    // Đầu vào rác không được làm hỏng túi hay ném lỗi.
+    await grantItems(u.userId, [{ itemId: 'xau', quantity: 0 }, { quantity: 5 }, null]);
+    const sau3 = await User.findOne({ userId: u.userId }).lean();
+    assert(sau3.inventory.length === sau2.inventory.length,
+      `đầu vào rác (số lượng 0, thiếu itemId, null) bị bỏ qua, túi vẫn ${sau3.inventory.length} ngăn`);
   }
 
   // ── Dọn dẹp ──

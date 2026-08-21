@@ -111,9 +111,42 @@ const UserSchema = new mongoose.Schema({
   sectRole: { type: String, enum: ['MEMBER', 'ELDER', 'LEADER', 'NONE'], default: 'NONE' },
 
   // Điểm danh & Bói quẻ hàng ngày
+  // Tổng chỉ số VĨNH VIỄN đã nhận từ đan dược. Trước đây đan cộng thẳng vào
+  // stats không giới hạn: 450 LT đổi lấy +25 ATK / +500 Max HP lặp vô hạn là
+  // máy in lực chiến, phá nát toàn bộ đường cong cảnh giới.
+  // Buff đột phá một lần từ Trúc Cơ Đan: uống xong thì giữ ở đây cho tới lần
+  // `!dotpha` kế tiếp, thành hay bại đều tiêu.
+  breakthroughBuff: { type: Number, default: 0 },
+
+  pillBonus: {
+    atk: { type: Number, default: 0 },
+    def: { type: Number, default: 0 },
+    maxHp: { type: Number, default: 0 }
+  },
+
   dailyCheckIn: {
     lastDate: { type: String, default: null },
     streak: { type: Number, default: 0 }
+  },
+
+  // ── CHUỖI NHIỆM VỤ TÂN THỦ ──
+  // step = số bước ĐÃ nhận thưởng, cũng chính là chỉ số của bước đang làm dở.
+  // Nhận thưởng luôn kèm điều kiện 'tutorial.step' bằng đúng giá trị cũ, nên
+  // hai cú bấm cùng lúc chỉ một cú ăn được — đây là toàn bộ lớp chống nhân đôi.
+  tutorial: {
+    step: { type: Number, default: 0 },
+    done: { type: Boolean, default: false }
+  },
+
+  // Số lần đã làm từng loại hành động, dùng làm điều kiện cho nhiệm vụ tân thủ.
+  // Đếm riêng thay vì suy từ tài sản hiện có: người chơi tiêu hết Linh Thạch
+  // thì vẫn phải được ghi nhận là đã làm công đủ số lần.
+  counters: {
+    cultivate: { type: Number, default: 0 },
+    work: { type: Number, default: 0 },
+    mining: { type: Number, default: 0 },
+    hunt: { type: Number, default: 0 },
+    pill: { type: Number, default: 0 }
   },
 
   // Thời gian chờ (Cooldowns)

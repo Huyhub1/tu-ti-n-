@@ -1,3 +1,4 @@
+import { MessageFlags } from 'discord.js';
 import { User } from '../database/models/User.js';
 import { Sect } from '../database/models/Sect.js';
 import { listSkillForSale } from '../commands/prefix/market.js';
@@ -41,16 +42,16 @@ export async function handleModalSubmit(interaction) {
     const { skillIdx, targetUserId } = parseSellCustomId(customId);
 
     if (interaction.user.id !== targetUserId) {
-      return interaction.reply({ content: `⚠️ Thao tác này không thuộc về bạn!`, ephemeral: true });
+      return interaction.reply({ content: `⚠️ Thao tác này không thuộc về bạn!`, flags: MessageFlags.Ephemeral });
     }
 
     const price = parseInt(String(interaction.fields.getTextInputValue('sell_price_input')).replace(/[.,_\s]/g, ''), 10);
 
     const user = await User.findOne({ userId: targetUserId });
-    if (!user) return interaction.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!`, ephemeral: true });
+    if (!user) return interaction.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.`, flags: MessageFlags.Ephemeral });
 
     const result = await listSkillForSale(user, skillIdx, price);
-    if (!result.ok) return interaction.reply({ content: result.message, ephemeral: true });
+    if (!result.ok) return interaction.reply({ content: result.message, flags: MessageFlags.Ephemeral });
 
     return interaction.reply({ embeds: [result.embed] });
   }
@@ -60,7 +61,7 @@ export async function handleModalSubmit(interaction) {
     const [, sectId, targetUserId] = customId.split('::');
 
     if (interaction.user.id !== targetUserId) {
-      return interaction.reply({ content: `⚠️ Thao tác này không thuộc về bạn!`, ephemeral: true });
+      return interaction.reply({ content: `⚠️ Thao tác này không thuộc về bạn!`, flags: MessageFlags.Ephemeral });
     }
 
     const amount = parseInt(String(interaction.fields.getTextInputValue('sect_donate_amount_input')).replace(/[.,_\s]/g, ''), 10);
@@ -69,16 +70,16 @@ export async function handleModalSubmit(interaction) {
     const sect = await Sect.findById(sectId).catch(() => null);
 
     if (!user || !sect) {
-      return interaction.reply({ content: `❌ Dữ liệu người chơi hoặc môn phái không tồn tại!`, ephemeral: true });
+      return interaction.reply({ content: `❌ Dữ liệu người chơi hoặc môn phái không tồn tại!`, flags: MessageFlags.Ephemeral });
     }
 
     // Không cho cống hiến vào bang mình không thuộc về.
     if (String(user.sectId || '') !== String(sect._id)) {
-      return interaction.reply({ content: `❌ Đạo hữu không phải đệ tử của **[${sect.name}]**!`, ephemeral: true });
+      return interaction.reply({ content: `❌ Đạo hữu không phải đệ tử của **[${sect.name}]**!`, flags: MessageFlags.Ephemeral });
     }
 
     const result = await donateToSect(user, sect, amount);
-    if (!result.ok) return interaction.reply({ content: result.message, ephemeral: true });
+    if (!result.ok) return interaction.reply({ content: result.message, flags: MessageFlags.Ephemeral });
 
     return interaction.reply({ embeds: [result.embed] });
   }

@@ -91,7 +91,7 @@ console.log(chalk.green(`  ✅ Menu Dropdown Bảng Xếp Hạng khởi tạo ch
 console.log(chalk.yellow(`[8] Kiểm tra Lò Luyện Đan Vạn Cổ & Giao Thương Đan Dược (!luyendan & !bandan)...`));
 const pills = getAllPills();
 const alchemyMenu = createAlchemySelectMenu('123456789');
-console.log(chalk.green(`  • Danh mục đan dược nạp: ${pills.length} phương thuốc (Hồi Xuân, Tụ Khí, Tẩy Tủy, Trúc Cơ, Kim Đan, Hộ Mạch)`));
+console.log(chalk.green(`  • Danh mục đan dược nạp: ${pills.length} phương thuốc: ${pills.map(p => p.name).join(', ')}`));
 console.log(chalk.green(`  • Menu Lò Luyện Đan: Khởi tạo Dropdown & Button tương tác chuẩn xác`));
 console.log(chalk.green(`  ✅ Hệ thống Luyện Đan & Chợ Đan Dược hoạt động chuẩn xác!\n`));
 

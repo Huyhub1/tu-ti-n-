@@ -14,7 +14,9 @@ const __dirname = path.dirname(__filename);
 const factionsConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config/factions.json'), 'utf8'));
 
 import { getFactionBuffs } from '../../services/factionService.js';
-import { COOLDOWNS, claimCooldown } from '../../utils/cooldown.js';
+import { COOLDOWNS, claimCooldown, cooldownLine } from '../../utils/cooldown.js';
+import { repeatRow } from '../../utils/repeatButton.js';
+import { tutorialNudge } from '../../services/tutorialService.js';
 
 const CULTIVATE_COOLDOWN_SECONDS = COOLDOWNS.cultivate;
 
@@ -35,13 +37,21 @@ export async function cultivate(user) {
   // Chốt lượt bằng một câu lệnh nguyên tử. Kiểm tra ở trên chỉ để báo lỗi cho
   // đẹp; nếu người chơi gửi nhiều lệnh cùng lúc thì tất cả đều vượt qua nó, nên
   // phải có thêm cổng chặn dưới đây mới không nhân đôi EXP cho một lượt.
-  const claimed = await claimCooldown(User, user.userId, 'cultivate');
+  // $inc dem luot gui kem ngay trong lenh chot hoi chieu: gop mot vong CSDL,
+  // va do cung mot phep ghi nen khong bao gio co canh 'da cay ma khong duoc dem'.
+  const claimed = await claimCooldown(User, user.userId, 'cultivate', {}, { $inc: { 'counters.cultivate': 1 } });
   if (!claimed) {
     return {
       success: false,
       message: `⏳ Đạo hữu vận công quá gấp, chân khí chưa kịp quy nguyên! Chờ thêm giây lát rồi tu luyện tiếp.`
     };
   }
+
+  // claimCooldown vua $inc bo dem duoi CSDL, nhung `user` trong bo nho van la
+  // ban doc truoc do nen dong nhac nhiem vu o cuoi se cham mat mot luot. Gan
+  // dung MOT truong chu khong gan ca cum `counters`: save() se chi sinh ra
+  // $set cho rieng o nay, khong de len bo dem cua hanh dong khac dang chay.
+  user.counters.cultivate = claimed.counters.cultivate;
 
 
   // Đồng bộ lại vạch tu vi theo config hiện hành. Mỗi lần cân bằng lại
@@ -121,15 +131,26 @@ export async function cultivate(user) {
   };
 }
 
-export async function executeTuluyen(message) {
-  const user = await User.findOne({ userId: message.author.id });
+/**
+ * Chạy một lượt tu luyện rồi dựng sẵn nguyên gói tin nhắn để hiển thị.
+ *
+ * Tách riêng khỏi executeTuluyen để nút 'Tu luyện tiếp' dùng lại được y
+ * nguyên: lệnh gõ tay và nút bấm buộc phải cho ra cùng một màn hình, chép
+ * làm hai bản thì sớm muộn cũng lệch nhau.
+ *
+ * Trả { content } khi không chạy được (chưa có nhân vật, còn hồi chiêu) và
+ * { embeds, components } khi thành công. Chỗ gọi cứ nhìn có 'embeds' hay
+ * không mà quyết định hiện công khai hay báo riêng cho người bấm.
+ */
+export async function buildTuluyenView(userId) {
+  const user = await User.findOne({ userId });
   if (!user) {
-    return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` để tạo nhân vật trước!` });
+    return { content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.` };
   }
 
   const result = await cultivate(user);
   if (!result.success) {
-    return message.reply({ content: result.message });
+    return { content: result.message };
   }
 
   const coreMsg = user.goldenCore && user.goldenCore.name ? `\n✨ Kim Đan Buff: **+${(user.goldenCore.expBonus * 100).toFixed(0)}% EXP**` : '';
@@ -143,7 +164,8 @@ export async function executeTuluyen(message) {
       `✨ Nhận được: **+${result.expGained} EXP** Tu Vi${coreMsg}\n` +
       `📊 Tiến độ: \`${result.displayExp}/${result.maxExp} EXP\` (${percent}%)\n` +
 
-      `⏱️ *Thời gian hồi chiêu: ${CULTIVATE_COOLDOWN_SECONDS} giây*`
+      cooldownLine('cultivate', user.cooldowns.cultivate) +
+      tutorialNudge(user)
     );
 
   if (result.isReadyToBreak) {
@@ -153,13 +175,17 @@ export async function executeTuluyen(message) {
     });
   }
 
-  await message.reply({ embeds: [embed] });
+  return { embeds: [embed], components: repeatRow('tuluyen', userId) };
+}
+
+export async function executeTuluyen(message) {
+  await message.reply(await buildTuluyenView(message.author.id));
 }
 
 export async function executeDotpha(message) {
   const user = await User.findOne({ userId: message.author.id });
   if (!user) {
-    return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` để tạo nhân vật trước!` });
+    return message.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.` });
   }
 
   // Nếu đang ở Luyện Khí Đỉnh Phong (layer 4) và chưa chọn nhánh Nén Khí

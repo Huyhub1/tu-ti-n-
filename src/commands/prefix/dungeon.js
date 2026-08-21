@@ -2,6 +2,7 @@ import { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMe
 
 import { User } from '../../database/models/User.js';
 import { checkCooldown, formatWait, checkBattleReady } from '../../utils/cooldown.js';
+import { meetsRequirement, requirementLabel } from '../../utils/power.js';
 
 import { combatSessions, pickCombatSkills, pickCombatGears, trimButtonLabel } from './hunting.js';
 import fs from 'fs';
@@ -16,6 +17,9 @@ const dungeonsConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../../co
 export const dungeonCombatSessions = {};
 
 // Tự động dọn dẹp các phiên chiến đấu phó bản không tương tác quá 10 phút (giải phóng RAM)
+// `.unref()` ở cuối để bộ đếm không giữ tiến trình Node sống: bot vẫn chạy nhờ
+// kết nối websocket của Discord, nhưng script kiểm thử nào lỡ nạp file này sẽ
+// treo vĩnh viễn nếu thiếu — và bot cũng không thoát sạch khi tắt.
 setInterval(() => {
   const now = Date.now();
   const TEN_MINUTES_MS = 10 * 60 * 1000;
@@ -26,13 +30,13 @@ setInterval(() => {
       }
     }
   }
-}, 60 * 1000);
+}, 60 * 1000).unref?.();
 
 export async function executePhoban(message) {
   const userId = message.author.id;
   const user = await User.findOne({ userId });
 
-  if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
+  if (!user) return message.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.` });
 
 
   if (dungeonCombatSessions[userId]) {
@@ -61,13 +65,21 @@ export async function executePhoban(message) {
     });
   }
 
+  // 8 ải trải từ Luyện Khí tới Nguyên Anh Đỉnh Phong. Trước đây minLevel/minLayer
+  // trong config chỉ để trang trí — không chỗ nào kiểm tra — nên tân thủ vẫn
+  // chọn được ải cuối rồi bị Boss một chiêu tiễn về thành.
   const dungeons = dungeonsConfig.dungeons;
+  const unlockedDg = dungeons.filter(d => meetsRequirement(user, d));
+  const lockedDg = dungeons.filter(d => !meetsRequirement(user, d)).slice(0, 2);
+  const shownDg = unlockedDg.slice(-6).concat(lockedDg);
 
   const embed = new EmbedBuilder()
     .setTitle(`🏰 [BÍ CẢNH / PHÓ BẢN VIỄN CỔ]`)
     .setColor('#9C27B0')
     .setDescription(
-      `Các đại trận di tích cổ đại ẩn giấu bảo vật vô giá và Boss canh giữ.\n\n` +
+      `Các đại trận di tích cổ đại ẩn giấu bảo vật vô giá và Boss canh giữ.\n` +
+      `Cảnh giới hiện tại: **${user.realm.name} · Tầng ${user.realm.layer}** — đã mở khoá ` +
+      `**${unlockedDg.length}/${dungeons.length}** ải bí cảnh.\n\n` +
       `👉 **Hãy chọn một Ải Bí Cảnh ở menu bên dưới để dò xét thông tin Boss:**`
     );
 
@@ -75,13 +87,19 @@ export async function executePhoban(message) {
     .setCustomId(`dungeon_select_stage_${userId}`)
     .setPlaceholder('👉 Chọn Ải Bí Cảnh muốn thám hiểm...');
 
-  dungeons.forEach((d, idx) => {
+  shownDg.forEach(d => {
+    const isLocked = !meetsRequirement(user, d);
     selectMenu.addOptions(
       new StringSelectMenuOptionBuilder()
-        .setLabel(`Ải ${idx + 1}: ${d.name}`)
-        .setDescription(`Boss: ${d.boss.name} | HP: ${d.boss.hp}`)
+        .setLabel(`${isLocked ? '🔒 ' : ''}${d.name}`.slice(0, 100))
+        .setDescription(
+          (isLocked
+            ? `Cần ${requirementLabel(d)} | Boss ${d.boss.name}`
+            : `Boss ${d.boss.name} | HP ${d.boss.hp.toLocaleString()} | +${d.exp.toLocaleString()} EXP`
+          ).slice(0, 100)
+        )
         .setValue(`dungeon_${d.id}`)
-        .setEmoji('⛩️')
+        .setEmoji(isLocked ? '🔒' : '⛩️')
     );
   });
 

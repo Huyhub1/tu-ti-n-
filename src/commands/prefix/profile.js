@@ -3,6 +3,7 @@ import { User } from '../../database/models/User.js';
 
 import { getRealmDisplayName } from '../../services/cultivationService.js';
 import { getTalentPerkText } from '../../services/talentService.js';
+import { battlePower } from '../../utils/power.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -43,7 +44,8 @@ export function createProfileEmbed(user) {
       `**Tư Chất:** 🧬 **[${user.talent.name}]** (*${user.talent.tierName}*)\n` +
       `**Đặc Quyền:** ${getTalentPerkText(user.talent.tier)}\n` +
       `**Cảnh Giới:** ⚡ **${realmInfo}**${goldenCoreText}\n` +
-      `**Tu Vi (EXP):** \`${displayExp}/${user.realm.maxExp}\` [${progressBar}] \`${progressPercent}%\``
+      `**Tu Vi (EXP):** \`${displayExp}/${user.realm.maxExp}\` [${progressBar}] \`${progressPercent}%\`\n` +
+      `**Lực Chiến:** ⚡ \`${battlePower(user).toLocaleString()} Điểm\` *(xếp hạng ở \`!top\`)*`
     )
     .addFields(
       {

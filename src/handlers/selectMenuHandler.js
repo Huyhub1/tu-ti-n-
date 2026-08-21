@@ -1,10 +1,11 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
+import { EmbedBuilder, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle, ModalBuilder, TextInputBuilder, TextInputStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
+import { meetsRequirement, requirementLabel, pillCapOf } from '../utils/power.js';
 import { User } from '../database/models/User.js';
 import { MarketItem } from '../database/models/MarketItem.js';
 import { createHelpSelectMenuRow } from '../commands/slash/help.js';
 import { createPublicGearListEmbed, createPublicGearSelectMenu, createPublicGearButtons } from '../commands/prefix/baovat.js';
 import { createTopEmbed, createTopSelectMenu } from '../commands/prefix/top.js';
-import { getPillById, createAlchemySelectMenu } from '../commands/prefix/alchemy.js';
+import { getPillById, createAlchemySelectMenu, getAllPills } from '../commands/prefix/alchemy.js';
 
 import { combatSessions } from '../commands/prefix/hunting.js';
 import { purchaseListing, buildPurchaseEmbed } from '../commands/prefix/market.js';
@@ -19,6 +20,28 @@ const monstersConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../confi
 const dungeonsConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/dungeons.json'), 'utf8'));
 const recipesConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/recipes.json'), 'utf8'));
 const equipmentConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../config/equipment.json'), 'utf8'));
+
+// Cẩm nang !help liệt kê đan dược sinh thẳng từ alchemy.json: trước đây sáu
+// dòng gõ tay, thêm phương thuốc mới là cẩm nang nói dối người chơi ngay.
+const REALM_SHORT = {
+  pham_nhan: 'Phàm Nhân',
+  luyen_khi: 'Luyện Khí',
+  truc_co: 'Trúc Cơ',
+  kim_dan: 'Kim Đan',
+  nguyen_anh: 'Nguyên Anh'
+};
+const alchemyPillLines = getAllPills().map((p, i) => {
+  const eff = [];
+  if (p.healPercent) eff.push(`hồi ${Math.round(p.healPercent * 100)}% HP`);
+  else if (p.healHp) eff.push(`hồi ${p.healHp.toLocaleString()} HP`);
+  if (p.expGain) eff.push(`+${p.expGain.toLocaleString()} EXP`);
+  if (p.statBonus?.atk) eff.push(`+${p.statBonus.atk} ATK`);
+  if (p.statBonus?.def) eff.push(`+${p.statBonus.def} DEF`);
+  if (p.statBonus?.maxHp) eff.push(`+${p.statBonus.maxHp} Max HP`);
+  if (p.breakBonus) eff.push(`+${Math.round(p.breakBonus * 100)}% tỉ lệ đột phá (1 lần)`);
+  const gate = `${REALM_SHORT[p.minRealmId] || p.minRealmId} T${p.minLayer}`;
+  return `  ${i + 1}. **${p.name}** \`[${gate}]\` — ${eff.join(', ')}.\n`;
+});
 
 export async function handleSelectMenu(interaction) {
   const customId = interaction.customId;
@@ -86,14 +109,10 @@ export async function handleSelectMenu(interaction) {
           .setTitle(`🔮 [CẨM NANG] - 4. Lò Luyện Đan Vạn Cổ & Chợ Trời Giao Thương`)
           .setDescription(
             `🧪 **Lò Luyện Đan (\`!luyendan\` / \`!alchemy\`):**\n` +
-            `• **Thu hái dược liệu:** Đi làm công (\`!lamcong\`) để nhặt **Linh Thảo**, săn quái (\`!santhu\`) để lấy **Yêu Đan**.\n` +
-            `• **6 Phương Thuốc Cực Phẩm:**\n` +
-            `  1. **Hồi Xuân Đan:** Hồi phục ngay 500 HP.\n` +
-            `  2. **Tụ Khí Đan:** Nuốt vào nhận ngay +200 EXP Tu Vi.\n` +
-            `  3. **Tẩy Tủy Đan:** Tăng vĩnh viễn +10 ATK, +5 DEF và +350 EXP.\n` +
-            `  4. **Trúc Cơ Đan:** +30% tỉ lệ thành công khi Đột Phá + 200 HP + 500 EXP.\n` +
-            `  5. **Kim Đan Cố Bản Đan:** Tăng vĩnh viễn +25 ATK, +500 HP, +15 DEF và +1200 EXP.\n` +
-            `  6. **Hộ Mạch Đan:** Bảo vệ kinh mạch, miễn trừ mất EXP khi độ kiếp thất bại.\n` +
+            `• **Thu hái dược liệu:** Đi làm công (\`!lamcong\`) và săn thú (\`!santhu\`) để nhặt **Linh Thảo**; mỗi loài trong **20 yêu thú** rơi một loại **Yêu Đan** riêng.\n` +
+            `• **${alchemyPillLines.length} Phương Thuốc Cực Phẩm** (mỗi phương có ngưỡng cảnh giới riêng):\n` +
+            alchemyPillLines.join('') +
+            `• *Chỉ số vĩnh viễn từ đan có **trần hấp thụ theo cảnh giới** — đột phá xong mới nới thêm được.*\n` +
             `• **Nuốt Đan Dược (\`!uongdan <tên/stt>\`):** Sử dụng đan dược trong túi.\n\n` +
 
             `🏪 **Chợ Trời Tu Chân Giới (\`!chotroi\` / \`!choden\`):**\n` +
@@ -112,7 +131,7 @@ export async function handleSelectMenu(interaction) {
           .setDescription(
             `• **Tàng Bảo Các (\`!baovat\`):** Tra cứu công khai 60 pháp bảo chia theo 5 phẩm cấp (Hoàng, Huyền, Địa, Thiên, Thần) kèm ảnh banner to HD.\n` +
             `• **Xem Chi Tiết (\`!xemphapbao <tên/id>\`):** Xem chỉ số, điển tích, Tuyệt Kỹ chiến đấu & nội tại VIP.\n` +
-            `• **Lò Đúc Thần Binh (\`!ducphapbao\`):** Dùng Nguyên Thạch & Linh Thạch nung đúc Binh Khí / Pháp Bảo mới.\n` +
+            `• **Lò Đúc Thần Binh (\`!ducphapbao\`):** **21 công thức** trải đủ 5 phẩm cấp, mở khoá dần theo cảnh giới. Tốn Linh Thạch, Nguyên Thạch và Yêu Đan của đúng loài yêu thú.\n` +
             `• **Trang Bị & Cường Hóa (\`!phapbao\`):** Mặc đồ tối ưu vào người và đập búa cường hóa (+1, +2, +3...) gia tăng sức mạnh vượt bậc!\n` +
             `• **Sức Mạnh Thần Giai:** Miễn nhiễm 35% sát thương, buff +150% EXP tu luyện vĩnh viễn, Tuyệt kỹ x7.5 sát thương!`
           );
@@ -123,8 +142,7 @@ export async function handleSelectMenu(interaction) {
           .setTitle(`📜 [CẨM NANG] - 6. Tàng Kinh Các 100+ Bí Kíp & Lò Vạn Đạo`)
           .setDescription(
 
-            `• **Tàng Kinh Các (
-\`!tangkinhcac\` / \`!bikip\`):** Xem danh sách công pháp đã học, độ thuần thục (%) và chỉ số cộng thêm.\n` +
+            `• **Tàng Kinh Các (\`!tangkinhcac\` / \`!bikip\`):** Xem danh sách công pháp đã học, độ thuần thục (%) và chỉ số cộng thêm.\n` +
             `• **Khay Chiến Đấu (\`!kichhoat <stt>\`):** Bật/tắt công pháp mang theo khi giao chiến, **tối đa 4 bí kíp** + 2 tuyệt kỹ pháp bảo. Chưa chọn gì thì bot tự lấy 4 bí kíp phẩm cao nhất trong kho.\n` +
             `• **Rèn Luyện (\`!luyencong <stt>\`):** Luyện tăng độ thuần thục của bí kíp (+15% Mastery, Delay 10s). Tư chất Thiên/Thần Phẩm luyện nhanh **x2 ➜ x2.5**.\n` +
             `• **Lò Luyện Vạn Đạo (\`!dunghop [phẩm cấp]\`):** Nấu chảy 5 công pháp Viên Mãn (100%) cùng phẩm cấp thành 1 công pháp phẩm cấp cao hơn ngẫu nhiên!`
@@ -139,8 +157,8 @@ export async function handleSelectMenu(interaction) {
             `• **Đào Khoáng (\`!daokhoang\` - Delay 45s):** Khai thác linh mạch kiếm Nguyên Thạch & Linh Thạch đúc đồ.\n` +
 
             `• **Đổ Thạch (\`!dothach <cược>\` - Delay 20s):** Cắt đá may rủi tìm Nguyên Thạch quý.\n` +
-            `• **Săn Yêu Thú (\`!santhu\` - Delay 30s):** Giao chiến turn-based với yêu thú, nhận Yêu Đan, Linh Thạch & Nguyên Thạch.\n` +
-            `• **Phó Bản Bí Cảnh (\`!phoban\` - Delay 120s):** Trảm Boss cổ đại mở rương bí kíp & bảo vật hiếm!\n` +
+            `• **Săn Yêu Thú (\`!santhu\` - Delay 30s):** Giao chiến turn-based với **20 loài yêu thú**, nhận Yêu Đan, Linh Thảo, Linh Thạch & Nguyên Thạch.\n` +
+            `• **Phó Bản Bí Cảnh (\`!phoban\` - Delay 120s):** **8 ải** từ Hang Động Ngoại Vi tới Hỗn Độn Thần Ma Trủng, trảm Boss mở rương bí kíp & bảo vật hiếm!\n` +
             `• **Đúc Pháp Bảo (\`!ducphapbao\` - Delay 60s):** Nung đúc thần binh từ Nguyên Thạch, Linh Thạch và Yêu Đan.\n` +
             `• **Lôi Đài PvP (\`!khieuchien @user <cược>\` - Delay 20s):** Cược **50 ➜ 20.000 LT**, chỉ đấu được với người chênh **tối đa 1 đại cảnh giới**, chiến thư hết hạn sau **90s**, trận tối đa **12 hiệp**.`
           );
@@ -165,6 +183,8 @@ export async function handleSelectMenu(interaction) {
           .setTitle(`⚡ [CẨM NANG] - 9. Danh Sách Đầy Đủ Tất Cả Lệnh`)
           .setDescription(
 
+            `**🌱 Tân Thủ:**\n` +
+            `• \`!tanthu\` / \`!nhiemvu\` : Chuỗi 10 nhiệm vụ dẫn đạo cho người mới.\n\n` +
             `**👤 Nhân Vật & Tu Vi:**\n` +
             `• \`/khoi-dau\` : Tạo nhân vật, gacha tư chất bẩm sinh, chọn phe.\n` +
             `• \`!profile\` / \`!tupan\` : Mở Bảng Tu Chân.\n` +
@@ -220,7 +240,7 @@ export async function handleSelectMenu(interaction) {
   if (customId.startsWith('gear_filter_rarity_')) {
     const targetUserId = customId.replace('gear_filter_rarity_', '');
     if (clickerId !== targetUserId) {
-      return interaction.reply({ content: `⚠️ Menu này không thuộc về bạn!`, ephemeral: true });
+      return interaction.reply({ content: `⚠️ Menu này không thuộc về bạn!`, flags: MessageFlags.Ephemeral });
     }
 
     const rarity = selected;
@@ -235,24 +255,29 @@ export async function handleSelectMenu(interaction) {
   if (customId.startsWith('top_category_select_')) {
     const targetUserId = customId.replace('top_category_select_', '');
     if (clickerId !== targetUserId) {
-      return interaction.reply({ content: `⚠️ Menu này không thuộc về bạn!`, ephemeral: true });
+      return interaction.reply({ content: `⚠️ Menu này không thuộc về bạn!`, flags: MessageFlags.Ephemeral });
     }
+
+    // Discord huỷ interaction nếu không được xác nhận trong 3 giây, mà bảng xếp
+    // hạng phải quét toàn bộ tu sĩ — càng đông người chơi càng lâu. Báo nhận
+    // trước rồi sửa nội dung sau thì không bao giờ chạm hạn đó.
+    await interaction.deferUpdate();
 
     const category = selected;
     const embed = await createTopEmbed(category);
     const menuRow = createTopSelectMenu(category, clickerId);
 
-    return interaction.update({ embeds: [embed], components: [menuRow] });
+    return interaction.editReply({ embeds: [embed], components: [menuRow] });
   }
 
   // 2. Menu Chọn Công Thức Đúc Pháp Bảo (!ducphapbao)
   if (customId.startsWith('craft_select_recipe_')) {
     const recipeId = selected;
     const recipe = recipesConfig.recipes.find(r => r.id === recipeId);
-    if (!recipe) return interaction.reply({ content: `❌ Công thức không tồn tại!`, ephemeral: true });
+    if (!recipe) return interaction.reply({ content: `❌ Công thức không tồn tại!`, flags: MessageFlags.Ephemeral });
 
     const user = await User.findOne({ userId: clickerId });
-    if (!user) return interaction.reply({ content: `❌ Chưa tạo nhân vật!`, ephemeral: true });
+    if (!user) return interaction.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.`, flags: MessageFlags.Ephemeral });
 
     const targetGear = equipmentConfig.equipments.find(e => e.id === recipe.targetEquipmentId);
 
@@ -314,18 +339,18 @@ export async function handleSelectMenu(interaction) {
   if (customId.startsWith('gear_select_action_')) {
     const targetUserId = customId.replace('gear_select_action_', '');
     if (clickerId !== targetUserId) {
-      return interaction.reply({ content: `⚠️ Kho trang bị này không thuộc về bạn!`, ephemeral: true });
+      return interaction.reply({ content: `⚠️ Kho trang bị này không thuộc về bạn!`, flags: MessageFlags.Ephemeral });
     }
 
     const user = await User.findOne({ userId: targetUserId });
-    if (!user) return interaction.reply({ content: `❌ Chưa tạo nhân vật!`, ephemeral: true });
+    if (!user) return interaction.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.`, flags: MessageFlags.Ephemeral });
 
     // selected: gear_<gearId>_<idx>
     const parts = selected.split('_');
     const idx = parseInt(parts[parts.length - 1], 10);
     const gear = user.equipments[idx];
 
-    if (!gear) return interaction.reply({ content: `❌ Trang bị không tồn tại!`, ephemeral: true });
+    if (!gear) return interaction.reply({ content: `❌ Trang bị không tồn tại!`, flags: MessageFlags.Ephemeral });
 
     // Tìm ảnh từ equipment.json nếu gear chưa có ảnh hoặc ảnh là file name cũ
     const baseGear = equipmentConfig.equipments.find(e => e.id === gear.gearId);
@@ -380,32 +405,38 @@ export async function handleSelectMenu(interaction) {
   if (customId.startsWith('hunt_select_beast_')) {
     const targetUserId = customId.replace('hunt_select_beast_', '');
     if (clickerId !== targetUserId) {
-      return interaction.reply({ content: `⚠️ Menu này không thuộc về bạn!`, ephemeral: true });
+      return interaction.reply({ content: `⚠️ Menu này không thuộc về bạn!`, flags: MessageFlags.Ephemeral });
     }
 
     if (combatSessions && combatSessions[clickerId]) {
       return interaction.reply({
         content: `⚔️ Đạo hữu đang trong trận chiến với **[${combatSessions[clickerId].beastName}]**! Hãy hoàn thành trận đấu hiện tại trước.`,
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
     if (dungeonCombatSessions && dungeonCombatSessions[clickerId]) {
       return interaction.reply({
         content: `⛩️ Đạo hữu đang khiêu chiến Boss trong bí cảnh! Hãy hoàn thành hoặc rút lui trước khi săn thú.`,
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
     const beastId = selected.replace('beast_', '');
     const beast = monstersConfig.beasts.find(b => b.id === beastId);
-    if (!beast) return interaction.reply({ content: `❌ Không tìm thấy thông tin thú!`, ephemeral: true });
+    if (!beast) return interaction.reply({ content: `❌ Không tìm thấy thông tin thú!`, flags: MessageFlags.Ephemeral });
+
+    // Khoá luôn nút Tấn Công ở màn do thám cho khỏi bấm hụt rồi ăn báo lỗi.
+    const scoutUser = await User.findOne({ userId: clickerId });
+    const beastLocked = !meetsRequirement(scoutUser, beast);
 
     const embed = new EmbedBuilder()
       .setTitle(`🐾 [DO THÁM THÀNH CÔNG] - ${beast.name}`)
       .setColor('#FF9800')
       .setDescription(
-        `**Miêu Tả:** *${beast.desc}*\n\n` +
-        `📊 **Thuộc Tính Yêu Thú:**\n` +
+        `**Miêu Tả:** *${beast.desc}*\n` +
+        `📜 **Yêu Cầu:** \`${requirementLabel(beast)}\`` +
+        (beastLocked ? ` — ❌ **Chưa đủ cảnh giới, không thể xuất thủ!**\n\n` : ` ✅\n\n`) +
+        `📊 **Thuộc Tính Yêu Thú (Cấp ${beast.level}):**\n` +
         `❤️ **Sinh Mệnh (HP):** \`${beast.hp}\`\n` +
         `🗡️ **Công Kích (ATK):** \`${beast.atk}\`\n` +
         `🛡️ **Phòng Ngự (DEF):** \`${beast.def}\`\n\n` +
@@ -415,7 +446,7 @@ export async function handleSelectMenu(interaction) {
       );
 
     const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId(`btn_start_hunt::${beast.id}::${clickerId}`).setLabel('⚔️ Tấn Công (Vào Trận)').setStyle(ButtonStyle.Danger),
+      new ButtonBuilder().setCustomId(`btn_start_hunt::${beast.id}::${clickerId}`).setLabel('⚔️ Tấn Công (Vào Trận)').setStyle(ButtonStyle.Danger).setDisabled(beastLocked),
       new ButtonBuilder().setCustomId(`btn_cancel_hunt::${clickerId}`).setLabel('🏃 Bỏ Qua (Không Đánh)').setStyle(ButtonStyle.Secondary)
     );
 
@@ -426,32 +457,36 @@ export async function handleSelectMenu(interaction) {
   if (customId.startsWith('dungeon_select_stage_')) {
     const targetUserId = customId.replace('dungeon_select_stage_', '');
     if (clickerId !== targetUserId) {
-      return interaction.reply({ content: `⚠️ Menu này không thuộc về bạn!`, ephemeral: true });
+      return interaction.reply({ content: `⚠️ Menu này không thuộc về bạn!`, flags: MessageFlags.Ephemeral });
     }
 
     if (dungeonCombatSessions && dungeonCombatSessions[clickerId]) {
       return interaction.reply({
         content: `⛩️ Đạo hữu đang khiêu chiến Boss **[${dungeonCombatSessions[clickerId].bossName}]**! Hãy hoàn thành hoặc rút lui trước.`,
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
     if (combatSessions && combatSessions[clickerId]) {
       return interaction.reply({
         content: `⚔️ Đạo hữu đang trong trận săn thú! Hãy hoàn thành trận đấu trước khi vào phó bản.`,
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
     const dungeonId = selected.replace('dungeon_', '');
     const dungeon = dungeonsConfig.dungeons.find(d => d.id === dungeonId);
-    if (!dungeon) return interaction.reply({ content: `❌ Không tìm thấy thông tin ải!`, ephemeral: true });
+    if (!dungeon) return interaction.reply({ content: `❌ Không tìm thấy thông tin ải!`, flags: MessageFlags.Ephemeral });
+
+    const dgScoutUser = await User.findOne({ userId: clickerId });
+    const dungeonLocked = !meetsRequirement(dgScoutUser, dungeon);
 
     const embed = new EmbedBuilder()
       .setTitle(`⛩️ [DO THÁM ẢI BÍ CẢNH] - ${dungeon.name}`)
       .setColor('#9C27B0')
       .setDescription(
         `**Miêu Tả:** *${dungeon.desc}*\n` +
-        `📜 **Yêu Cầu:** \`${dungeon.minLevel} [Tầng ${dungeon.minLayer}+]\`\n\n` +
+        `📜 **Yêu Cầu:** \`${requirementLabel(dungeon)}\`` +
+        (dungeonLocked ? ` — ❌ **Cấm chế chưa mở, không thể tiến vào!**\n\n` : ` ✅\n\n`) +
         `👹 **THÔNG TIN BOSS TRẤN GIỮ:**\n` +
         `👑 **Danh Xưng:** **${dungeon.boss.name}**\n` +
         `❤️ **Sinh Mệnh (HP):** \`${dungeon.boss.hp}\`\n` +
@@ -463,7 +498,7 @@ export async function handleSelectMenu(interaction) {
       );
 
     const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder().setCustomId(`btn_start_dungeon::${dungeon.id}::${clickerId}`).setLabel('⚔️ Khiêu Chiến Boss').setStyle(ButtonStyle.Danger),
+      new ButtonBuilder().setCustomId(`btn_start_dungeon::${dungeon.id}::${clickerId}`).setLabel('⚔️ Khiêu Chiến Boss').setStyle(ButtonStyle.Danger).setDisabled(dungeonLocked),
       new ButtonBuilder().setCustomId(`btn_cancel_dungeon::${clickerId}`).setLabel('🏃 Rút Lui').setStyle(ButtonStyle.Secondary)
     );
 
@@ -474,17 +509,17 @@ export async function handleSelectMenu(interaction) {
   if (customId.startsWith('inv_select_item_')) {
     const targetUserId = customId.replace('inv_select_item_', '');
     if (clickerId !== targetUserId) {
-      return interaction.reply({ content: `⚠️ Túi đồ này không thuộc về bạn!`, ephemeral: true });
+      return interaction.reply({ content: `⚠️ Túi đồ này không thuộc về bạn!`, flags: MessageFlags.Ephemeral });
     }
 
     const user = await User.findOne({ userId: targetUserId });
-    if (!user) return interaction.reply({ content: `❌ Chưa tạo nhân vật!`, ephemeral: true });
+    if (!user) return interaction.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.`, flags: MessageFlags.Ephemeral });
 
     const parts = selected.split('_');
     const idx = parseInt(parts[parts.length - 1], 10);
     const item = user.inventory[idx];
 
-    if (!item) return interaction.reply({ content: `❌ Vật phẩm không tồn tại!`, ephemeral: true });
+    if (!item) return interaction.reply({ content: `❌ Vật phẩm không tồn tại!`, flags: MessageFlags.Ephemeral });
 
     const embed = new EmbedBuilder()
       .setTitle(`💊 [VẬT PHẨM] - ${item.name}`)
@@ -509,7 +544,7 @@ export async function handleSelectMenu(interaction) {
   if (customId.startsWith('sell_select_item_')) {
     const targetUserId = customId.replace('sell_select_item_', '');
     if (clickerId !== targetUserId) {
-      return interaction.reply({ content: `⚠️ Menu này không thuộc về bạn!`, ephemeral: true });
+      return interaction.reply({ content: `⚠️ Menu này không thuộc về bạn!`, flags: MessageFlags.Ephemeral });
     }
 
     const itemKey = selected;
@@ -537,12 +572,12 @@ export async function handleSelectMenu(interaction) {
   if (customId.startsWith('market_buy_select_')) {
     const marketItemId = selected;
     const user = await User.findOne({ userId: clickerId });
-    if (!user) return interaction.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!`, ephemeral: true });
+    if (!user) return interaction.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.`, flags: MessageFlags.Ephemeral });
 
 
     const item = await MarketItem.findById(marketItemId);
     if (!item) {
-      return interaction.reply({ content: `❌ Mặt hàng này đã được bán hoặc không còn tồn tại!`, ephemeral: true });
+      return interaction.reply({ content: `❌ Mặt hàng này đã được bán hoặc không còn tồn tại!`, flags: MessageFlags.Ephemeral });
     }
 
     // Đi chung một đường với `!mua`: khoá gian hàng bằng atomic update, thu
@@ -551,7 +586,7 @@ export async function handleSelectMenu(interaction) {
     // hai lần.
     const result = await purchaseListing(user.userId, item);
     if (!result.ok) {
-      return interaction.reply({ content: result.message, ephemeral: true });
+      return interaction.reply({ content: result.message, flags: MessageFlags.Ephemeral });
     }
 
     return interaction.update({ embeds: [buildPurchaseEmbed(item, result)], components: [] });
@@ -560,10 +595,10 @@ export async function handleSelectMenu(interaction) {
   // 6. Xử lý Menu Lò Luyện Đan
   if (customId.startsWith('alchemy_select_pill_')) {
     const targetUserId = customId.replace('alchemy_select_pill_', '');
-    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Đây không phải lò luyện đan của bạn!`, ephemeral: true });
+    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Đây không phải lò luyện đan của bạn!`, flags: MessageFlags.Ephemeral });
 
     const pill = getPillById(selected);
-    if (!pill) return interaction.reply({ content: `❌ Không tìm thấy thông tin phương thuốc!`, ephemeral: true });
+    if (!pill) return interaction.reply({ content: `❌ Không tìm thấy thông tin phương thuốc!`, flags: MessageFlags.Ephemeral });
 
     const user = await User.findOne({ userId: clickerId }).lean();
     const linhThaoItem = (user.inventory || []).find(i => i.itemId === 'linh_thao');
@@ -575,7 +610,25 @@ export async function handleSelectMenu(interaction) {
     const hasEnoughLinhThao = linhThaoCount >= pill.recipe.linhThao;
     const hasEnoughYeuDan = totalYeuDan >= pill.recipe.yeuDanCount;
     const hasEnoughLt = user.currencies.linhThach >= pill.recipe.linhThach;
-    const canBrew = hasEnoughLinhThao && hasEnoughYeuDan && hasEnoughLt;
+    const pillLocked = !meetsRequirement(user, pill);
+    const canBrew = hasEnoughLinhThao && hasEnoughYeuDan && hasEnoughLt && !pillLocked;
+
+    // Đan nay hồi theo % máu tối đa nên số phẳng cũ chỉ còn là sàn; hiển thị cả
+    // hai để người chơi biết viên nào thực sự cứu mạng ở cảnh giới của mình.
+    const pillFlatHeal = pill.healHp || 0;
+    const pillPctHeal = Math.floor((user.stats.maxHp || 100) * (pill.healPercent || 0));
+    const pillHealText = pillPctHeal > pillFlatHeal
+      ? `+${pillPctHeal.toLocaleString()} HP (${Math.round((pill.healPercent || 0) * 100)}% Sinh Mệnh tối đa)`
+      : `+${pillFlatHeal.toLocaleString()} HP`;
+
+    const pillCap = pillCapOf(user);
+    const pillOwned = user.pillBonus || { atk: 0, def: 0, maxHp: 0 };
+    const PILL_STAT_LABEL = { atk: '🗡️ ATK', def: '🛡️ DEF', maxHp: '❤️ Max HP' };
+    const pillStatKeys = ['atk', 'def', 'maxHp'].filter(k => (pill.statBonus || {})[k]);
+    const pillBonusText = pillStatKeys
+      .map(k => `\`+${pill.statBonus[k]} ${PILL_STAT_LABEL[k]}\``).join(' | ');
+    const pillCapText = pillStatKeys
+      .map(k => `${PILL_STAT_LABEL[k]} \`${pillOwned[k] || 0}/${pillCap[k]}\``).join(' | ');
 
     const embed = new EmbedBuilder()
       .setTitle(`🔮 [PHƯƠNG THUỐC] - ${pill.name} [${pill.tierName}]`)
@@ -583,17 +636,21 @@ export async function handleSelectMenu(interaction) {
       .setDescription(
         `*${pill.desc}*\n\n` +
         `📊 **HIỆU QUẢ LINH ĐAN:**\n` +
-        `  • ❤️ Hồi phục Sinh Mệnh: \`+${pill.healHp} HP\`\n` +
-        `  • ⚡ Tăng Cường Chân Khí: \`+${pill.expGain} EXP\`\n` +
-        (pill.statBonus?.atk ? `  • 🗡️ Thuộc tính vĩnh viễn: \`+${pill.statBonus.atk} ATK\` | \`+${pill.statBonus.def || 0} DEF\`\n` : '') +
+        `  • ❤️ Hồi phục Sinh Mệnh: \`${pillHealText}\`\n` +
+        `  • ⚡ Tăng Cường Chân Khí: \`+${pill.expGain.toLocaleString()} EXP\`\n` +
+        (pillBonusText ? `  • 🌱 Thuộc tính vĩnh viễn: ${pillBonusText}\n` : '') +
+        (pillBonusText ? `  • 📏 Trần hấp thụ tại **${user.realm.name}**: ${pillCapText}\n` : '') +
+        (pill.breakBonus ? `  • ⚡ Trợ đột phá: \`+${Math.round(pill.breakBonus * 100)}%\` tỉ lệ thành công cho lần \`!dotpha\` kế tiếp (một lần)\n` : '') +
         `\n🧪 **DƯỢC LIỆU YÊU CẦU:**\n` +
         `  • 🌿 Linh Thảo: \`${linhThaoCount}/${pill.recipe.linhThao} nhánh\` ${hasEnoughLinhThao ? '✅' : '❌'}\n` +
         `  • 🐾 Yêu Đan: \`${totalYeuDan}/${pill.recipe.yeuDanCount} viên\` ${hasEnoughYeuDan ? '✅' : '❌'}\n` +
         `  • 💎 Linh Thạch: \`${user.currencies.linhThach.toLocaleString()}/${pill.recipe.linhThach.toLocaleString()} LT\` ${hasEnoughLt ? '✅' : '❌'}\n\n` +
-        (canBrew ? `✨ **Đủ điều kiện nhóm lửa khai lò!**` : `⚠️ **Chưa đủ dược liệu để luyện chế.**`)
+        (pillLocked
+          ? `🔒 **Cần đạt ${requirementLabel(pill)}** — hỏa hầu hiện tại (**${user.realm.name} · Tầng ${user.realm.layer}**) chưa khống chế nổi dược lực, ép luyện chỉ tổ nổ lò.`
+          : canBrew ? `✨ **Đủ điều kiện nhóm lửa khai lò!**` : `⚠️ **Chưa đủ dược liệu để luyện chế.**`)
       );
 
-    const selectRow = createAlchemySelectMenu(clickerId, pill.id);
+    const selectRow = createAlchemySelectMenu(clickerId, pill.id, user);
     const buttonRow = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId(`btn_brew_pill::${pill.id}::${clickerId}`)

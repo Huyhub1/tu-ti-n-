@@ -86,7 +86,7 @@ export function createStreakDisplay(currentStreak) {
 export async function executeDiemdanh(message) {
   const userId = message.author.id;
   let user = await User.findOne({ userId });
-  if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
+  if (!user) return message.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.` });
 
   const today = getTodayDateString();
   const yesterday = getYesterdayDateString();

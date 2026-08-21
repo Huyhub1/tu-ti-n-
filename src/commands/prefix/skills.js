@@ -1,11 +1,12 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder } from 'discord.js';
 import { User } from '../../database/models/User.js';
 
 
 import { fuseSkills, RARITY_ORDER, findBestFusableRarity, getRarityName } from '../../services/skillService.js';
 
 import { getUserTalentPerks } from '../../services/talentService.js';
-import { COOLDOWNS, claimCooldown } from '../../utils/cooldown.js';
+import { COOLDOWNS, claimCooldown, cooldownLine } from '../../utils/cooldown.js';
+import { EMBED_LIMITS, clampPage, truncate, fillFields } from '../../utils/embedLimits.js';
 
 
 const TRAIN_COOLDOWN_SECONDS = COOLDOWNS.skillTrain;
@@ -22,7 +23,7 @@ export const MAX_EQUIPPED_SKILLS = 4;
  */
 export async function executeKichhoat(message, args = []) {
   const user = await User.findOne({ userId: message.author.id });
-  if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
+  if (!user) return message.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.` });
 
   if (!user.skills || user.skills.length === 0) {
     return message.reply({ content: `❌ Đạo hữu chưa có công pháp nào trong kho! Gõ \`!choden\` để tìm mua bí kíp.` });
@@ -77,62 +78,169 @@ export async function executeKichhoat(message, args = []) {
   });
 }
 
+// Discord chặn cứng 25 field mỗi embed và 25 lựa chọn mỗi select menu. Kho bí
+// kíp thì phình không giới hạn — chơi vài hôm là quá 25 công pháp, và bản cũ
+// đổ thẳng cả kho vào một embed nên càng chơi lâu càng chắc chắn vỡ.
+// Chừa 8 field cho bí kíp, phần còn lại dành cho khung hướng dẫn phía dưới.
+const SKILL_PAGE_SIZE = 8;
+
+// Dựng khung Tàng Kinh Các cho đúng một trang. Trả về cả page/totalPages để nút
+// chuyển trang bên buttonHandler dùng lại mà không phải tính lần nữa.
+export function createSkillsView(user, page = 1) {
+  const skills = user.skills || [];
+  const totalPages = Math.max(1, Math.ceil(skills.length / SKILL_PAGE_SIZE));
+  const safePage = clampPage(page, totalPages);
+  const startIdx = (safePage - 1) * SKILL_PAGE_SIZE;
+  const pageSkills = skills.slice(startIdx, startIdx + SKILL_PAGE_SIZE);
+  const equippedCount = skills.filter(s => s.equipped).length;
+  const owner = truncate(user.daoName || user.username || 'Vô Danh Tu Sĩ', 64);
+
+  const embed = new EmbedBuilder()
+    .setTitle(truncate(`📚 [TÀNG KINH CÁC & KHO BÍ KÍP] - ${owner}`, EMBED_LIMITS.title))
+    .setColor('#37474F');
+
+  if (skills.length === 0) {
+    embed.setDescription(
+      `*Kho bí kíp của đạo hữu đang trống!*\n\n` +
+      `👉 Bấm **[Vào Sàn Giao Dịch Chợ Đen]** bên dưới để mua công pháp của tu sĩ khác,\n` +
+      `hoặc săn yêu thú / phá bí cảnh để nhặt bí kíp rơi ra.`
+    );
+  } else {
+    embed.setDescription(
+      `Toàn bộ công pháp đạo hữu đã thu thập (\`${skills.length}\` bí kíp):\n` +
+      `*(Đang kích hoạt \`${equippedCount}/${MAX_EQUIPPED_SKILLS}\` — dùng \`!kichhoat <stt>\` để đổi)*\n\n`
+    );
+
+    // Chừa 1 field + ~700 ký tự cho khung hướng dẫn và footer thêm ngay sau đây.
+    fillFields(embed, pageSkills.map((sk, offset) => {
+      // stt hiển thị là vị trí thật trong kho, không phải vị trí trong trang — nếu
+      // đánh số lại từ 1 mỗi trang thì `!kichhoat 3` ở trang 2 sẽ bật nhầm bí kíp.
+      const stt = startIdx + offset + 1;
+      const equipTag = sk.equipped ? `✅ [ĐANG DÙNG]` : `⭕`;
+      const masteryTag = sk.mastery >= 100 ? `🔥 VIÊN MÃN (100%)` : `Thuần thục: \`${sk.mastery}%\``;
+      return {
+        name: `${stt}. ${equipTag} **[${sk.name}]** - Phẩm: \`${sk.rarity}\``,
+        value: `📂 Loại: \`${sk.category}\` | ${masteryTag}`,
+        inline: false
+      };
+    }), { reserve: 700, reserveFields: 1 });
+  }
+
+  embed.addFields({
+    name: `💡 Lệnh Rèn Luyện & Nấu Chảy:`,
+    value:
+      `• \`!kichhoat <stt>\` : Bật/tắt công pháp cho khay chiến đấu (tối đa **${MAX_EQUIPPED_SKILLS}**).\n` +
+      `• \`!luyencong <stt>\` : Bế quan luyện thuần thục công pháp (+15% Mastery, Delay 10s).\n` +
+      `• \`!dunghop [phẩm cấp]\` : Nấu chảy 5 công pháp Viên Mãn cùng phẩm thành 1 bí kíp phẩm cao hơn!`,
+    inline: false
+  });
+
+  embed.setFooter({ text: `Trang ${safePage}/${totalPages} · tổng ${skills.length} bí kíp` });
+
+  const components = [];
+  if (totalPages > 1) {
+    components.push(new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`btn_skill_page::${safePage - 1}::${user.userId}`)
+        .setLabel('◀️ Trang Trước')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(safePage <= 1),
+      new ButtonBuilder()
+        .setCustomId(`btn_skill_page_info::${safePage}::${user.userId}`)
+        .setLabel(`Trang ${safePage}/${totalPages}`)
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(true),
+      new ButtonBuilder()
+        .setCustomId(`btn_skill_page::${safePage + 1}::${user.userId}`)
+        .setLabel('Trang Sau ▶️')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(safePage >= totalPages)
+    ));
+  }
+
+  components.push(new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId(`btn_open_sell_menu_${user.userId}`).setLabel('💰 Bán Bí Kíp Lên Chợ Đen').setStyle(ButtonStyle.Danger),
+    new ButtonBuilder().setCustomId(`btn_open_market_${user.userId}`).setLabel('🏪 Vào Sàn Giao Dịch Chợ Đen').setStyle(ButtonStyle.Primary)
+  ));
+
+  return { embed, components, page: safePage, totalPages };
+}
+
+// Menu chọn bí kíp để niêm yết lên Chợ Đen. Cùng lý do phân trang như trên:
+// select menu chỉ nhận tối đa 25 lựa chọn, kho bí kíp thì không có trần.
+const SELL_PAGE_SIZE = 20;
+
+export function createSellSkillView(user, page = 1) {
+  const skills = user.skills || [];
+  const totalPages = Math.max(1, Math.ceil(skills.length / SELL_PAGE_SIZE));
+  const safePage = clampPage(page, totalPages);
+  const startIdx = (safePage - 1) * SELL_PAGE_SIZE;
+  const pageSkills = skills.slice(startIdx, startIdx + SELL_PAGE_SIZE);
+
+  const embed = new EmbedBuilder()
+    .setTitle(`💰 [ĐĂNG BÁN BÍ KÍP LÊN CHỢ ĐEN]`)
+    .setColor('#4CAF50')
+    .setDescription(
+      `👉 **Chọn bí kíp muốn niêm yết ở menu bên dưới:**\n` +
+      `*(Sau khi chọn sẽ hiện bảng nhập giá bán.)*`
+    )
+    .setFooter({ text: `Trang ${safePage}/${totalPages} · tổng ${skills.length} bí kíp` });
+
+  const selectMenu = new StringSelectMenuBuilder()
+    .setCustomId(`sell_select_item_${user.userId}`)
+    .setPlaceholder('👉 Chọn bí kíp muốn bán...');
+
+  pageSkills.forEach((sk, offset) => {
+    // Giữ nguyên chỉ số toàn cục trong `value`: modalHandler đọc `skill_<idx>` rồi
+    // tra thẳng user.skills[idx], nên đánh số lại theo trang là bán nhầm đồ.
+    const idx = startIdx + offset;
+    selectMenu.addOptions(
+      new StringSelectMenuOptionBuilder()
+        .setLabel(truncate(`${idx + 1}. [${sk.name}] (${sk.rarity})`, EMBED_LIMITS.optionLabel))
+        .setDescription(truncate(`Loại: ${sk.category} | Thuần thục: ${sk.mastery}%`, EMBED_LIMITS.optionDescription))
+        .setValue(truncate(`skill_${idx}`, EMBED_LIMITS.optionValue))
+        .setEmoji('📜')
+    );
+  });
+
+  const components = [new ActionRowBuilder().addComponents(selectMenu)];
+  if (totalPages > 1) {
+    components.push(new ActionRowBuilder().addComponents(
+      new ButtonBuilder()
+        .setCustomId(`btn_sell_page::${safePage - 1}::${user.userId}`)
+        .setLabel('◀️ Trang Trước')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(safePage <= 1),
+      new ButtonBuilder()
+        .setCustomId(`btn_sell_page_info::${safePage}::${user.userId}`)
+        .setLabel(`Trang ${safePage}/${totalPages}`)
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(true),
+      new ButtonBuilder()
+        .setCustomId(`btn_sell_page::${safePage + 1}::${user.userId}`)
+        .setLabel('Trang Sau ▶️')
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(safePage >= totalPages)
+    ));
+  }
+
+  return { embed, components, page: safePage, totalPages };
+}
+
 export async function executeTangkinhcac(message) {
   const user = await User.findOne({ userId: message.author.id });
   if (!user) {
-    return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` để tạo nhân vật trước!` });
+    return message.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.` });
   }
 
-  const embed = new EmbedBuilder()
-    .setTitle(`🏴‍☠️ [CHỢ ĐEN & KHO BÍ KÍP CÁ NHÂN] - ${user.daoName || user.username}`)
-    .setColor('#37474F')
-    .setDescription(
-
-      `Danh sách tất cả các công pháp đạo hữu đã thu thập (\`${user.skills.length}\` bí kíp):\n` +
-      `*(Đang kích hoạt \`${user.skills.filter(s => s.equipped).length}/4\` — dùng \`!kichhoat <stt>\` để đổi)*\n\n`
-    );
-
-  if (user.skills.length === 0) {
-    embed.setDescription(`*Kho của bạn đang trống! Hãy bấm nút [Vào Sàn Giao Dịch Chợ Đen] để mua bí kíp.*`);
-  } else {
-    user.skills.forEach((s, idx) => {
-
-      const equipTag = s.equipped ? `✅ [ĐANG DÙNG]` : `⭕`;
-      // stt hiển thị = index + 1, khớp với tham số của !kichhoat và !luyencong
-      const masteryTag = s.mastery >= 100 ? `🔥 VIÊN MÃN (100%)` : `Thuần thục: \`${s.mastery}%\``;
-      embed.addFields({
-        name: `${idx + 1}. ${equipTag} **[${s.name}]** - Phẩm: \`${s.rarity}\``,
-        value: `📂 Loại: \`${s.category}\` | ${masteryTag}`,
-        inline: false
-      });
-    });
-  }
-
-  embed.addFields(
-    {
-      name: `💡 Lệnh Rèn Luyện & Nấu Chảy:`,
-
-      value:
-        `• \`!kichhoat <stt>\` : Bật/tắt công pháp cho khay chiến đấu (tối đa **4**).\n` +
-        `• \`!luyencong <stt>\` : Bế quan luyện thuần thục công pháp (+15% Mastery, Delay 10s).\n` +
-        `• \`!dunghop [phẩm cấp]\` : Nấu chảy 5 công pháp Viên Mãn cùng phẩm thành 1 bí kíp phẩm cao hơn!`,
-      inline: false
-    }
-  );
-
-  // 2 nút giao dịch Chợ Đen
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder().setCustomId(`btn_open_sell_menu_${user.userId}`).setLabel('💰 Bán Đồ Lên Chợ Đen').setStyle(ButtonStyle.Danger),
-    new ButtonBuilder().setCustomId(`btn_open_market_${user.userId}`).setLabel('🏪 Vào Sàn Giao Dịch Chợ Đen').setStyle(ButtonStyle.Primary)
-  );
-
-  await message.reply({ embeds: [embed], components: [row] });
+  const { embed, components } = createSkillsView(user, 1);
+  await message.reply({ embeds: [embed], components });
 }
 
 
 export async function executeLuyencong(message, args) {
   let user = await User.findOne({ userId: message.author.id });
-  if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
+  if (!user) return message.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.` });
 
   if (user.skills.length === 0) {
     return message.reply({ content: `❌ Đạo hữu chưa có công pháp nào trong kho!` });
@@ -190,7 +298,7 @@ export async function executeLuyencong(message, args) {
       `Đạo hữu diễn luyện chiêu thức của **[${skill.name}]**:\n\n` +
       `✨ Độ thuần thục: \`${masteryBefore}%\` ➜ **\`${skill.mastery}%\`** (+${skill.mastery - masteryBefore}) ${skill.mastery >= 100 ? '🔥 **VIÊN MÃN!**' : ''}\n` +
       `${masteryGain > 15 ? `🌟 *Linh căn thiên phú giúp lĩnh ngộ nhanh gấp ${(masteryGain / 15).toFixed(1)} lần!*\n` : ''}` +
-      `⏱️ *Thời gian hồi chiêu: 10 giây*`
+      cooldownLine('skillTrain', user.cooldowns.skillTrain)
     );
 
   await message.reply({ embeds: [embed] });
@@ -199,7 +307,7 @@ export async function executeLuyencong(message, args) {
 
 export async function executeDunghop(message, args = []) {
   const user = await User.findOne({ userId: message.author.id });
-  if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
+  if (!user) return message.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.` });
 
   // Bản cũ khoá cứng 'HOANG_GIAI' nên cả nhánh dung hợp bậc cao là đồ trang trí.
   // Giờ: có tham số thì theo tham số, không thì tự chọn phẩm cấp cao nhất đủ liệu.

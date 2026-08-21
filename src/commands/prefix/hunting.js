@@ -2,6 +2,7 @@ import { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMe
 
 import { User } from '../../database/models/User.js';
 import { checkCooldown, formatWait, checkBattleReady } from '../../utils/cooldown.js';
+import { meetsRequirement, requirementLabel } from '../../utils/power.js';
 import { dungeonCombatSessions } from './dungeon.js';
 import fs from 'fs';
 import path from 'path';
@@ -15,6 +16,9 @@ const monstersConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../../co
 export const combatSessions = {};
 
 // Tự động dọn dẹp các phiên chiến đấu không tương tác quá 10 phút (giải phóng RAM)
+// `.unref()` ở cuối để bộ đếm không giữ tiến trình Node sống: bot vẫn chạy nhờ
+// kết nối websocket của Discord, nhưng script kiểm thử nào lỡ nạp file này sẽ
+// treo vĩnh viễn nếu thiếu — và bot cũng không thoát sạch khi tắt.
 setInterval(() => {
   const now = Date.now();
   const TEN_MINUTES_MS = 10 * 60 * 1000;
@@ -25,48 +29,65 @@ setInterval(() => {
       }
     }
   }
-}, 60 * 1000);
+}, 60 * 1000).unref?.();
 
-export async function executeSanthu(message) {
-  const userId = message.author.id;
+/**
+ * Dựng màn hình chọn yêu thú (kèm mọi lớp kiểm tra trước trận).
+ *
+ * Tách khỏi executeSanthu để nút 'Săn tiếp' ở màn kết trận mở lại đúng menu
+ * này mà không phải gõ lệnh: xong một con là chọn con kế tiếp ngay tại chỗ.
+ *
+ * Trả { content } khi chưa đi săn được (đang trong trận khác, còn hồi chiêu,
+ * còn trọng thương) và { embeds, components } khi mở được menu.
+ */
+export async function buildSanthuView(userId) {
   const user = await User.findOne({ userId });
 
-  if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
+  if (!user) return { content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.` };
 
 
   if (combatSessions[userId]) {
-    return message.reply({
+    return {
       content: `⚔️ Đạo hữu đang trong trận chiến với **[${combatSessions[userId].beastName}]**! Hãy hoàn thành trận đấu hiện tại trước khi bắt đầu cuộc đi săn mới.`
-    });
+    };
   }
 
   const cd = checkCooldown(user, 'hunting');
   if (!cd.ready) {
-    return message.reply({
+    return {
       content: `⏳ Đạo hữu vừa đi săn về, khí huyết chưa ổn định! Vui lòng nghỉ thêm **${formatWait(cd.waitTime)}**.`
-    });
+    };
   }
 
   const battle = checkBattleReady(user);
   if (!battle.ready) {
-    return message.reply({
+    return {
       content: `🩸 **Trọng thương chưa lành!** Máu hiện tại \`${battle.hp}/${battle.maxHp}\` — cần tối thiểu \`${battle.need}\` HP mới đủ sức xông trận.\n` +
         `💊 Hãy dùng \`!uongdan hoi_xuan_dan\` để hồi phục, hoặc \`!tuluyen\` để vận công dưỡng thương.`
-    });
+    };
   }
   if (dungeonCombatSessions && dungeonCombatSessions[userId]) {
-    return message.reply({
+    return {
       content: `⛩️ Đạo hữu đang khiêu chiến Boss **[${dungeonCombatSessions[userId].bossName}]** trong bí cảnh! Hãy hoàn thành hoặc rút lui trước khi săn thú.`
-    });
+    };
   }
 
+  // Danh sách 20 con thú trải dài từ Phàm Nhân tới Nguyên Anh Đỉnh Phong.
+  // Chỉ bày ra những con vừa tầm: 8 con mạnh nhất trong khả năng + 2 con khoá
+  // phía trên làm mục tiêu phấn đấu. Bày cả 20 con vừa rối mắt vừa dụ tân thủ
+  // lao đầu vào Hỗn Độn Ma Thần Hống rồi chết oan.
   const beasts = monstersConfig.beasts;
+  const unlocked = beasts.filter(b => meetsRequirement(user, b));
+  const locked = beasts.filter(b => !meetsRequirement(user, b)).slice(0, 2);
+  const shown = unlocked.slice(-8).concat(locked);
 
   const embed = new EmbedBuilder()
     .setTitle(`🦁 [SĂN BẮT YÊU THÚ NGOẠI MÔN]`)
     .setColor('#4CAF50')
     .setDescription(
-      `Khu rừng rậm rạp sau núi toát ra nhiều luồng yêu khí khác nhau.\n\n` +
+      `Khu rừng rậm rạp sau núi toát ra nhiều luồng yêu khí khác nhau.\n` +
+      `Cảnh giới hiện tại: **${user.realm.name} · Tầng ${user.realm.layer}** — đã mở khoá ` +
+      `**${unlocked.length}/${beasts.length}** loài yêu thú.\n\n` +
       `👉 **Hãy chọn một loài Yêu Thú ở menu bên dưới để do thám thông tin:**`
     );
 
@@ -74,18 +95,28 @@ export async function executeSanthu(message) {
     .setCustomId(`hunt_select_beast_${userId}`)
     .setPlaceholder('👉 Chọn con thú muốn săn bắt...');
 
-  beasts.forEach((b, idx) => {
+  shown.forEach(b => {
+    const isLocked = !meetsRequirement(user, b);
     selectMenu.addOptions(
       new StringSelectMenuOptionBuilder()
-        .setLabel(`${idx + 1}. ${b.name} (Cấp ${b.level})`)
-        .setDescription(`HP: ${b.hp} | Công: ${b.atk} | Thủ: ${b.def}`)
+        .setLabel(`${isLocked ? '🔒 ' : ''}Cấp ${b.level}. ${b.name}`.slice(0, 100))
+        .setDescription(
+          (isLocked
+            ? `Cần ${requirementLabel(b)} | HP ${b.hp} | Công ${b.atk}`
+            : `HP ${b.hp} | Công ${b.atk} | Thủ ${b.def} | +${b.exp} EXP, +${b.linhThach} LT`
+          ).slice(0, 100)
+        )
         .setValue(`beast_${b.id}`)
-        .setEmoji('🐾')
+        .setEmoji(isLocked ? '🔒' : '🐾')
     );
   });
 
   const row = new ActionRowBuilder().addComponents(selectMenu);
-  await message.reply({ embeds: [embed], components: [row] });
+  return { embeds: [embed], components: [row] };
+}
+
+export async function executeSanthu(message) {
+  await message.reply(await buildSanthuView(message.author.id));
 }
 
 export const SKILL_MANA_COST = {

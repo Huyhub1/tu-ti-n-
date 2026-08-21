@@ -17,6 +17,9 @@ export const dokiepSessions = {};
 // này thì mỗi phiên treo vĩnh viễn trong RAM và người chơi cũng bị kẹt luôn
 // vì lệnh !dokiep sẽ báo "đang độ kiếp" mãi mãi.
 const DOKIEP_SESSION_TTL_MS = 10 * 60 * 1000;
+// `.unref()` ở cuối để bộ đếm không giữ tiến trình Node sống: bot vẫn chạy nhờ
+// kết nối websocket của Discord, nhưng script kiểm thử nào lỡ nạp file này sẽ
+// treo vĩnh viễn nếu thiếu — và bot cũng không thoát sạch khi tắt.
 setInterval(() => {
   const now = Date.now();
   for (const userId in dokiepSessions) {
@@ -25,7 +28,7 @@ setInterval(() => {
       delete dokiepSessions[userId];
     }
   }
-}, 60 * 1000);
+}, 60 * 1000).unref?.();
 
 export function createDokiepEmbed(session) {
   const strikeNames = [
@@ -88,7 +91,7 @@ function getProgressBar(current, max, length = 10) {
 export async function executeDokiep(message) {
   const userId = message.author.id;
   const user = await User.findOne({ userId });
-  if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
+  if (!user) return message.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.` });
 
   // Kiểm tra điều kiện độ kiếp: Phải là Kim Đan Kỳ Tầng Đỉnh Phong (layer >= 4) và đầy EXP
   if (user.realm.id !== 'kim_dan') {

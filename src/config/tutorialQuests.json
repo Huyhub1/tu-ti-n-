@@ -1,0 +1,85 @@
+{
+  "_note": "Chuoi nhiem vu tan thu. Dieu kien va phan thuong khai bao bang du lieu de can bang lai ma khong phai sua code. Xem src/services/tutorialService.js.",
+  "quests": [
+    {
+      "id": "nhap_dao",
+      "title": "Nhập Đạo",
+      "desc": "Ngồi xếp bằng vận chuyển chu thiên một lượt, cảm nhận linh khí đầu tiên chảy qua kinh mạch.",
+      "hint": "!tuluyen",
+      "goal": { "type": "counter", "key": "cultivate", "amount": 1 },
+      "reward": { "linhThach": 100 }
+    },
+    {
+      "id": "can_cu",
+      "title": "Cần Cù Bù Tư Chất",
+      "desc": "Không có tài nguyên thì tu vi cũng đứng yên. Xuống núi làm công 3 lượt kiếm chút vốn liếng.",
+      "hint": "!lamcong",
+      "goal": { "type": "counter", "key": "work", "amount": 3 },
+      "reward": { "linhThach": 200, "items": [{ "itemId": "linh_thao", "name": "Linh Thảo", "type": "NGUYEN_LIEU", "quantity": 2, "desc": "Dược thảo tươi đẫm linh khí, nguyên liệu chính của Lò Luyện Đan." }] }
+    },
+    {
+      "id": "so_chien",
+      "title": "Sơ Chiến Yêu Thú",
+      "desc": "Trảm một con yêu thú ngoại môn để lấy Yêu Đan — nguyên liệu không thể thiếu về sau.",
+      "hint": "!santhu",
+      "goal": { "type": "counter", "key": "hunt", "amount": 1 },
+      "reward": { "linhThach": 300, "items": [{ "itemId": "hoi_xuan_dan", "name": "Hồi Xuân Đan", "type": "DAN_DUOC", "quantity": 2, "desc": "Đan dược hồi phục sinh mệnh tức thì." }] }
+    },
+    {
+      "id": "loc_troi",
+      "title": "Nhận Lộc Trời",
+      "desc": "Mỗi ngày điểm danh một lần để nhận lộc và bói quẻ Thiên Cơ. Đi đủ 7 ngày liên tiếp có đại lễ.",
+      "hint": "!diemdanh",
+      "goal": { "type": "checkInStreak", "amount": 1 },
+      "reward": { "linhThach": 250 }
+    },
+    {
+      "id": "khai_son",
+      "title": "Khai Sơn Phá Thạch",
+      "desc": "Đào 3 lượt địa mạch viễn cổ. Nguyên Thạch là tiền tệ cứng, đừng tiêu bừa.",
+      "hint": "!daokhoang",
+      "goal": { "type": "counter", "key": "mining", "amount": 3 },
+      "reward": { "linhThach": 400, "nguyenThach": 3 }
+    },
+    {
+      "id": "nhap_luyen_khi",
+      "title": "Thoát Phàm Nhập Luyện Khí",
+      "desc": "Gom đủ tu vi rồi đột phá khỏi thân phàm. Đây là bậc thềm thật sự của tiên đồ.",
+      "hint": "!tuluyen rồi !dotpha",
+      "goal": { "type": "realmAtLeast", "realmId": "luyen_khi" },
+      "reward": { "linhThach": 500, "items": [{ "itemId": "tu_khi_dan", "name": "Tụ Khí Đan", "type": "DAN_DUOC", "quantity": 1, "desc": "Đan dược tụ linh khí, tăng tu vi tức thì." }] }
+    },
+    {
+      "id": "luyen_dan_su",
+      "title": "Sơ Nhập Đan Đạo",
+      "desc": "Mở lò luyện thành công 1 viên đan. Đan dược là cách duy nhất tăng chỉ số vĩnh viễn.",
+      "hint": "!luyendan",
+      "goal": { "type": "counter", "key": "pill", "amount": 1 },
+      "reward": { "linhThach": 600, "items": [{ "itemId": "linh_thao", "name": "Linh Thảo", "type": "NGUYEN_LIEU", "quantity": 3, "desc": "Dược thảo tươi đẫm linh khí, nguyên liệu chính của Lò Luyện Đan." }] }
+    },
+    {
+      "id": "chap_chuong_phap_bao",
+      "title": "Chấp Chưởng Pháp Bảo",
+      "desc": "Đúc hoặc săn được một món pháp bảo rồi đeo lên người. Tay không thì đừng mơ vào bí cảnh.",
+      "hint": "!ducphapbao rồi !phapbao",
+      "goal": { "type": "equippedGear", "amount": 1 },
+      "reward": { "linhThach": 800 }
+    },
+    {
+      "id": "van_dao_khoi_dau",
+      "title": "Vạn Đạo Khởi Đầu",
+      "desc": "Sưu tầm đủ 2 bộ công pháp trong Tàng Kinh Các. Đủ 5 quyển cùng phẩm là nung được quyển cao hơn.",
+      "hint": "!choden",
+      "goal": { "type": "skillCount", "amount": 2 },
+      "reward": { "linhThach": 1000 }
+    },
+    {
+      "id": "xuat_su",
+      "title": "Xuất Sư Hạ Sơn",
+      "desc": "Tu tới Luyện Khí Tầng 5. Xong bước này là đủ vốn lập tông môn của riêng mình.",
+      "hint": "!tuluyen rồi !dotpha",
+      "goal": { "type": "layerAtLeast", "realmId": "luyen_khi", "amount": 5 },
+      "reward": { "linhThach": 3000, "nguyenThach": 10, "items": [{ "itemId": "truc_co_dan", "name": "Trúc Cơ Đan", "type": "DAN_DUOC", "quantity": 1, "desc": "Tăng tỉ lệ thành công cho lần đột phá kế tiếp." }] }
+    }
+  ]
+}

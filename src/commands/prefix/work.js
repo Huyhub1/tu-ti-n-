@@ -4,7 +4,9 @@ import { User } from '../../database/models/User.js';
 import { getAllSkills } from '../../services/skillService.js';
 import { getFactionBuffs } from '../../services/factionService.js';
 
-import { COOLDOWNS, formatWait, claimCooldown } from '../../utils/cooldown.js';
+import { COOLDOWNS, formatWait, claimCooldown, cooldownLine } from '../../utils/cooldown.js';
+import { repeatRow } from '../../utils/repeatButton.js';
+import { tutorialNudge } from '../../services/tutorialService.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -16,30 +18,35 @@ const jobsConfig = JSON.parse(fs.readFileSync(path.join(__dirname, '../../config
 
 const WORK_COOLDOWN_SECONDS = COOLDOWNS.work;
 
-export async function executeLamcong(message) {
-
-  const userId = message.author.id;
+/**
+ * Chạy một lượt làm công rồi dựng sẵn nguyên gói tin nhắn để hiển thị.
+ *
+ * Tách khỏi executeLamcong để nút 'Làm tiếp' và lệnh gõ tay dùng chung đúng
+ * một đường đi — kể cả các nhánh báo lỗi hồi chiêu.
+ *
+ * Trả { content } khi không chạy được, { embeds, components } khi thành công.
+ */
+export async function buildLamcongView(userId) {
   let user = await User.findOne({ userId });
 
-  if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
+  if (!user) return { content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.` };
 
   const now = new Date();
   if (user.cooldowns.work) {
     const elapsedSeconds = Math.floor((now - new Date(user.cooldowns.work)) / 1000);
     if (elapsedSeconds < WORK_COOLDOWN_SECONDS) {
       const waitTime = WORK_COOLDOWN_SECONDS - elapsedSeconds;
-      return message.reply({
-
+      return {
         content: `⏳ Đạo hữu vừa làm việc vất vả, hãy nghỉ ngơi dưỡng sức thêm **${formatWait(waitTime)}** rồi hẵng tiếp tục!`
-      });
+      };
     }
   }
 
   // Chiếm lượt bằng một câu lệnh nguyên tử: gửi 5 lệnh cùng lúc thì chỉ 1 lệnh
   // đi tiếp, tránh nhân tiền công lên nhiều lần cho cùng một lượt hồi chiêu.
-  const claimed = await claimCooldown(User, userId, 'work');
+  const claimed = await claimCooldown(User, userId, 'work', {}, { $inc: { 'counters.work': 1 } });
   if (!claimed) {
-    return message.reply({ content: `⏳ Đạo hữu gõ quá nhanh, thân thể chưa kịp hồi sức! Chờ thêm giây lát rồi thử lại.` });
+    return { content: `⏳ Đạo hữu gõ quá nhanh, thân thể chưa kịp hồi sức! Chờ thêm giây lát rồi thử lại.` };
   }
   user = claimed;
 
@@ -107,8 +114,13 @@ export async function executeLamcong(message) {
       `💰 Nhận được: **+${moneyEarned.toLocaleString()} Linh Thạch**\n` +
       `💎 Tổng tài sản hiện có: **${user.currencies.linhThach.toLocaleString()} Linh Thạch**${extraMsg}${herbMsg}\n\n` +
 
-      `⏱️ *Thời gian hồi chiêu: ${WORK_COOLDOWN_SECONDS} giây*`
+      cooldownLine('work', user.cooldowns.work) +
+      tutorialNudge(user)
     );
 
-  await message.reply({ embeds: [embed] });
+  return { embeds: [embed], components: repeatRow('lamcong', userId) };
+}
+
+export async function executeLamcong(message) {
+  await message.reply(await buildLamcongView(message.author.id));
 }

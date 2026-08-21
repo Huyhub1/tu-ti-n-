@@ -5,12 +5,21 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "start": "node src/index.js",
+    "start": "node scripts/supervisor.js",
+    "start:bot": "node src/index.js",
+    "update": "node scripts/applyUpdate.js",
     "dev": "node --watch src/index.js",
     "test": "node tests/testBot.js",
     "test:e2e": "node tests/testFullE2E.js",
+    "test:ui": "node tests/testUiLimits.js",
+    "test:race": "node tests/testRaceConditions.js",
+    "test:sanitize": "node tests/testSanitize.js",
     "audit": "node scripts/auditCodebase.js",
-    "test:race": "node tests/testRaceConditions.js"
+    "check:release": "npm run audit && npm test && npm run test:e2e && npm run test:ui && npm run test:sanitize && npm run test:tutorial && npm run test:power && npm run test:update && npm run smoke:tanthu && npm run test:race",
+    "test:tutorial": "node tests/testTutorial.js",
+    "test:power": "node tests/testBattlePower.js",
+    "smoke:tanthu": "node tests/smokeTanthu.js",
+    "test:update": "node tests/testUpdateService.js"
   },
   "dependencies": {
     "chalk": "^5.3.0",

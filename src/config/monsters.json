@@ -12,7 +12,10 @@
       "nguyenThach": 1,
       "danExp": 50,
       "danHeal": 100,
-      "desc": "Thỏ trắng hấp thu linh khí sau núi, nhanh nhẹn nhưng yếu ớt."
+      "desc": "Thỏ trắng hấp thu linh khí sau núi, nhanh nhẹn nhưng yếu ớt.",
+      "minRealmId": "pham_nhan",
+      "minLayer": 1,
+      "gearTier": "HOANG_GIAI"
     },
     {
       "id": "thach_giap_tru",
@@ -26,7 +29,10 @@
       "nguyenThach": 1,
       "danExp": 80,
       "danHeal": 180,
-      "desc": "Lợn rừng da bọc đá cứng ở bìa rừng ngoại môn."
+      "desc": "Lợn rừng da bọc đá cứng ở bìa rừng ngoại môn.",
+      "minRealmId": "luyen_khi",
+      "minLayer": 1,
+      "gearTier": "HOANG_GIAI"
     },
     {
       "id": "u_anh_hac_bao",
@@ -40,7 +46,10 @@
       "nguyenThach": 2,
       "danExp": 120,
       "danHeal": 250,
-      "desc": "Báo đen ẩn hiện trong sương mù, tốc độ nhanh như tia chớp."
+      "desc": "Báo đen ẩn hiện trong sương mù, tốc độ nhanh như tia chớp.",
+      "minRealmId": "luyen_khi",
+      "minLayer": 2,
+      "gearTier": "HOANG_GIAI"
     },
     {
       "id": "xich_diem_lang",
@@ -54,7 +63,10 @@
       "nguyenThach": 2,
       "danExp": 180,
       "danHeal": 350,
-      "desc": "Sói lửa săn mồi theo bầy, hơi thở tỏa ra tàn tích hỏa diễm."
+      "desc": "Sói lửa săn mồi theo bầy, hơi thở tỏa ra tàn tích hỏa diễm.",
+      "minRealmId": "luyen_khi",
+      "minLayer": 3,
+      "gearTier": "HOANG_GIAI"
     },
     {
       "id": "bach_dien_ho",
@@ -68,7 +80,10 @@
       "nguyenThach": 3,
       "danExp": 260,
       "danHeal": 500,
-      "desc": "Gấu mặt trắng khổng lồ trấn giữ khu rừng thảo dược ngàn năm."
+      "desc": "Gấu mặt trắng khổng lồ trấn giữ khu rừng thảo dược ngàn năm.",
+      "minRealmId": "luyen_khi",
+      "minLayer": 4,
+      "gearTier": "HUYEN_GIAI"
     },
     {
       "id": "bich_lan_huyet_mang",
@@ -82,7 +97,10 @@
       "nguyenThach": 3,
       "danExp": 380,
       "danHeal": 700,
-      "desc": "Mãng xà vảy xanh bóng lượn lờ chốn đầm lầy hắc thủy hoang vu."
+      "desc": "Mãng xà vảy xanh bóng lượn lờ chốn đầm lầy hắc thủy hoang vu.",
+      "minRealmId": "truc_co",
+      "minLayer": 1,
+      "gearTier": "HUYEN_GIAI"
     },
     {
       "id": "bang_tinh_tuyet_dieu",
@@ -96,7 +114,10 @@
       "nguyenThach": 4,
       "danExp": 500,
       "danHeal": 900,
-      "desc": "Đại bàng tuyết sải cánh trên đỉnh núi băng, móng vuốt đông cứng vạn vật."
+      "desc": "Đại bàng tuyết sải cánh trên đỉnh núi băng, móng vuốt đông cứng vạn vật.",
+      "minRealmId": "truc_co",
+      "minLayer": 1,
+      "gearTier": "HUYEN_GIAI"
     },
     {
       "id": "kim_cang_cu_vien",
@@ -110,7 +131,10 @@
       "nguyenThach": 5,
       "danExp": 700,
       "danHeal": 1200,
-      "desc": "Vượn khổng lồ mình đồng da sắt, một quyền đấm vỡ tảng đá ngàn cân."
+      "desc": "Vượn khổng lồ mình đồng da sắt, một quyền đấm vỡ tảng đá ngàn cân.",
+      "minRealmId": "truc_co",
+      "minLayer": 2,
+      "gearTier": "HUYEN_GIAI"
     },
     {
       "id": "cuu_u_doc_hat",
@@ -124,7 +148,10 @@
       "nguyenThach": 6,
       "danExp": 950,
       "danHeal": 1500,
-      "desc": "Bọ cạp độc khổng lồ bò ra từ khe nứt Cửu U, đuôi tẩm kịch độc ăn mòn."
+      "desc": "Bọ cạp độc khổng lồ bò ra từ khe nứt Cửu U, đuôi tẩm kịch độc ăn mòn.",
+      "minRealmId": "truc_co",
+      "minLayer": 3,
+      "gearTier": "HUYEN_GIAI"
     },
     {
       "id": "loi_tinh_cuong_su",
@@ -138,7 +165,180 @@
       "nguyenThach": 8,
       "danExp": 1400,
       "danHeal": 2000,
-      "desc": "Sư tử sấm sét bờm rực điện quang, bá chủ đỉnh phong của dãy Hoang Sơn."
+      "desc": "Sư tử sấm sét bờm rực điện quang, bá chủ đỉnh phong của dãy Hoang Sơn.",
+      "minRealmId": "truc_co",
+      "minLayer": 4,
+      "gearTier": "DIA_GIAI"
+    },
+    {
+      "id": "huyet_nguyet_lang_vuong",
+      "name": "Huyết Nguyệt Lang Vương",
+      "level": 11,
+      "hp": 3200,
+      "atk": 210,
+      "def": 105,
+      "exp": 1100,
+      "linhThach": 520,
+      "nguyenThach": 9,
+      "desc": "Sói vương lông bạc dưới trăng máu, tiếng hú triệu tập cả bầy yêu lang.",
+      "danExp": 1760,
+      "danHeal": 1760,
+      "minRealmId": "truc_co",
+      "minLayer": 4,
+      "gearTier": "DIA_GIAI"
+    },
+    {
+      "id": "thanh_giao_hai_xa",
+      "name": "Thanh Giao Hải Xà",
+      "level": 12,
+      "hp": 4400,
+      "atk": 380,
+      "def": 190,
+      "exp": 1800,
+      "linhThach": 680,
+      "nguyenThach": 11,
+      "desc": "Giao xà xanh biếc sống dưới vực sâu, một cái quẫy đuôi dựng sóng thần trăm trượng.",
+      "danExp": 2880,
+      "danHeal": 2420,
+      "minRealmId": "kim_dan",
+      "minLayer": 1,
+      "gearTier": "DIA_GIAI"
+    },
+    {
+      "id": "hac_diem_ky_lan",
+      "name": "Hắc Diệm Kỳ Lân Thú",
+      "level": 13,
+      "hp": 5200,
+      "atk": 440,
+      "def": 220,
+      "exp": 2600,
+      "linhThach": 880,
+      "nguyenThach": 13,
+      "desc": "Kỳ lân mang huyết mạch thần thú suy tàn, vảy đen phun hắc diệm thiêu rụi kim thạch.",
+      "danExp": 4160,
+      "danHeal": 2860,
+      "minRealmId": "kim_dan",
+      "minLayer": 1,
+      "gearTier": "DIA_GIAI"
+    },
+    {
+      "id": "bat_ky_huyen_ho",
+      "name": "Bát Kỳ Huyễn Hồ",
+      "level": 14,
+      "hp": 6000,
+      "atk": 500,
+      "def": 250,
+      "exp": 3500,
+      "linhThach": 1150,
+      "nguyenThach": 15,
+      "desc": "Hồ ly tám đuôi tinh thông huyễn thuật, đánh thẳng vào thần hồn đối thủ.",
+      "danExp": 5600,
+      "danHeal": 3300,
+      "minRealmId": "kim_dan",
+      "minLayer": 2,
+      "gearTier": "DIA_GIAI"
+    },
+    {
+      "id": "thon_thien_thach_mang",
+      "name": "Thôn Thiên Thạch Mãng",
+      "level": 15,
+      "hp": 6800,
+      "atk": 560,
+      "def": 280,
+      "exp": 4500,
+      "linhThach": 1500,
+      "nguyenThach": 18,
+      "desc": "Mãng xà thân phủ nham thạch ngàn tấn, há miệng nuốt trọn cả một tòa núi.",
+      "danExp": 7200,
+      "danHeal": 3740,
+      "minRealmId": "kim_dan",
+      "minLayer": 3,
+      "gearTier": "THIEN_GIAI"
+    },
+    {
+      "id": "cuu_dau_yeu_xa_vuong",
+      "name": "Cửu Đầu Yêu Xà Vương",
+      "level": 16,
+      "hp": 8200,
+      "atk": 640,
+      "def": 320,
+      "exp": 6500,
+      "linhThach": 2000,
+      "nguyenThach": 22,
+      "desc": "Chín cái đầu phun chín loại độc khác nhau, chặt đứt một đầu lập tức mọc lại.",
+      "danExp": 10400,
+      "danHeal": 4510,
+      "minRealmId": "kim_dan",
+      "minLayer": 4,
+      "gearTier": "THIEN_GIAI"
+    },
+    {
+      "id": "phan_thien_hoa_phuong",
+      "name": "Phần Thiên Hỏa Phượng",
+      "level": 17,
+      "hp": 11500,
+      "atk": 1000,
+      "def": 500,
+      "exp": 9500,
+      "linhThach": 2600,
+      "nguyenThach": 26,
+      "desc": "Phượng hoàng lửa niết bàn trùng sinh, một tiếng hót đốt cháy cả tầng mây.",
+      "danExp": 15200,
+      "danHeal": 6325,
+      "minRealmId": "nguyen_anh",
+      "minLayer": 1,
+      "gearTier": "THIEN_GIAI"
+    },
+    {
+      "id": "huyen_vu_tran_hai_quy",
+      "name": "Huyền Vũ Trấn Hải Quy",
+      "level": 18,
+      "hp": 13500,
+      "atk": 1140,
+      "def": 570,
+      "exp": 13500,
+      "linhThach": 3400,
+      "nguyenThach": 30,
+      "desc": "Thần quy mai đen trấn giữ đáy biển vạn năm, giáp cứng hơn cả Thần Giai pháp bảo.",
+      "danExp": 21600,
+      "danHeal": 7425,
+      "minRealmId": "nguyen_anh",
+      "minLayer": 2,
+      "gearTier": "THIEN_GIAI"
+    },
+    {
+      "id": "thai_co_chuc_long",
+      "name": "Thái Cổ Chúc Long",
+      "level": 19,
+      "hp": 15500,
+      "atk": 1280,
+      "def": 640,
+      "exp": 18000,
+      "linhThach": 4400,
+      "nguyenThach": 35,
+      "desc": "Chúc Long thời thái cổ, mắt mở là ngày, mắt nhắm là đêm, hơi thở tạo gió bão.",
+      "danExp": 28800,
+      "danHeal": 8525,
+      "minRealmId": "nguyen_anh",
+      "minLayer": 3,
+      "gearTier": "THAN_GIAI"
+    },
+    {
+      "id": "hon_don_ma_than_hong",
+      "name": "Hỗn Độn Ma Thần Hống",
+      "level": 20,
+      "hp": 18000,
+      "atk": 1450,
+      "def": 725,
+      "exp": 24000,
+      "linhThach": 5800,
+      "nguyenThach": 42,
+      "desc": "Ma thần sinh ra từ khe nứt Hỗn Độn, một tiếng gầm khiến Nguyên Anh tan rã.",
+      "danExp": 38400,
+      "danHeal": 9900,
+      "minRealmId": "nguyen_anh",
+      "minLayer": 4,
+      "gearTier": "THAN_GIAI"
     }
   ]
 }

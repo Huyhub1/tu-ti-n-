@@ -104,3 +104,37 @@ export async function claimCooldown(User, userId, key, extraFilter = {}, extraUp
 
   return User.findOneAndUpdate(filter, update, { new: true });
 }
+
+/**
+ * MỐC SẴN SÀNG LẠI, DẠNG NHÃN THỜI GIAN ĐỘNG CỦA DISCORD.
+ *
+ * Dòng "hồi chiêu 45 giây" là con số chết: người chơi đọc xong vẫn phải tự bấm
+ * giờ, mà cuộn lại tin cũ thì nó vẫn nói y hệt dù đã hết hồi từ lâu. Nhãn
+ * <t:UNIX:R> để Discord tự đếm ngược theo múi giờ và ngôn ngữ của từng người,
+ * và tự đổi thành "x giây trước" khi đã sẵn sàng.
+ *
+ * @param key tên mốc hồi chiêu trong COOLDOWNS
+ * @param from thời điểm bắt đầu tính (mặc định là bây giờ)
+ */
+export function readyAtTag(key, from = new Date()) {
+  const limit = COOLDOWNS[key] || 0;
+  // Mốc truyền vào thường là user.cooldowns[key] lấy từ CSDL. Mongoose trả về
+  // Date, nhưng document đã .lean() hoặc dữ liệu cũ có thể là chuỗi — ép kiểu
+  // rồi mới dùng, sai thì lấy mốc bây giờ chứ không để NaN lọt vào nhãn.
+  const at = from instanceof Date ? from : new Date(from);
+  const base = Number.isFinite(at.getTime()) ? at.getTime() : Date.now();
+  const unixSeconds = Math.floor((base + limit * 1000) / 1000);
+  return '<t:' + unixSeconds + ':R>';
+}
+
+/**
+ * Dòng chân trang hồi chiêu dùng chung cho mọi lệnh hành động.
+ *
+ * Giữ nguyên con số tuyệt đối (để biết chu kỳ dài bao lâu) rồi ghép thêm mốc
+ * sẵn sàng động ở sau.
+ */
+export function cooldownLine(key, from = new Date(), extra = '') {
+  const limit = COOLDOWNS[key] || 0;
+  const tail = extra ? ' · ' + extra : '';
+  return '⏱️ *Hồi chiêu ' + formatWait(limit) + ' — sẵn sàng lại ' + readyAtTag(key, from) + tail + '*';
+}

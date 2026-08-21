@@ -225,6 +225,14 @@ export function attemptBreakthrough(user) {
   if (factionBuffs.breakSuccessBonus > 0) {
     successRate *= (1 + factionBuffs.breakSuccessBonus);
   }
+  // Trúc Cơ Đan: cộng tương đối như buff trận doanh, và tiêu ngay dù thành
+  // hay bại — nếu chỉ tiêu khi thất bại thì uống một viên là buff vĩnh viễn.
+  const breakBuff = user.breakthroughBuff || 0;
+  if (breakBuff > 0) {
+    successRate *= (1 + breakBuff);
+    user.breakthroughBuff = 0;
+  }
+
   successRate = Math.min(0.95, successRate);
 
   const roll = Math.random();

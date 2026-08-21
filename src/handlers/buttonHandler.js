@@ -1,8 +1,10 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
+import { EmbedBuilder, MessageFlags, ActionRowBuilder, ButtonBuilder, ButtonStyle, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ModalBuilder, TextInputBuilder, TextInputStyle } from 'discord.js';
 import { User } from '../database/models/User.js';
 import { MarketItem } from '../database/models/MarketItem.js';
 import { Sect } from '../database/models/Sect.js';
-import { cultivate } from '../commands/prefix/cultivate.js';
+import { cultivate, buildTuluyenView } from '../commands/prefix/cultivate.js';
+import { buildLamcongView } from '../commands/prefix/work.js';
+import { buildDaokhoangView } from '../commands/prefix/mining.js';
 
 
 import { attemptBreakthrough, getRealmDisplayName, calculateUserMaxExp } from '../services/cultivationService.js';
@@ -10,9 +12,12 @@ import { attemptBreakthrough, getRealmDisplayName, calculateUserMaxExp } from '.
 import { getUserTalentPerks } from '../services/talentService.js';
 import { spendResources } from '../services/economyService.js';
 import { getSkillById, getAllSkills } from '../services/skillService.js';
-import { combatSessions, createCombatEmbed, createCombatButtons, SKILL_MANA_COST, GEAR_MANA_COST } from '../commands/prefix/hunting.js';
+import { combatSessions, createCombatEmbed, createCombatButtons, SKILL_MANA_COST, GEAR_MANA_COST, buildSanthuView } from '../commands/prefix/hunting.js';
 import { dungeonCombatSessions, createDungeonCombatEmbed, createDungeonCombatButtons, DUNGEON_SKILL_MANA_COST, DUNGEON_GEAR_MANA_COST } from '../commands/prefix/dungeon.js';
 import { createGearListEmbed, createGearListButtons, isAdmin } from '../commands/prefix/admin.js';
+import { createInventoryView } from '../commands/prefix/inventory.js';
+import { createGearView } from '../commands/prefix/equipment.js';
+import { createSkillsView, createSellSkillView } from '../commands/prefix/skills.js';
 import { createSectEmbed, createSectButtons, getSectMaxMembers, getSectBuffText } from '../commands/prefix/sect.js';
 import { createPublicGearListEmbed, createPublicGearSelectMenu, createPublicGearButtons } from '../commands/prefix/baovat.js';
 import { getPillById } from '../commands/prefix/alchemy.js';
@@ -21,6 +26,10 @@ import { dokiepSessions, createDokiepEmbed, createDokiepButtons } from '../comma
 
 
 import { COOLDOWNS, setCooldown, checkBattleReady, claimCooldown } from '../utils/cooldown.js';
+import { meetsRequirement, requirementLabel } from '../utils/power.js';
+import { parseRepeatId, repeatRow } from '../utils/repeatButton.js';
+import { TUTORIAL_CLAIM_PREFIX, claimAndBuildView } from '../commands/prefix/tutorial.js';
+import { tutorialNudge } from '../services/tutorialService.js';
 import {
   PVP_MIN_BET,
   PVP_CHALLENGE_TTL_MS,
@@ -94,11 +103,25 @@ async function persistCombatState(userOrId, session, { defeated = false } = {}) 
 }
 
 // Hàm hỗ trợ thưởng rớt trang bị Bậc 4 (Huyền Giai)
-function checkHuyenGiaiDrop(user, rate = 0.15) {
+const GEAR_TIER_LABEL = {
+  HOANG_GIAI: 'Bậc 3',
+  HUYEN_GIAI: 'Bậc 4',
+  DIA_GIAI: 'Bậc 5',
+  THIEN_GIAI: 'Bậc 6',
+  THAN_GIAI: 'Bậc 7'
+};
+
+/**
+ * Rơi pháp bảo theo phẩm của nội dung vừa hạ (trường gearTier trong
+ * monsters.json / dungeons.json). Trước đây mọi nguồn đều chỉ rơi HUYEN_GIAI
+ * nên 33/60 pháp bảo (Địa / Thiên / Thần Giai) không có bất kỳ đường nào để
+ * sở hữu trong game — chúng chỉ tồn tại trong Tàng Bảo Các để ngắm.
+ */
+function checkGearDrop(user, rate = 0.15, tier = 'HUYEN_GIAI') {
   if (Math.random() <= rate) {
-    const huyenGiaiGears = equipmentConfig.equipments.filter(e => e.rarity === 'HUYEN_GIAI');
-    if (huyenGiaiGears.length > 0) {
-      const droppedGear = huyenGiaiGears[Math.floor(Math.random() * huyenGiaiGears.length)];
+    const pool = equipmentConfig.equipments.filter(e => e.rarity === tier);
+    if (pool.length > 0) {
+      const droppedGear = pool[Math.floor(Math.random() * pool.length)];
       user.equipments = user.equipments || [];
       const isOwned = user.equipments.some(e => e.gearId === droppedGear.id);
       if (!isOwned) {
@@ -115,7 +138,7 @@ function checkHuyenGiaiDrop(user, rate = 0.15) {
           imageUrl: droppedGear.imageUrl || '',
           equipped: false
         });
-        return `\n🎁 **[CƠ DUYÊN BẢO VẬT]:** Nhặt được pháp bảo Bậc 4 **[${droppedGear.name}]** (\`${droppedGear.rarityName}\`)!`;
+        return `\n🎁 **[CƠ DUYÊN BẢO VẬT]:** Nhặt được pháp bảo ${GEAR_TIER_LABEL[tier] || ''} **[${droppedGear.name}]** (\`${droppedGear.rarityName}\`)!`;
       }
     }
   }
@@ -131,6 +154,9 @@ function checkHuyenGiaiDrop(user, rate = 0.15) {
  * "🎁 1 Yêu Đan" — kết liễu bằng công pháp hay pháp bảo là mất trắng.
  */
 function grantHuntVictoryRewards(user, session) {
+  // Dem o day chu khong dem luc bat dau san: bo chay giua tran thi khong tinh.
+  user.counters = user.counters || {};
+  user.counters.hunt = (user.counters.hunt || 0) + 1;
   user.realm.exp += session.exp;
   user.currencies.linhThach += session.linhThach;
   user.currencies.nguyenThach = (user.currencies.nguyenThach || 0) + session.nguyenThach;
@@ -149,9 +175,23 @@ function grantHuntVictoryRewards(user, session) {
     });
   }
 
-  const dropMsg = checkHuyenGiaiDrop(user, session.gearDropRate ?? 0.15);
+  const herbGain = 1 + Math.floor((session.beastLevel || 1) / 4);
+  const herbStack = user.inventory.find(i => i.itemId === 'linh_thao');
+  if (herbStack) {
+    herbStack.quantity += herbGain;
+  } else {
+    user.inventory.push({
+      itemId: 'linh_thao',
+      name: 'Linh Thảo',
+      type: 'NGUYEN_LIEU',
+      quantity: herbGain,
+      desc: 'Dược thảo tươi đẫm linh khí, nguyên liệu chính của Lò Luyện Đan.'
+    });
+  }
+
+  const dropMsg = checkGearDrop(user, session.gearDropRate ?? 0.15, session.gearTier || 'HUYEN_GIAI');
   const rewardLine =
-    `✨ \`+${session.exp} EXP\` | 💎 \`+${session.linhThach} Linh Thạch\` | 🔮 \`+${session.nguyenThach} Nguyên Thạch\` | 🎁 **1 Yêu Đan**!`;
+    `✨ \`+${session.exp} EXP\` | 💎 \`+${session.linhThach} Linh Thạch\` | 🔮 \`+${session.nguyenThach} Nguyên Thạch\` | 🎁 **1 Yêu Đan** | 🌿 \`+${herbGain} Linh Thảo\``;
 
   return { dropMsg, rewardLine };
 }
@@ -191,7 +231,7 @@ function grantDungeonVictoryRewards(user, session) {
     }
   }
 
-  dropMsg += checkHuyenGiaiDrop(user, session.gearDropRate ?? 0.30);
+  dropMsg += checkGearDrop(user, session.gearDropRate ?? 0.30, session.gearTier || 'HUYEN_GIAI');
 
   const rewardLine =
     `✨ \`+${session.exp} EXP\` | 💎 \`+${session.linhThach} LT\` | 🔮 \`+${nguyenThachEarned} Nguyên Thạch\``;
@@ -199,9 +239,69 @@ function grantDungeonVictoryRewards(user, session) {
   return { nguyenThachEarned, dropMsg, rewardLine };
 }
 
+// Bang tra: mot hanh dong -> ham dung man hinh tuong ung. Khai bao ngoai
+// handleButton de khong dung lai object nay moi lan co nguoi bam nut.
+const REPEAT_BUILDERS = {
+  tuluyen: buildTuluyenView,
+  lamcong: buildLamcongView,
+  daokhoang: buildDaokhoangView,
+  santhu: buildSanthuView
+};
+
 export async function handleButton(interaction) {
   const customId = interaction.customId;
   const clickerId = interaction.user.id;
+
+  // 0. Nút 'làm lại' dưới kết quả các lệnh cày cuốc.
+  //
+  // Chạy lại đúng hàm dựng màn hình mà lệnh gõ tay dùng, rồi:
+  //  · thành công  -> update() ngay tại tin nhắn cũ, kênh không bị ngập tin;
+  //  · thất bại    -> báo riêng cho người bấm, giữ nguyên tin nhắn kèm nút để
+  //                   họ bấm lại sau khi hết hồi chiêu (update() sẽ nuốt mất nút).
+  const repeat = parseRepeatId(customId);
+  if (repeat) {
+    if (clickerId !== repeat.userId) {
+      return interaction.reply({
+        content: `⚠️ Nút này của đạo hữu khác! Hãy tự gõ lệnh của mình để nhận lượt riêng.`,
+        flags: MessageFlags.Ephemeral
+      });
+    }
+    const build = REPEAT_BUILDERS[repeat.action];
+    if (!build) {
+      return interaction.reply({ content: `❌ Nút đã cũ, hãy gõ lại lệnh.`, flags: MessageFlags.Ephemeral });
+    }
+    const payload = await build(repeat.userId);
+    if (payload && payload.embeds) {
+      return interaction.update({ embeds: payload.embeds, components: payload.components || [] });
+    }
+    return interaction.reply({
+      content: (payload && payload.content) || `❌ Chưa thực hiện được, thử lại sau giây lát.`,
+      flags: MessageFlags.Ephemeral
+    });
+  }
+
+  // 0b. Nút lĩnh thưởng chuỗi nhiệm vụ tân thủ.
+  //
+  // customId nhúng sẵn userId nên nút của người này bấm không ăn sang người kia.
+  // Lớp chống nhận hai lần thật sự nằm ở tutorialService (lọc theo tutorial.step),
+  // chỗ này chỉ chặn nhầm người cho đỡ khó hiểu.
+  if (customId.startsWith(TUTORIAL_CLAIM_PREFIX)) {
+    const ownerId = customId.slice(TUTORIAL_CLAIM_PREFIX.length);
+    if (clickerId !== ownerId) {
+      return interaction.reply({
+        content: `⚠️ Đây là nhiệm vụ của đạo hữu khác! Gõ \`!tanthu\` để mở chuỗi của mình.`,
+        flags: MessageFlags.Ephemeral
+      });
+    }
+    const payload = await claimAndBuildView(ownerId);
+    if (payload && payload.embeds) {
+      return interaction.update({ embeds: payload.embeds, components: payload.components || [] });
+    }
+    return interaction.reply({
+      content: (payload && payload.content) || `❌ Chưa lĩnh được, thử lại sau giây lát.`,
+      flags: MessageFlags.Ephemeral
+    });
+  }
 
   // 1. Xử lý Chọn Trận Doanh khi Khởi Đầu
   if (customId.startsWith('choose_faction_')) {
@@ -210,17 +310,17 @@ export async function handleButton(interaction) {
     const targetUserId = parts[parts.length - 1];
 
     if (clickerId !== targetUserId) {
-      return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về đạo hữu!`, ephemeral: true });
+      return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về đạo hữu!`, flags: MessageFlags.Ephemeral });
     }
 
     let user = await User.findOne({ userId: targetUserId });
     if (!user) {
-      return interaction.reply({ content: `❌ Không tìm thấy dữ liệu nhân vật!`, ephemeral: true });
+      return interaction.reply({ content: `❌ Không tìm thấy dữ liệu nhân vật!`, flags: MessageFlags.Ephemeral });
     }
 
     const factionData = factionsConfig.factions[faction];
     if (!factionData) {
-      return interaction.reply({ content: `❌ Trận doanh không hợp lệ!`, ephemeral: true });
+      return interaction.reply({ content: `❌ Trận doanh không hợp lệ!`, flags: MessageFlags.Ephemeral });
     }
 
     user.faction = faction;
@@ -251,6 +351,19 @@ export async function handleButton(interaction) {
       user.stats.critRate = Math.max(user.stats.critRate || 0.05, 0.15);
     }
 
+    // Hành trang tân thủ: đủ để thử ngay hai vòng lặp cốt lõi (uống đan và
+    // luyện đan) trong năm phút đầu, thay vì phải cày mù mấy chục lượt mới
+    // chạm tới hệ thống. Giá trị quy đổi ~90 Linh Thạch nên không lệch cân bằng.
+    const STARTER_KIT = [
+      { itemId: 'linh_thao', name: 'Linh Thảo', type: 'NGUYEN_LIEU', quantity: 3, desc: 'Dược thảo tươi đẫm linh khí, nguyên liệu chính của Lò Luyện Đan.' },
+      { itemId: 'hoi_xuan_dan', name: 'Hồi Xuân Đan', type: 'DAN_DUOC', quantity: 2, desc: 'Đan dược hồi phục sinh mệnh tức thì.' }
+    ];
+    for (const gift of STARTER_KIT) {
+      const stack = user.inventory.find(i => i.itemId === gift.itemId);
+      if (stack) stack.quantity += gift.quantity;
+      else user.inventory.push({ ...gift });
+    }
+
     await user.save();
 
     const embed = new EmbedBuilder()
@@ -261,8 +374,16 @@ export async function handleButton(interaction) {
 
         `📖 **Tôn Chỉ:** ${factionData.desc}\n` +
         `⚡ **Đặc quyền:** ${factionData.buffText || 'Đang cập nhật'}\n` +
-        `🎁 **Bí Kíp Khởi Đầu:** Đã tiếp nhận **[${starterSkillInfo ? starterSkillInfo.name : 'Cơ Bản Quyết'}]** vào Tàng Kinh Các.\n\n` +
-        `👉 **Hãy gõ \`!tupan\` để mở Bảng Tu Chân và bắt đầu con đường xưng bá!**`
+        `🎁 **Bí Kíp Khởi Đầu:** Đã tiếp nhận **[${starterSkillInfo ? starterSkillInfo.name : 'Cơ Bản Quyết'}]** vào Tàng Kinh Các.\n` +
+        `🎒 **Hành Trang Tân Thủ:** 3x **Linh Thảo** · 2x **Hồi Xuân Đan** đã vào Túi Càn Khôn.\n\n` +
+
+        `🧭 **CHỈ NAM TÂN THỦ — cứ làm ba việc này trước:**\n` +
+        `**①** \`!tuluyen\` — bế quan hấp thụ linh khí. Đây là nguồn EXP chính, 10 giây một lượt.\n` +
+        `**②** \`!diemdanh\` — nhận lộc trời và bói quẻ Thiên Cơ. Đi đủ 7 ngày liên tiếp có đại lễ.\n` +
+        `**③** \`!santhu\` — săn yêu thú lấy **Yêu Đan** và **Linh Thảo**, nguyên liệu để \`!luyendan\`.\n\n` +
+
+        `📈 Gom đủ tu vi thì gõ \`!dotpha\` để lên tầng. Xem toàn cảnh bản thân bằng \`!tupan\`.\n` +
+        `📖 Lạc đường bất cứ lúc nào — gõ \`!help\` để mở Cẩm Nang Tu Chân.`
       );
 
     return interaction.update({ embeds: [embed], components: [] });
@@ -282,25 +403,36 @@ export async function handleButton(interaction) {
     }
 
     if (clickerId !== targetUserId) {
-      return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
+      return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, flags: MessageFlags.Ephemeral });
     }
 
     let user = await User.findOne({ userId: targetUserId });
-    if (!user) return interaction.reply({ content: `❌ Chưa tạo nhân vật!`, ephemeral: true });
+    if (!user) return interaction.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.`, flags: MessageFlags.Ephemeral });
 
     const beast = monstersConfig.beasts.find(b => b.id === beastId);
-    if (!beast) return interaction.reply({ content: `❌ Thú không tồn tại!`, ephemeral: true });
+    if (!beast) return interaction.reply({ content: `❌ Thú không tồn tại!`, flags: MessageFlags.Ephemeral });
+
+    // Menu đã lọc sẵn nhưng vẫn phải chặn lại ở đây: customId cũ nằm trong
+    // lịch sử chat vẫn bấm lại được, và người chơi có thể đã rớt cảnh giới.
+    if (!meetsRequirement(user, beast)) {
+      return interaction.reply({
+        content: `🔒 **[${beast.name}]** là yêu thú Cấp ${beast.level}, yêu khí quá nồng đậm!` +
+          `\nCần đạt **${requirementLabel(beast)}** mới đủ sức đối đầu ` +
+          `(hiện tại: **${user.realm.name} · Tầng ${user.realm.layer}**).`,
+        flags: MessageFlags.Ephemeral
+      });
+    }
 
     if (combatSessions && combatSessions[targetUserId]) {
       return interaction.reply({
         content: `⚔️ Đạo hữu đang trong trận chiến với **[${combatSessions[targetUserId].beastName}]**! Hãy hoàn thành trận đấu hiện tại trước.`,
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
     if (dungeonCombatSessions && dungeonCombatSessions[targetUserId]) {
       return interaction.reply({
         content: `⛩️ Đạo hữu đang khiêu chiến Boss trong bí cảnh! Hãy hoàn thành hoặc rút lui trước khi săn thú.`,
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
@@ -310,7 +442,7 @@ export async function handleButton(interaction) {
     // vẫn còn khe hở await.
     const claimedHunt = await claimCooldown(User, targetUserId, 'hunting');
     if (!claimedHunt) {
-      return interaction.reply({ content: `⏳ Đạo hữu bấm quá nhanh, khí huyết chưa ổn định! Chờ thêm giây lát rồi săn tiếp.`, ephemeral: true });
+      return interaction.reply({ content: `⏳ Đạo hữu bấm quá nhanh, khí huyết chưa ổn định! Chờ thêm giây lát rồi săn tiếp.`, flags: MessageFlags.Ephemeral });
     }
     user = claimedHunt;
 
@@ -353,6 +485,8 @@ export async function handleButton(interaction) {
       linhThach: beast.linhThach,
       nguyenThach: beast.nguyenThach,
       gearDropRate: Math.min(0.60, 0.15 * (1 + huntBuffs.dropRateBonus)),
+      gearTier: beast.gearTier || 'HUYEN_GIAI',
+      beastLevel: beast.level || 1,
       lastActionTime: Date.now(),
       lastLog: `⚔️ **${user.daoName || user.username}** rút vũ khí xông vào chiến đấu với **${beast.name}**!`
     };
@@ -367,10 +501,10 @@ export async function handleButton(interaction) {
   // 3. Xử lý Nút Đánh Thường Săn Thú
   if (customId.startsWith('combat_attack_normal_')) {
     const targetUserId = customId.replace('combat_attack_normal_', '');
-    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Đây không phải trận đấu của bạn!`, ephemeral: true });
+    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Đây không phải trận đấu của bạn!`, flags: MessageFlags.Ephemeral });
 
     const session = combatSessions[targetUserId];
-    if (!session) return interaction.reply({ content: `❌ Trận chiến đã kết thúc hoặc không tồn tại!`, ephemeral: true });
+    if (!session) return interaction.reply({ content: `❌ Trận chiến đã kết thúc hoặc không tồn tại!`, flags: MessageFlags.Ephemeral });
 
     session.lastActionTime = Date.now();
 
@@ -388,6 +522,7 @@ export async function handleButton(interaction) {
 
       const user = await User.findOne({ userId: targetUserId });
       let gearDropMsg = '';
+      let huntNudge = '';
       let rewardLine = '';
 
       if (user) {
@@ -396,18 +531,20 @@ export async function handleButton(interaction) {
         rewardLine = rewards.rewardLine;
         u_syncCombatStats(user, session);
         await user.save();
+        // Doc sau grantHuntVictoryRewards nen bo dem 'hunt' da +1: nguoi choi
+        // thay ngay dong nhac trong chinh tin nhan bao chien thang.
+        huntNudge = tutorialNudge(user);
       }
 
-      session.lastLog = `${logText}\n\n🏆 **CHIẾN THẮNG!** Đạo hữu đã trảm sát **${session.beastName}**!\n✨ Nhận: ${rewardLine}${gearDropMsg}`;
+      session.lastLog = `${logText}\n\n🏆 **CHIẾN THẮNG!** Đạo hữu đã trảm sát **${session.beastName}**!\n✨ Nhận: ${rewardLine}${gearDropMsg}${huntNudge}`;
       const embed = createCombatEmbed(session);
-      return interaction.update({ embeds: [embed], components: [] });
+      return interaction.update({ embeds: [embed], components: repeatRow('santhu', targetUserId) });
     }
 
     const beastDmg = applyIncomingDamage(session, Math.max(4, Math.floor(session.beastAtk * (0.9 + Math.random() * 0.2) - session.userDef * 0.4)));
     session.userHp = Math.max(0, session.userHp - beastDmg);
     logText += session.lastDodged
-      ? `
-💨 **${session.userName}** thân pháp phiêu hốt, né sạch đòn phản kích của **${session.beastName}**!`
+      ? `\n💨 **${session.userName}** thân pháp phiêu hốt, né sạch đòn phản kích của **${session.beastName}**!`
       : `\n👹 **${session.beastName}** gầm thét vồ tới, cắn xé gây **${beastDmg} sát thương** lên bạn!`;
 
     if (session.userHp <= 0) {
@@ -415,7 +552,7 @@ export async function handleButton(interaction) {
     await persistCombatState(targetUserId, session, { defeated: true });
       session.lastLog = `${logText}\n\n💀 **THẤT BẠI!** Đạo hữu đã bị trọng thương, đành phải vận chuyển độn thuật chạy về dưỡng thương!`;
       const embed = createCombatEmbed(session);
-      return interaction.update({ embeds: [embed], components: [] });
+      return interaction.update({ embeds: [embed], components: repeatRow('santhu', targetUserId) });
     }
 
     await persistCombatState(targetUserId, session);
@@ -436,10 +573,10 @@ export async function handleButton(interaction) {
       targetUserId = customId.replace('combat_attack_skill_', '');
     }
 
-    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Đây không phải trận đấu của bạn!`, ephemeral: true });
+    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Đây không phải trận đấu của bạn!`, flags: MessageFlags.Ephemeral });
 
     const session = combatSessions[targetUserId];
-    if (!session) return interaction.reply({ content: `❌ Trận chiến đã kết thúc!`, ephemeral: true });
+    if (!session) return interaction.reply({ content: `❌ Trận chiến đã kết thúc!`, flags: MessageFlags.Ephemeral });
 
     session.lastActionTime = Date.now();
 
@@ -462,7 +599,7 @@ export async function handleButton(interaction) {
 
     const skillCost = SKILL_MANA_COST[skillRarity] || 25;
     if (session.userMp < skillCost) {
-      return interaction.reply({ content: `⚠️ Không đủ Linh Lực (cần **${skillCost} MP**, hiện có **${session.userMp} MP**)! Hãy đánh thường để tích lũy chân khí.`, ephemeral: true });
+      return interaction.reply({ content: `⚠️ Không đủ Linh Lực (cần **${skillCost} MP**, hiện có **${session.userMp} MP**)! Hãy đánh thường để tích lũy chân khí.`, flags: MessageFlags.Ephemeral });
     }
 
     session.userMp -= skillCost;
@@ -486,6 +623,7 @@ export async function handleButton(interaction) {
       delete combatSessions[targetUserId];
 
       let gearDropMsg = '';
+      let huntNudge = '';
       let rewardLine = '';
       if (user) {
         const rewards = grantHuntVictoryRewards(user, session);
@@ -493,18 +631,20 @@ export async function handleButton(interaction) {
         rewardLine = rewards.rewardLine;
         u_syncCombatStats(user, session);
         await user.save();
+        // Doc sau grantHuntVictoryRewards nen bo dem 'hunt' da +1: nguoi choi
+        // thay ngay dong nhac trong chinh tin nhan bao chien thang.
+        huntNudge = tutorialNudge(user);
       }
 
-      session.lastLog = `${logText}\n\n🏆 **CHIẾN THẮNG TUYỆT ĐỐI!** Một kích diệt sát **${session.beastName}**!\n✨ ${rewardLine}${gearDropMsg}`;
+      session.lastLog = `${logText}\n\n🏆 **CHIẾN THẮNG TUYỆT ĐỐI!** Một kích diệt sát **${session.beastName}**!\n✨ ${rewardLine}${gearDropMsg}${huntNudge}`;
       const embed = createCombatEmbed(session);
-      return interaction.update({ embeds: [embed], components: [] });
+      return interaction.update({ embeds: [embed], components: repeatRow('santhu', targetUserId) });
     }
 
     const beastDmg = applyIncomingDamage(session, Math.max(4, Math.floor(session.beastAtk * (0.9 + Math.random() * 0.2) - session.userDef * 0.4)));
     session.userHp = Math.max(0, session.userHp - beastDmg);
     logText += session.lastDodged
-      ? `
-💨 **${session.userName}** thân pháp phiêu hốt, né sạch đòn phản kích của **${session.beastName}**!`
+      ? `\n💨 **${session.userName}** thân pháp phiêu hốt, né sạch đòn phản kích của **${session.beastName}**!`
       : `\n👹 **${session.beastName}** giãy giụa phản kích gây **${beastDmg} sát thương**!`;
 
     if (session.userHp <= 0) {
@@ -512,7 +652,7 @@ export async function handleButton(interaction) {
     await persistCombatState(user, session, { defeated: true });
       session.lastLog = `${logText}\n\n💀 **THẤT BẠI!** Đạo hữu kiệt sức, đành rút lui dưỡng thương!`;
       const embed = createCombatEmbed(session);
-      return interaction.update({ embeds: [embed], components: [] });
+      return interaction.update({ embeds: [embed], components: repeatRow('santhu', targetUserId) });
     }
 
     await persistCombatState(user, session);
@@ -528,10 +668,10 @@ export async function handleButton(interaction) {
     const gearId = parts[1];
     const targetUserId = parts[2];
 
-    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Đây không phải trận đấu của bạn!`, ephemeral: true });
+    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Đây không phải trận đấu của bạn!`, flags: MessageFlags.Ephemeral });
 
     const session = combatSessions[targetUserId];
-    if (!session) return interaction.reply({ content: `❌ Trận chiến đã kết thúc!`, ephemeral: true });
+    if (!session) return interaction.reply({ content: `❌ Trận chiến đã kết thúc!`, flags: MessageFlags.Ephemeral });
 
     session.lastActionTime = Date.now();
 
@@ -541,7 +681,7 @@ export async function handleButton(interaction) {
     const gearCost = GEAR_MANA_COST[gearRarity] || 40;
 
     if (session.userMp < gearCost) {
-      return interaction.reply({ content: `⚠️ Không đủ Linh Lực (cần **${gearCost} MP**, hiện có **${session.userMp} MP**)! Hãy đánh thường để tích lũy chân khí.`, ephemeral: true });
+      return interaction.reply({ content: `⚠️ Không đủ Linh Lực (cần **${gearCost} MP**, hiện có **${session.userMp} MP**)! Hãy đánh thường để tích lũy chân khí.`, flags: MessageFlags.Ephemeral });
     }
 
     session.userMp -= gearCost;
@@ -570,6 +710,7 @@ export async function handleButton(interaction) {
       delete combatSessions[targetUserId];
 
       let gearDropMsg = '';
+      let huntNudge = '';
       let rewardLine = '';
       if (user) {
         const rewards = grantHuntVictoryRewards(user, session);
@@ -577,18 +718,20 @@ export async function handleButton(interaction) {
         rewardLine = rewards.rewardLine;
         u_syncCombatStats(user, session);
         await user.save();
+        // Doc sau grantHuntVictoryRewards nen bo dem 'hunt' da +1: nguoi choi
+        // thay ngay dong nhac trong chinh tin nhan bao chien thang.
+        huntNudge = tutorialNudge(user);
       }
 
-      session.lastLog = `${logText}\n\n🏆 **CHIẾN THẮNG TUYỆT ĐỐI!** Pháp bảo chấn sát **${session.beastName}**!\n✨ ${rewardLine}${gearDropMsg}`;
+      session.lastLog = `${logText}\n\n🏆 **CHIẾN THẮNG TUYỆT ĐỐI!** Pháp bảo chấn sát **${session.beastName}**!\n✨ ${rewardLine}${gearDropMsg}${huntNudge}`;
       const embed = createCombatEmbed(session);
-      return interaction.update({ embeds: [embed], components: [] });
+      return interaction.update({ embeds: [embed], components: repeatRow('santhu', targetUserId) });
     }
 
     const beastDmg = applyIncomingDamage(session, Math.max(4, Math.floor(session.beastAtk * (0.9 + Math.random() * 0.2) - session.userDef * 0.4)));
     session.userHp = Math.max(0, session.userHp - beastDmg);
     logText += session.lastDodged
-      ? `
-💨 **${session.userName}** thân pháp phiêu hốt, né sạch đòn phản kích của **${session.beastName}**!`
+      ? `\n💨 **${session.userName}** thân pháp phiêu hốt, né sạch đòn phản kích của **${session.beastName}**!`
       : `\n👹 **${session.beastName}** hoảng loạn cắn trả gây **${beastDmg} sát thương**!`;
 
     if (session.userHp <= 0) {
@@ -596,7 +739,7 @@ export async function handleButton(interaction) {
     await persistCombatState(user, session, { defeated: true });
       session.lastLog = `${logText}\n\n💀 **THẤT BẠI!** Đạo hữu kiệt sức, rút lui dưỡng thương!`;
       const embed = createCombatEmbed(session);
-      return interaction.update({ embeds: [embed], components: [] });
+      return interaction.update({ embeds: [embed], components: repeatRow('santhu', targetUserId) });
     }
 
     await persistCombatState(user, session);
@@ -609,12 +752,12 @@ export async function handleButton(interaction) {
   // 6. Tháo chạy săn thú
   if (customId.startsWith('combat_flee_') || customId.startsWith('btn_cancel_hunt::') || customId.startsWith('btn_cancel_hunt_')) {
     const targetUserId = customId.replace('combat_flee_', '').replace('btn_cancel_hunt::', '').replace('btn_cancel_hunt_', '');
-    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
+    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, flags: MessageFlags.Ephemeral });
 
     delete combatSessions[targetUserId];
     return interaction.update({
       embeds: [new EmbedBuilder().setTitle('🏃 [TẨU THOÁT]').setColor('#757575').setDescription('Đạo hữu đã an toàn rút lui khỏi khu vực săn thú.')],
-      components: []
+      components: repeatRow('santhu', targetUserId)
     });
   }
 
@@ -631,24 +774,35 @@ export async function handleButton(interaction) {
       dungeonId = parts.join('_');
     }
 
-    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
+    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, flags: MessageFlags.Ephemeral });
 
     let user = await User.findOne({ userId: targetUserId });
-    if (!user) return interaction.reply({ content: `❌ Chưa tạo nhân vật!`, ephemeral: true });
+    if (!user) return interaction.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.`, flags: MessageFlags.Ephemeral });
 
     const dungeon = dungeonsConfig.dungeons.find(d => d.id === dungeonId);
-    if (!dungeon) return interaction.reply({ content: `❌ Ải không tồn tại!`, ephemeral: true });
+    if (!dungeon) return interaction.reply({ content: `❌ Ải không tồn tại!`, flags: MessageFlags.Ephemeral });
+
+    // minRealmId / minLayer trong dungeons.json trước đây chỉ để trang trí,
+    // không chỗ nào kiểm tra — tân thủ vẫn mở được ải cuối rồi chết ngay.
+    if (!meetsRequirement(user, dungeon)) {
+      return interaction.reply({
+        content: `🔒 Cấm chế của **[${dungeon.name}]** chưa chịu mở ra cho đạo hữu!` +
+          `\nCần đạt **${requirementLabel(dungeon)}** ` +
+          `(hiện tại: **${user.realm.name} · Tầng ${user.realm.layer}**).`,
+        flags: MessageFlags.Ephemeral
+      });
+    }
 
     if (dungeonCombatSessions && dungeonCombatSessions[targetUserId]) {
       return interaction.reply({
         content: `⛩️ Đạo hữu đang trong trận khiêu chiến Boss **[${dungeonCombatSessions[targetUserId].bossName}]**! Hãy hoàn thành hoặc rút lui trước.`,
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
     if (combatSessions && combatSessions[targetUserId]) {
       return interaction.reply({
         content: `⚔️ Đạo hữu đang trong trận săn thú! Hãy hoàn thành trận đấu trước khi vào phó bản.`,
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
@@ -656,7 +810,7 @@ export async function handleButton(interaction) {
     // Chốt lượt vào bí cảnh bằng một câu lệnh nguyên tử (xem ghi chú ở săn thú).
     const claimedDungeon = await claimCooldown(User, targetUserId, 'dungeon');
     if (!claimedDungeon) {
-      return interaction.reply({ content: `⏳ Đạo hữu bấm quá nhanh, cửa bí cảnh chưa kịp mở lại! Chờ thêm giây lát.`, ephemeral: true });
+      return interaction.reply({ content: `⏳ Đạo hữu bấm quá nhanh, cửa bí cảnh chưa kịp mở lại! Chờ thêm giây lát.`, flags: MessageFlags.Ephemeral });
     }
     user = claimedDungeon;
 
@@ -697,7 +851,8 @@ export async function handleButton(interaction) {
       nguyenThachMin: dungeon.nguyenThachMin,
       nguyenThachMax: dungeon.nguyenThachMax,
       rareDropRate: Math.min(0.80, (dungeon.rareDropRate || 0) * (1 + dgBuffs.dropRateBonus)),
-      gearDropRate: Math.min(0.75, 0.30 * (1 + dgBuffs.dropRateBonus)),
+      gearDropRate: Math.min(0.75, (dungeon.gearDropRate ?? 0.30) * (1 + dgBuffs.dropRateBonus)),
+      gearTier: dungeon.gearTier || 'HUYEN_GIAI',
       lastActionTime: Date.now(),
       lastLog: `⛩️ **${user.daoName || user.username}** bước vào trận nhãn, đối đầu trực tiếp với Thủ Lĩnh **${dungeon.boss.name}**!`
     };
@@ -711,10 +866,10 @@ export async function handleButton(interaction) {
   // 8. Xử lý Đánh Boss Thường trong Phó Bản
   if (customId.startsWith('dungeon_attack_normal_')) {
     const targetUserId = customId.replace('dungeon_attack_normal_', '');
-    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Đây không phải trận đấu của bạn!`, ephemeral: true });
+    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Đây không phải trận đấu của bạn!`, flags: MessageFlags.Ephemeral });
 
     const session = dungeonCombatSessions[targetUserId];
-    if (!session) return interaction.reply({ content: `❌ Trận chiến đã kết thúc!`, ephemeral: true });
+    if (!session) return interaction.reply({ content: `❌ Trận chiến đã kết thúc!`, flags: MessageFlags.Ephemeral });
 
     session.lastActionTime = Date.now();
 
@@ -749,8 +904,7 @@ export async function handleButton(interaction) {
     const bossDmg = applyIncomingDamage(session, Math.max(8, Math.floor(session.bossAtk * (0.9 + Math.random() * 0.2) - session.userDef * 0.35)));
     session.userHp = Math.max(0, session.userHp - bossDmg);
     logText += session.lastDodged
-      ? `
-💨 **${session.userName}** thân pháp phiêu hốt, né sạch đòn phản kích của **${session.bossName}**!`
+      ? `\n💨 **${session.userName}** thân pháp phiêu hốt, né sạch đòn phản kích của **${session.bossName}**!`
       : `\n👹 **${session.bossName}** vung trượng đập nát hư không, giáng xuống **${bossDmg} sát thương**!`;
 
     if (session.userHp <= 0) {
@@ -779,10 +933,10 @@ export async function handleButton(interaction) {
       targetUserId = customId.replace('dungeon_attack_skill_', '');
     }
 
-    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Đây không phải trận đấu của bạn!`, ephemeral: true });
+    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Đây không phải trận đấu của bạn!`, flags: MessageFlags.Ephemeral });
 
     const session = dungeonCombatSessions[targetUserId];
-    if (!session) return interaction.reply({ content: `❌ Trận chiến đã kết thúc!`, ephemeral: true });
+    if (!session) return interaction.reply({ content: `❌ Trận chiến đã kết thúc!`, flags: MessageFlags.Ephemeral });
 
     session.lastActionTime = Date.now();
 
@@ -805,7 +959,7 @@ export async function handleButton(interaction) {
 
     const skillCost = DUNGEON_SKILL_MANA_COST[skillRarity] || 25;
     if (session.userMp < skillCost) {
-      return interaction.reply({ content: `⚠️ Không đủ Linh Lực (cần **${skillCost} MP**, hiện có **${session.userMp} MP**)! Hãy đánh thường để tích lũy chân khí.`, ephemeral: true });
+      return interaction.reply({ content: `⚠️ Không đủ Linh Lực (cần **${skillCost} MP**, hiện có **${session.userMp} MP**)! Hãy đánh thường để tích lũy chân khí.`, flags: MessageFlags.Ephemeral });
     }
 
     session.userMp -= skillCost;
@@ -846,8 +1000,7 @@ export async function handleButton(interaction) {
     const bossDmg = applyIncomingDamage(session, Math.max(10, Math.floor(session.bossAtk * (0.9 + Math.random() * 0.2) - session.userDef * 0.35)));
     session.userHp = Math.max(0, session.userHp - bossDmg);
     logText += session.lastDodged
-      ? `
-💨 **${session.userName}** thân pháp phiêu hốt, né sạch đòn phản kích của **${session.bossName}**!`
+      ? `\n💨 **${session.userName}** thân pháp phiêu hốt, né sạch đòn phản kích của **${session.bossName}**!`
       : `\n👹 **${session.bossName}** gào thét phản công gây **${bossDmg} sát thương**!`;
 
     if (session.userHp <= 0) {
@@ -871,10 +1024,10 @@ export async function handleButton(interaction) {
     const gearId = parts[1];
     const targetUserId = parts[2];
 
-    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Đây không phải trận đấu của bạn!`, ephemeral: true });
+    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Đây không phải trận đấu của bạn!`, flags: MessageFlags.Ephemeral });
 
     const session = dungeonCombatSessions[targetUserId];
-    if (!session) return interaction.reply({ content: `❌ Trận chiến đã kết thúc!`, ephemeral: true });
+    if (!session) return interaction.reply({ content: `❌ Trận chiến đã kết thúc!`, flags: MessageFlags.Ephemeral });
 
     session.lastActionTime = Date.now();
 
@@ -884,7 +1037,7 @@ export async function handleButton(interaction) {
     const gearCost = DUNGEON_GEAR_MANA_COST[gearRarity] || 40;
 
     if (session.userMp < gearCost) {
-      return interaction.reply({ content: `⚠️ Không đủ Linh Lực (cần **${gearCost} MP**, hiện có **${session.userMp} MP**)! Hãy đánh thường để tích lũy chân khí.`, ephemeral: true });
+      return interaction.reply({ content: `⚠️ Không đủ Linh Lực (cần **${gearCost} MP**, hiện có **${session.userMp} MP**)! Hãy đánh thường để tích lũy chân khí.`, flags: MessageFlags.Ephemeral });
     }
 
     session.userMp -= gearCost;
@@ -930,8 +1083,7 @@ export async function handleButton(interaction) {
     const bossDmg = applyIncomingDamage(session, Math.max(10, Math.floor(session.bossAtk * (0.9 + Math.random() * 0.2) - session.userDef * 0.35)));
     session.userHp = Math.max(0, session.userHp - bossDmg);
     logText += session.lastDodged
-      ? `
-💨 **${session.userName}** thân pháp phiêu hốt, né sạch đòn phản kích của **${session.bossName}**!`
+      ? `\n💨 **${session.userName}** thân pháp phiêu hốt, né sạch đòn phản kích của **${session.bossName}**!`
       : `\n👹 **${session.bossName}** gào thét cuồng nộ đánh trả gây **${bossDmg} sát thương**!`;
 
     if (session.userHp <= 0) {
@@ -952,7 +1104,7 @@ export async function handleButton(interaction) {
   // 11. Rút lui phó bản
   if (customId.startsWith('dungeon_flee_') || customId.startsWith('btn_cancel_dungeon::') || customId.startsWith('btn_cancel_dungeon_')) {
     const targetUserId = customId.replace('dungeon_flee_', '').replace('btn_cancel_dungeon::', '').replace('btn_cancel_dungeon_', '');
-    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
+    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, flags: MessageFlags.Ephemeral });
 
     delete dungeonCombatSessions[targetUserId];
     return interaction.update({
@@ -967,14 +1119,14 @@ export async function handleButton(interaction) {
     const recipeId = parts[1];
     const targetUserId = parts[2];
 
-    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
+    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, flags: MessageFlags.Ephemeral });
 
 
     let user = await User.findOne({ userId: targetUserId });
-    if (!user) return interaction.reply({ content: `❌ Chưa tạo nhân vật!`, ephemeral: true });
+    if (!user) return interaction.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.`, flags: MessageFlags.Ephemeral });
 
     const recipe = recipesConfig.recipes.find(r => r.id === recipeId);
-    if (!recipe) return interaction.reply({ content: `❌ Công thức không tồn tại!`, ephemeral: true });
+    if (!recipe) return interaction.reply({ content: `❌ Công thức không tồn tại!`, flags: MessageFlags.Ephemeral });
 
 
     // ── KIỂM TRA ĐỦ NGUYÊN LIỆU TRƯỚC KHI TRỪ ──
@@ -999,7 +1151,7 @@ export async function handleButton(interaction) {
       return interaction.reply({
         content: `❌ **Nguyên liệu không đủ để khởi lò!**\n\n${missing.join('\n')}\n\n` +
           `💡 *Săn quái (\`!santhu\`) để lấy Yêu Đan, đào khoáng (\`!daokhoang\`) để lấy Nguyên Thạch.*`,
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
@@ -1016,7 +1168,7 @@ export async function handleButton(interaction) {
     if (!spent) {
       return interaction.reply({
         content: `❌ Nguyên liệu vừa thay đổi (đạo hữu bấm quá nhanh hoặc đã dùng ở nơi khác) — lò không khởi được. Gõ \`!ducphapbao\` để thử lại!`,
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
@@ -1076,10 +1228,10 @@ export async function handleButton(interaction) {
     const idx = parseInt(parts[1], 10);
     const targetUserId = parts[2];
 
-    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
+    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, flags: MessageFlags.Ephemeral });
 
     let user = await User.findOne({ userId: targetUserId });
-    if (!user || !user.equipments[idx]) return interaction.reply({ content: `❌ Trang bị không tồn tại!`, ephemeral: true });
+    if (!user || !user.equipments[idx]) return interaction.reply({ content: `❌ Trang bị không tồn tại!`, flags: MessageFlags.Ephemeral });
 
     const targetGear = user.equipments[idx];
     const willEquip = !targetGear.equipped;
@@ -1131,11 +1283,11 @@ export async function handleButton(interaction) {
     const idx = parseInt(parts[1], 10);
     const targetUserId = parts[2];
 
-    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
+    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, flags: MessageFlags.Ephemeral });
 
 
     let user = await User.findOne({ userId: targetUserId });
-    if (!user || !user.equipments[idx]) return interaction.reply({ content: `❌ Trang bị không tồn tại!`, ephemeral: true });
+    if (!user || !user.equipments[idx]) return interaction.reply({ content: `❌ Trang bị không tồn tại!`, flags: MessageFlags.Ephemeral });
 
 
     let gear = user.equipments[idx];
@@ -1145,7 +1297,7 @@ export async function handleButton(interaction) {
     if (lv >= MAX_ENHANCE_LEVEL) {
       return interaction.reply({
         content: `🔒 **[${gear.name}]** đã đạt cấp cường hóa tối đa **+${MAX_ENHANCE_LEVEL}** — vật chất phàm tục không thể chịu thêm linh khí nữa!`,
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
@@ -1157,7 +1309,7 @@ export async function handleButton(interaction) {
     if (user.currencies.linhThach < costLinhThach || (user.currencies.nguyenThach || 0) < costNguyenThach) {
       return interaction.reply({
         content: `❌ Không đủ tài nguyên cường hóa! Cần **${costLinhThach.toLocaleString()} Linh Thạch** + **${costNguyenThach} Nguyên Thạch** (Hiện có: \`${user.currencies.linhThach.toLocaleString()}\` LT | \`${user.currencies.nguyenThach || 0}\` NT).`,
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
@@ -1172,7 +1324,7 @@ export async function handleButton(interaction) {
     if (!spentEnhance) {
       return interaction.reply({
         content: `❌ Tài nguyên vừa thay đổi — không đủ để cường hóa! Cần **${costLinhThach.toLocaleString()} Linh Thạch** + **${costNguyenThach} Nguyên Thạch**.`,
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
@@ -1270,11 +1422,11 @@ export async function handleButton(interaction) {
     const itemIdx = parseInt(parts[2], 10);
     const targetUserId = parts[3];
 
-    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
+    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, flags: MessageFlags.Ephemeral });
 
     let user = await User.findOne({ userId: targetUserId });
     if (!user || !user.inventory[itemIdx]) {
-      return interaction.reply({ content: `❌ Vật phẩm không còn tồn tại trong túi đồ!`, ephemeral: true });
+      return interaction.reply({ content: `❌ Vật phẩm không còn tồn tại trong túi đồ!`, flags: MessageFlags.Ephemeral });
     }
 
     const item = user.inventory[itemIdx];
@@ -1335,34 +1487,16 @@ export async function handleButton(interaction) {
   // 19. Nút Bán Đồ Lên Chợ Đen
   if (customId.startsWith('btn_open_sell_menu_')) {
     const targetUserId = customId.replace('btn_open_sell_menu_', '');
-    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
+    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, flags: MessageFlags.Ephemeral });
 
     let user = await User.findOne({ userId: targetUserId });
     if (!user || user.skills.length === 0) {
-      return interaction.reply({ content: `❌ Kho của bạn chưa có bí kíp nào để đăng bán!`, ephemeral: true });
+      return interaction.reply({ content: `❌ Kho của bạn chưa có bí kíp nào để đăng bán!`, flags: MessageFlags.Ephemeral });
     }
 
-    const embed = new EmbedBuilder()
-      .setTitle(`💰 [ĐĂNG BÁN BÍ KÍP LÊN CHỢ ĐEN]`)
-      .setColor('#4CAF50')
-      .setDescription(`👉 **Hãy chọn bí kíp bạn muốn niêm yết bán ở menu bên dưới:**\n*(Sau khi chọn sẽ xuất hiện bảng nhập giá bán)*`);
-
-    const selectMenu = new StringSelectMenuBuilder()
-      .setCustomId(`sell_select_item_${targetUserId}`)
-      .setPlaceholder('👉 Chọn bí kíp muốn bán...');
-
-    user.skills.forEach((s, idx) => {
-      selectMenu.addOptions(
-        new StringSelectMenuOptionBuilder()
-          .setLabel(`${idx + 1}. [${s.name}] (${s.rarity})`)
-          .setDescription(`Loại: ${s.category} | Thuần thục: ${s.mastery}%`)
-          .setValue(`skill_${idx}`)
-          .setEmoji('📜')
-      );
-    });
-
-    const row = new ActionRowBuilder().addComponents(selectMenu);
-    return interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+    // Kho bí kíp không có trần nên phải phân trang, xem ghi chú trong skills.js.
+    const view = createSellSkillView(user, 1);
+    return interaction.reply({ embeds: [view.embed], components: view.components, flags: MessageFlags.Ephemeral });
   }
 
   // 20. Nút Xem & Mua Ở Chợ Đen
@@ -1379,7 +1513,7 @@ export async function handleButton(interaction) {
 
     if (items.length === 0) {
       embed.setDescription(`*Hiện tại chợ đen chưa có mặt hàng nào. Hãy dùng nút [Bán Đồ Lên Chợ Đen] để đăng bán!*`);
-      return interaction.reply({ embeds: [embed], ephemeral: true });
+      return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
     }
 
     const selectMenu = new StringSelectMenuBuilder()
@@ -1403,7 +1537,54 @@ export async function handleButton(interaction) {
     });
 
     const row = new ActionRowBuilder().addComponents(selectMenu);
-    return interaction.reply({ embeds: [embed], components: [row], ephemeral: true });
+    return interaction.reply({ embeds: [embed], components: [row], flags: MessageFlags.Ephemeral });
+  }
+
+  // 20a. Chuyển trang Tàng Kinh Các và menu bán bí kíp.
+  if (customId.startsWith('btn_skill_page::') || customId.startsWith('btn_sell_page::')) {
+    const isSell = customId.startsWith('btn_sell_page::');
+    const [, rawPage, targetUserId] = customId.split('::');
+    if (clickerId !== targetUserId) {
+      return interaction.reply({ content: `⚠️ Tàng Kinh Các này không thuộc về đạo hữu!`, flags: MessageFlags.Ephemeral });
+    }
+
+    const user = await User.findOne({ userId: targetUserId });
+    if (!user) {
+      return interaction.reply({
+        content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.`,
+        flags: MessageFlags.Ephemeral
+      });
+    }
+
+    const targetPage = parseInt(rawPage, 10) || 1;
+    const view = isSell ? createSellSkillView(user, targetPage) : createSkillsView(user, targetPage);
+    return interaction.update({ embeds: [view.embed], components: view.components });
+  }
+
+  // 20b. Chuyển trang Túi Càn Khôn và Kho Pháp Bảo.
+  // Hai danh sách này dài theo thời gian chơi nên bắt buộc phải phân trang;
+  // xem thêm ghi chú về trần 25 field / 25 lựa chọn trong inventory.js.
+  if (customId.startsWith('btn_inv_page::') || customId.startsWith('btn_gear_page::')) {
+    const isInv = customId.startsWith('btn_inv_page::');
+    const [, rawPage, targetUserId] = customId.split('::');
+    if (clickerId !== targetUserId) {
+      return interaction.reply({
+        content: isInv ? `⚠️ Túi đồ này không thuộc về đạo hữu!` : `⚠️ Kho trang bị này không thuộc về đạo hữu!`,
+        flags: MessageFlags.Ephemeral
+      });
+    }
+
+    const user = await User.findOne({ userId: targetUserId });
+    if (!user) {
+      return interaction.reply({
+        content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.`,
+        flags: MessageFlags.Ephemeral
+      });
+    }
+
+    const targetPage = parseInt(rawPage, 10) || 1;
+    const view = isInv ? createInventoryView(user, targetPage) : createGearView(user, targetPage);
+    return interaction.update({ embeds: [view.embed], components: view.components });
   }
 
   // 21. Nút Chuyển Trang Danh Sách Pháp Bảo (!admin listgear)
@@ -1414,7 +1595,7 @@ export async function handleButton(interaction) {
     const targetUserId = parts[4];
 
     if (!isAdmin(clickerId)) {
-      return interaction.reply({ content: `❌ Chỉ có Admin tối cao mới được chuyển trang danh sách này!`, ephemeral: true });
+      return interaction.reply({ content: `❌ Chỉ có Admin tối cao mới được chuyển trang danh sách này!`, flags: MessageFlags.Ephemeral });
     }
 
     const targetPage = isPrev ? currentPage - 1 : currentPage + 1;
@@ -1434,7 +1615,7 @@ export async function handleButton(interaction) {
     const issuedAt = parseInt(parts[5], 10) || 0;
 
     if (clickerId !== targetUserId) {
-      return interaction.reply({ content: `⚠️ Lời thách đấu này không dành cho bạn!`, ephemeral: true });
+      return interaction.reply({ content: `⚠️ Lời thách đấu này không dành cho bạn!`, flags: MessageFlags.Ephemeral });
     }
 
     // Chiến thư quá hạn -> không cho bấm nút cũ để "phục kích" sau vài giờ
@@ -1454,7 +1635,7 @@ export async function handleButton(interaction) {
 
     if (!challenger || !defender) {
       releaseChallenge(challengerId, targetUserId);
-      return interaction.reply({ content: `❌ Dữ liệu người chơi không hợp lệ!`, ephemeral: true });
+      return interaction.reply({ content: `❌ Dữ liệu người chơi không hợp lệ!`, flags: MessageFlags.Ephemeral });
     }
 
     if ((challenger.currencies.linhThach || 0) < betAmount) {
@@ -1469,14 +1650,14 @@ export async function handleButton(interaction) {
     }
 
     if ((defender.currencies.linhThach || 0) < betAmount) {
-      return interaction.reply({ content: `❌ Bạn không đủ **${betAmount.toLocaleString()} Linh Thạch** để tiếp nhận thách đấu!`, ephemeral: true });
+      return interaction.reply({ content: `❌ Bạn không đủ **${betAmount.toLocaleString()} Linh Thạch** để tiếp nhận thách đấu!`, flags: MessageFlags.Ephemeral });
     }
 
     const defenderBattle = checkBattleReady(defender);
     if (!defenderBattle.ready) {
       return interaction.reply({
         content: `🩸 Đạo hữu đang trọng thương (\`${defenderBattle.hp}/${defenderBattle.maxHp}\` HP), cần tối thiểu \`${defenderBattle.need}\` HP mới lên đài được!`,
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
@@ -1552,7 +1733,7 @@ export async function handleButton(interaction) {
     const targetUserId = parts[3];
 
     if (clickerId !== targetUserId) {
-      return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
+      return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, flags: MessageFlags.Ephemeral });
     }
 
 
@@ -1576,22 +1757,22 @@ export async function handleButton(interaction) {
     const targetUserId = parts[4];
 
     if (clickerId !== targetUserId) {
-      return interaction.reply({ content: `⚠️ Lời mời này không dành cho bạn!`, ephemeral: true });
+      return interaction.reply({ content: `⚠️ Lời mời này không dành cho bạn!`, flags: MessageFlags.Ephemeral });
     }
 
     let user = await User.findOne({ userId: targetUserId });
-    if (!user) return interaction.reply({ content: `❌ Chưa tạo nhân vật!`, ephemeral: true });
+    if (!user) return interaction.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.`, flags: MessageFlags.Ephemeral });
 
     if (user.sectId) {
-      return interaction.reply({ content: `❌ Bạn đã ở trong một môn phái khác!`, ephemeral: true });
+      return interaction.reply({ content: `❌ Bạn đã ở trong một môn phái khác!`, flags: MessageFlags.Ephemeral });
     }
 
     const sect = await Sect.findById(sectId);
-    if (!sect) return interaction.reply({ content: `❌ Tông môn này không còn tồn tại!`, ephemeral: true });
+    if (!sect) return interaction.reply({ content: `❌ Tông môn này không còn tồn tại!`, flags: MessageFlags.Ephemeral });
 
     const maxMembers = getSectMaxMembers(sect.level);
     if (sect.members.length >= maxMembers) {
-      return interaction.reply({ content: `❌ Sơn môn đã đủ đệ tử (${sect.members.length}/${maxMembers})!`, ephemeral: true });
+      return interaction.reply({ content: `❌ Sơn môn đã đủ đệ tử (${sect.members.length}/${maxMembers})!`, flags: MessageFlags.Ephemeral });
     }
 
     sect.members.push({
@@ -1626,7 +1807,7 @@ export async function handleButton(interaction) {
     const targetUserId = parts[4];
 
     if (clickerId !== targetUserId) {
-      return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
+      return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, flags: MessageFlags.Ephemeral });
     }
 
     const embed = new EmbedBuilder()
@@ -1644,7 +1825,7 @@ export async function handleButton(interaction) {
     const targetUserId = parts[4];
 
     if (clickerId !== targetUserId) {
-      return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
+      return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, flags: MessageFlags.Ephemeral });
     }
 
     const modal = new ModalBuilder()
@@ -1673,29 +1854,29 @@ export async function handleButton(interaction) {
     const targetUserId = parts[4];
 
     if (clickerId !== targetUserId) {
-      return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
+      return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, flags: MessageFlags.Ephemeral });
     }
 
     let user = await User.findOne({ userId: targetUserId });
     const sect = await Sect.findById(sectId);
 
-    if (!user || !sect) return interaction.reply({ content: `❌ Dữ liệu không hợp lệ!`, ephemeral: true });
+    if (!user || !sect) return interaction.reply({ content: `❌ Dữ liệu không hợp lệ!`, flags: MessageFlags.Ephemeral });
 
     if (user.sectRole !== 'LEADER' && user.sectRole !== 'ELDER') {
-      return interaction.reply({ content: `❌ Chỉ có Chưởng Môn hoặc Trưởng Lão mới có quyền nâng cấp sơn môn!`, ephemeral: true });
+      return interaction.reply({ content: `❌ Chỉ có Chưởng Môn hoặc Trưởng Lão mới có quyền nâng cấp sơn môn!`, flags: MessageFlags.Ephemeral });
     }
 
     const UPGRADE_COSTS = { 1: 1000, 2: 3000, 3: 8000, 4: 20000 };
     const cost = UPGRADE_COSTS[sect.level];
 
     if (!cost || sect.level >= 5) {
-      return interaction.reply({ content: `🏛️ Tông Môn đã đạt tới cảnh giới cực hạn (Cấp 5 - Vạn Cổ Tối Cao)!`, ephemeral: true });
+      return interaction.reply({ content: `🏛️ Tông Môn đã đạt tới cảnh giới cực hạn (Cấp 5 - Vạn Cổ Tối Cao)!`, flags: MessageFlags.Ephemeral });
     }
 
     if (sect.treasury.linhThach < cost) {
       return interaction.reply({
         content: `❌ Ngân Khố Bang không đủ Linh Thạch! Cần **${cost.toLocaleString()} LT** (Hiện có: **${sect.treasury.linhThach.toLocaleString()} LT**). Hãy vận động toàn bang dùng nút [💎 Góp 100 LT] hoặc lệnh \`!conghien\`!`,
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
@@ -1717,19 +1898,19 @@ export async function handleButton(interaction) {
     const targetUserId = parts[4];
 
     if (clickerId !== targetUserId) {
-      return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
+      return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, flags: MessageFlags.Ephemeral });
     }
 
 
     let user = await User.findOne({ userId: targetUserId });
     const sect = await Sect.findById(sectId);
 
-    if (!user || !sect) return interaction.reply({ content: `❌ Dữ liệu không hợp lệ!`, ephemeral: true });
+    if (!user || !sect) return interaction.reply({ content: `❌ Dữ liệu không hợp lệ!`, flags: MessageFlags.Ephemeral });
 
     // sectId lấy từ customId của embed cũ nên có thể trỏ tới tông môn mà người
     // chơi đã rời khỏi. Không chặn thì họ vẫn cày uy danh cho bang cũ.
     if (String(user.sectId || '') !== String(sect._id)) {
-      return interaction.reply({ content: `❌ Đạo hữu không còn là đệ tử của tông môn này!`, ephemeral: true });
+      return interaction.reply({ content: `❌ Đạo hữu không còn là đệ tử của tông môn này!`, flags: MessageFlags.Ephemeral });
     }
 
     const now = new Date();
@@ -1737,14 +1918,14 @@ export async function handleButton(interaction) {
       const elapsedSeconds = Math.floor((now - new Date(user.cooldowns.sectTask)) / 1000);
       if (elapsedSeconds < COOLDOWNS.sectTask) {
         const waitTime = COOLDOWNS.sectTask - elapsedSeconds;
-        return interaction.reply({ content: `⏳ Đạo hữu vừa làm nhiệm vụ bang! Vui lòng nghỉ ngơi thêm **${waitTime}s**.`, ephemeral: true });
+        return interaction.reply({ content: `⏳ Đạo hữu vừa làm nhiệm vụ bang! Vui lòng nghỉ ngơi thêm **${waitTime}s**.`, flags: MessageFlags.Ephemeral });
       }
     }
 
     // Cổng chặn nguyên tử: bấm nút liên tục chỉ ăn đúng 1 lượt thưởng.
     const claimedTask = await claimCooldown(User, targetUserId, 'sectTask');
     if (!claimedTask) {
-      return interaction.reply({ content: `⏳ Đạo hữu bấm quá nhanh, chấp sự đường chưa kịp ghi công! Chờ thêm giây lát.`, ephemeral: true });
+      return interaction.reply({ content: `⏳ Đạo hữu bấm quá nhanh, chấp sự đường chưa kịp ghi công! Chờ thêm giây lát.`, flags: MessageFlags.Ephemeral });
     }
     user = claimedTask;
 
@@ -1773,7 +1954,7 @@ export async function handleButton(interaction) {
     await interaction.update({ embeds: [embed], components: buttons });
     return interaction.followUp({
       content: `🎉 **${task.title}:** ${task.desc}\n✨ \`+${task.exp} EXP\` | 💎 \`+${task.lt} LT\` | 🎖️ \`+${task.contrib} Cống Hiến\` | 🔥 \`+${task.rep} Uy Danh\`!`,
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 
@@ -1798,7 +1979,7 @@ export async function handleButton(interaction) {
       });
     }
 
-    return interaction.reply({ embeds: [embed], ephemeral: true });
+    return interaction.reply({ embeds: [embed], flags: MessageFlags.Ephemeral });
   }
 
   // 30. Nút Rời Khỏi Bang
@@ -1808,17 +1989,17 @@ export async function handleButton(interaction) {
     const targetUserId = parts[4];
 
     if (clickerId !== targetUserId) {
-      return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
+      return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, flags: MessageFlags.Ephemeral });
     }
 
     let user = await User.findOne({ userId: targetUserId });
     const sect = await Sect.findById(sectId);
 
-    if (!user || !sect) return interaction.reply({ content: `❌ Dữ liệu không hợp lệ!`, ephemeral: true });
+    if (!user || !sect) return interaction.reply({ content: `❌ Dữ liệu không hợp lệ!`, flags: MessageFlags.Ephemeral });
 
     if (user.sectRole === 'LEADER') {
       if (sect.members.length > 1) {
-        return interaction.reply({ content: `❌ Chưởng Môn không thể tùy tiện rời bang khi còn đệ tử! Hãy dùng lệnh \`!phongchuc @user LEADER\` để nhường ngôi Chưởng Môn trước!`, ephemeral: true });
+        return interaction.reply({ content: `❌ Chưởng Môn không thể tùy tiện rời bang khi còn đệ tử! Hãy dùng lệnh \`!phongchuc @user LEADER\` để nhường ngôi Chưởng Môn trước!`, flags: MessageFlags.Ephemeral });
       } else {
         // Giải tán môn phái nếu chỉ còn 1 mình
         await Sect.findByIdAndDelete(sectId);
@@ -1856,7 +2037,7 @@ export async function handleButton(interaction) {
     const rarity = parts.join('_') || 'ALL';
 
     if (clickerId !== targetUserId) {
-      return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, ephemeral: true });
+      return interaction.reply({ content: `⚠️ Nút bấm này không thuộc về bạn!`, flags: MessageFlags.Ephemeral });
     }
 
     const targetPage = isPrev ? currentPage - 1 : currentPage + 1;
@@ -1870,20 +2051,49 @@ export async function handleButton(interaction) {
   // 32. Nút Khởi Hỏa Luyện Đan (!luyendan)
   if (customId.startsWith('btn_brew_pill::')) {
     const [, pillId, targetUserId] = customId.split('::');
-    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Đây không phải lò luyện đan của bạn!`, ephemeral: true });
+    if (clickerId !== targetUserId) return interaction.reply({ content: `⚠️ Đây không phải lò luyện đan của bạn!`, flags: MessageFlags.Ephemeral });
 
 
     let user = await User.findOne({ userId: clickerId });
     const pill = getPillById(pillId);
-    if (!pill || !user) return interaction.reply({ content: `❌ Lỗi nạp dữ liệu đan dược!`, ephemeral: true });
+    if (!pill || !user) return interaction.reply({ content: `❌ Lỗi nạp dữ liệu đan dược!`, flags: MessageFlags.Ephemeral });
+
+    if (!meetsRequirement(user, pill)) {
+      return interaction.reply({
+        content: `🔒 **[${pill.name}]** là phương thuốc ${pill.tierName}, dược lực quá mãnh liệt!\n` +
+          `Cần đạt **${requirementLabel(pill)}** mới khống chế nổi hỏa hầu ` +
+          `(hiện tại: **${user.realm.name} · Tầng ${user.realm.layer}**).`,
+        flags: MessageFlags.Ephemeral
+      });
+    }
 
     // Kiểm tra nguyên liệu
     const linhThaoItem = (user.inventory || []).find(i => i.itemId === 'linh_thao');
     const linhThaoCount = linhThaoItem ? linhThaoItem.quantity : 0;
 
-    const yeuDanItem = (user.inventory || []).find(i => i.itemId.startsWith('yeu_dan_') && i.quantity >= pill.recipe.yeuDanCount);
-    if (linhThaoCount < pill.recipe.linhThao || !yeuDanItem || user.currencies.linhThach < pill.recipe.linhThach) {
-      return interaction.reply({ content: `❌ Dược liệu không đủ để khởi hỏa luyện đan!`, ephemeral: true });
+    // Yêu Đan rơi theo TỪNG loài thú nên túi đồ luôn là nhiều chồng lẻ.
+    // Bản cũ đòi một chồng duy nhất đủ số, trong khi bảng nguyên liệu lại cộng
+    // tổng mọi chồng — hiện "18/18 ✅" nhưng bấm vào lại báo thiếu dược liệu.
+    // Nay gom nhiều chồng, vẫn trừ nguyên tử trong đúng một câu lệnh Mongo.
+    const yeuDanStacks = (user.inventory || []).filter(i => i.itemId.startsWith('yeu_dan_') && i.quantity > 0);
+    const totalYeuDan = yeuDanStacks.reduce((sum, i) => sum + i.quantity, 0);
+    const yeuDanSpend = [];
+    let yeuDanNeed = pill.recipe.yeuDanCount;
+    for (const stack of yeuDanStacks) {
+      if (yeuDanNeed <= 0) break;
+      const take = Math.min(stack.quantity, yeuDanNeed);
+      yeuDanSpend.push({ itemId: stack.itemId, quantity: take });
+      yeuDanNeed -= take;
+    }
+
+    if (linhThaoCount < pill.recipe.linhThao || totalYeuDan < pill.recipe.yeuDanCount || user.currencies.linhThach < pill.recipe.linhThach) {
+      return interaction.reply({
+        content: `❌ Dược liệu không đủ để khởi hỏa luyện đan!\n` +
+          `🌿 Linh Thảo \`${linhThaoCount}/${pill.recipe.linhThao}\` | ` +
+          `🐾 Yêu Đan \`${totalYeuDan}/${pill.recipe.yeuDanCount}\` | ` +
+          `💎 Linh Thạch \`${(user.currencies.linhThach || 0).toLocaleString()}/${pill.recipe.linhThach.toLocaleString()}\``,
+        flags: MessageFlags.Ephemeral
+      });
     }
 
 
@@ -1893,18 +2103,24 @@ export async function handleButton(interaction) {
       linhThach: pill.recipe.linhThach,
       items: [
         { itemId: 'linh_thao', quantity: pill.recipe.linhThao },
-        { itemId: yeuDanItem.itemId, quantity: pill.recipe.yeuDanCount }
+        ...yeuDanSpend
       ]
     });
 
     if (!spentBrew) {
       return interaction.reply({
         content: `❌ Dược liệu vừa thay đổi — lò đan tắt lửa! Gõ \`!luyendan\` để mở lại lò.`,
-        ephemeral: true
+        flags: MessageFlags.Ephemeral
       });
     }
 
     user = spentBrew;
+
+    // Dem luot luyen dan thanh cong (dieu kien nhiem vu tan thu). Dat sau
+    // spendResources chu khong dat truoc: tru nguyen lieu that bai thi coi
+    // nhu chua he mo lo.
+    user.counters = user.counters || {};
+    user.counters.pill = (user.counters.pill || 0) + 1;
 
     // Thêm đan vào inventory
     const existingPill = user.inventory.find(i => i.itemId === pill.id);
@@ -1943,18 +2159,18 @@ export async function handleButton(interaction) {
     const actionType = parts.join('_'); // chan_khi, phap_bao, dan_duoc, tong_mon
 
     if (clickerId !== targetUserId) {
-      return interaction.reply({ content: `⚠️ Đây là lôi kiếp của tu sĩ khác, can thiệp bừa bãi sẽ bị thiên lôi tru diệt!`, ephemeral: true });
+      return interaction.reply({ content: `⚠️ Đây là lôi kiếp của tu sĩ khác, can thiệp bừa bãi sẽ bị thiên lôi tru diệt!`, flags: MessageFlags.Ephemeral });
     }
 
 
     const session = dokiepSessions[targetUserId];
     if (!session) {
-      return interaction.reply({ content: `❌ Phiên độ kiếp đã kết thúc hoặc không tồn tại!`, ephemeral: true });
+      return interaction.reply({ content: `❌ Phiên độ kiếp đã kết thúc hoặc không tồn tại!`, flags: MessageFlags.Ephemeral });
     }
     session.lastActionTime = Date.now(); // Giữ phiên sống chừng nào còn thao tác
 
     let user = await User.findOne({ userId: targetUserId });
-    if (!user) return interaction.reply({ content: `❌ Không tìm thấy dữ liệu nhân vật!`, ephemeral: true });
+    if (!user) return interaction.reply({ content: `❌ Không tìm thấy dữ liệu nhân vật!`, flags: MessageFlags.Ephemeral });
 
     // Sát thương cơ bản từng đạo lôi kiếp
     const baseDmgByStrike = [1000, 1800, 2800];

@@ -2,7 +2,8 @@ import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'disc
 import { User } from '../../database/models/User.js';
 
 import { Sect } from '../../database/models/Sect.js';
-import { COOLDOWNS, claimCooldown } from '../../utils/cooldown.js';
+import { COOLDOWNS, claimCooldown, cooldownLine } from '../../utils/cooldown.js';
+import { validateSectName, exactNameRegex } from '../../utils/sanitize.js';
 
 const SECT_TASK_COOLDOWN_SECONDS = COOLDOWNS.sectTask;
 const SECT_UPGRADE_COSTS = {
@@ -68,7 +69,7 @@ export function createSectButtons(sect, userId) {
 // 1. Lệnh Khai Sơn Lập Phái: !laptongmon <Tên>
 export async function executeLaptongmon(message, args) {
   const user = await User.findOne({ userId: message.author.id });
-  if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
+  if (!user) return message.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.` });
 
   if (user.sectId) {
     return message.reply({ content: `❌ Đạo hữu đã gia nhập một Tông Môn rồi! Phải rời môn phái trước khi lập bang mới.` });
@@ -78,7 +79,13 @@ export async function executeLaptongmon(message, args) {
     return message.reply({ content: `❌ Cú pháp: \`!laptongmon <Tên_Tông_Môn>\` (Ví dụ: \`!laptongmon Cửu U Ma Cung\`)` });
   }
 
-  const sectName = args.join(' ').trim();
+  // Tên bang là chuỗi tự do duy nhất trong game hiện lại cho người khác đọc,
+  // nên phải qua kiểm duyệt: xem lý do đầy đủ trong src/utils/sanitize.js.
+  const nameCheck = validateSectName(args.join(' '));
+  if (!nameCheck.ok) {
+    return message.reply({ content: `❌ ${nameCheck.reason}` });
+  }
+  const sectName = nameCheck.value;
   const SECT_COST = 500;
 
   if (user.currencies.linhThach < SECT_COST) {
@@ -87,7 +94,9 @@ export async function executeLaptongmon(message, args) {
     });
   }
 
-  const existingSect = await Sect.findOne({ name: sectName });
+  // So trùng không phân biệt hoa thường: "Ma Cung" và "ma cung" hiện ra giống
+  // hệt nhau, để lọt cả hai thì bảng xếp hạng trông như bị lặp bản ghi.
+  const existingSect = await Sect.findOne({ name: exactNameRegex(sectName) });
   if (existingSect) {
     return message.reply({ content: `❌ Tên Tông Môn **${sectName}** đã tồn tại trong thiên hạ!` });
   }
@@ -160,7 +169,7 @@ export async function executeLaptongmon(message, args) {
 // 2. Lệnh Xem Bảng Tông Môn: !tongmon
 export async function executeTongmon(message) {
   const user = await User.findOne({ userId: message.author.id });
-  if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
+  if (!user) return message.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.` });
 
   if (!user.sectId) {
     return message.reply({
@@ -384,7 +393,7 @@ export async function executeNhiemvubang(message) {
       `🎖️ Cống Hiến Bang: **+${task.contrib} Điểm**\n` +
 
       `🔥 Uy Danh Tông Môn: **+${task.rep} Điểm**\n\n` +
-      `⏱️ *Thời gian hồi chiêu: ${SECT_TASK_COOLDOWN_SECONDS} giây*`
+      cooldownLine('sectTask', user.cooldowns.sectTask)
     );
 
   await message.reply({ embeds: [embed] });

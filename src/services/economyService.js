@@ -80,6 +80,59 @@ export async function spendResources(userId, cost = {}) {
  * Cộng tài nguyên. Bọc lại cho đối xứng với `spendResources` để chỗ nào cần
  * hoàn tác một giao dịch hỏng cũng có sẵn đường atomic mà dùng.
  */
+/**
+ * Cộng vật phẩm vào túi bằng update nguyên tử, KHÔNG dùng `save()`.
+ *
+ * Lối cũ — đọc document, sửa mảng `inventory` trong bộ nhớ rồi `save()` — có
+ * hai vết nứt. Thứ nhất, `save()` chạy kiểm tra hợp lệ trên TOÀN BỘ document:
+ * chỉ cần một bản ghi cũ nào đó thiếu field bắt buộc (ví dụ sau này ta thêm
+ * `required` cho một field của `skills`) là cú cộng vật phẩm ném lỗi, dù lỗi
+ * chẳng liên quan gì tới cái túi. Thứ hai, nó ghi đè cả mảng nên một lệnh
+ * khác đang cộng vật phẩm song song sẽ bị nuốt mất.
+ *
+ * Ở đây mỗi vật phẩm đi qua tối đa ba lệnh, không lệnh nào đụng phần còn lại
+ * của document:
+ *   1. Đã có ngăn  -> `$inc` thẳng vào `inventory.$.quantity`.
+ *   2. Chưa có ngăn -> `$push`, kèm filter `$ne` để hai lệnh cùng tạo ngăn thì
+ *      chỉ một lệnh khớp, không đẻ ra hai ngăn trùng itemId.
+ *   3. Lệnh kia vừa tạo ngăn trước ta trong tích tắc -> quay lại `$inc`.
+ *
+ * @param {string} userId
+ * @param {Array<{itemId: string, name?: string, type?: string, quantity: number}>} items
+ * @returns {Promise<object|null>} document sau cùng, hoặc null nếu không cộng gì
+ */
+export async function grantItems(userId, items = []) {
+  let doc = null;
+
+  for (const raw of items || []) {
+    const itemId = raw && raw.itemId;
+    const quantity = Math.max(0, Math.floor((raw && raw.quantity) || 0));
+    if (!itemId || !quantity) continue;
+
+    const congVaoNganCu = () => User.findOneAndUpdate(
+      { userId, 'inventory.itemId': itemId },
+      { $inc: { 'inventory.$.quantity': quantity } },
+      { new: true }
+    ).catch(() => null);
+
+    let ket = await congVaoNganCu();
+
+    if (!ket) {
+      ket = await User.findOneAndUpdate(
+        { userId, 'inventory.itemId': { $ne: itemId } },
+        { $push: { inventory: { ...raw, quantity } } },
+        { new: true }
+      ).catch(() => null);
+    }
+
+    if (!ket) ket = await congVaoNganCu();
+
+    if (ket) doc = ket;
+  }
+
+  return doc;
+}
+
 export async function grantCurrencies(userId, { linhThach = 0, nguyenThach = 0 } = {}) {
   const inc = {};
   if (linhThach) inc['currencies.linhThach'] = linhThach;

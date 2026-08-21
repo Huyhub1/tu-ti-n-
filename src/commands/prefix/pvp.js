@@ -13,7 +13,7 @@ import {
 
 export async function executeKhieuchien(message, args) {
   const user = await User.findOne({ userId: message.author.id });
-  if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
+  if (!user) return message.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.` });
 
   // 1. Hồi chiêu (bản cũ chỉ đọc mà không bao giờ ghi nên cooldown vô nghĩa)
   const cd = checkCooldown(user, 'pvp');

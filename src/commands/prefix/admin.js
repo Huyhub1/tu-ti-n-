@@ -145,6 +145,12 @@ export async function executeAdmin(message, args) {
         `• \`!admin addmoney @user <linh_thạch> [nguyên_thạch]\` : Cộng tiền cho mem.\n` +
 
         `• \`!admin reset @user\` : Xóa dữ liệu tu tiên của 1 người chơi (phải gõ 2 lần để xác nhận).\n\n` +
+
+        `**⚙️ Thiên Cơ Các — vận hành máy chủ:**\n` +
+        `• \`!capnhat\` : Xem bản đang chạy; có bản mới trên git thì kéo về luôn.\n` +
+        `• \`!capnhat xem\` : Chỉ xem, không kéo về.\n` +
+        `• \`!capnhat thulai\` : Gỡ cách ly, ép thử lại bản mới đã trượt vòng nghiệm thu.\n\n` +
+
         `*Ví dụ:* \`!admin listgear\` | \`!admin viewgear chuong_hon_don\` | \`!admin addgear @Lieu chuong_hon_don\``
       );
     return message.reply({ embeds: [embed] });

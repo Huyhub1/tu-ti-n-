@@ -5,6 +5,7 @@ import { User } from '../database/models/User.js';
 
 import { getFactionBuffs, getCritMultiplier } from './factionService.js';
 import { getUserTalentPerks } from './talentService.js';
+import { battlePower } from '../utils/power.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,13 +32,13 @@ export function getRealmLevel(realmId) {
 
 /**
  * Điểm lực chiến dùng để so kèo (không phải để tính sát thương).
- * Công thức giống BXH `!top power` để người chơi thấy con số nhất quán.
+ *
+ * Gọi thẳng utils/power.js chứ không chép lại công thức: trước đây file này
+ * giữ một bản sao riêng, chỉ cần một bên đổi trọng số là số trên khung tỉ võ
+ * lệch với số trên BXH và người chơi tưởng bot tính sai.
  */
 export function getBattlePower(user) {
-  const s = user.stats || {};
-  return Math.floor(
-    (s.atk || 15) * 4 + (s.def || 8) * 3 + (s.maxHp || 100) * 0.5 + (s.critRate || 0.05) * 1000
-  );
+  return battlePower(user);
 }
 
 /**

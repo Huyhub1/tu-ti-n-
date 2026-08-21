@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { SlashCommandBuilder, MessageFlags, EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 import { User } from '../../database/models/User.js';
 
 import { rollInnateTalent, getTalentPerks, getTalentPerkText } from '../../services/talentService.js';
@@ -16,7 +16,7 @@ export async function execute(interaction) {
   if (existingUser) {
     return interaction.reply({
       content: `⚠️ Đạo hữu **${existingUser.daoName || username}** đã bước chân vào tiên đồ rồi! Hãy gõ \`!tupan\` để xem bảng thông tin tu chân.`,
-      ephemeral: true
+      flags: MessageFlags.Ephemeral
     });
   }
 

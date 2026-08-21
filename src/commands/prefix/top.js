@@ -2,6 +2,7 @@ import { EmbedBuilder, ActionRowBuilder, StringSelectMenuBuilder, StringSelectMe
 import { User } from '../../database/models/User.js';
 import { Sect } from '../../database/models/Sect.js';
 import { getRealmDisplayName } from '../../services/cultivationService.js';
+import { battlePower } from '../../utils/power.js';
 
 const REALM_ORDER = {
   pham_nhan: 0,
@@ -18,13 +19,25 @@ const FACTION_TAGS = {
   TAN_TU: '⚪ [Tán]'
 };
 
-export async function createTopEmbed(category = 'top_realm') {
+// Bảng xếp hạng phải quét toàn bộ tu sĩ vì thứ hạng là giá trị tính ra (thứ tự
+// cảnh giới, lực chiến tổng hợp, số bí kíp) chứ không nằm sẵn trong index nào.
+// Nạp trọn document thì mỗi tu sĩ kéo theo cả túi đồ, kho pháp bảo và kho bí
+// kíp — ba mảng này chiếm gần hết dung lượng, nên loại chúng ra là đủ nhẹ.
+//
+// Cố tình dùng danh sách LOẠI TRỪ chứ không liệt kê field cần giữ: liệt kê thì
+// mỗi lần thêm một field mới vào phần hiển thị lại phải nhớ khai báo, quên là
+// field im lặng thành undefined và bảng xếp hạng hiện sai mà không báo lỗi.
+const OMIT_ALL_BAGS = '-inventory -equipments -skills';
+const OMIT_EXCEPT_GEAR = '-inventory -skills';
+const OMIT_EXCEPT_SKILLS = '-inventory -equipments';
+
+export async function createTopEmbed(category = 'top_power') {
   const embed = new EmbedBuilder();
 
   switch (category) {
     // 1. BXH Tu Vi & Cảnh Giới
     case 'top_realm': {
-      const users = await User.find().lean();
+      const users = await User.find().select(OMIT_ALL_BAGS).lean();
       users.sort((a, b) => {
         const orderA = REALM_ORDER[a.realm?.id] ?? 0;
         const orderB = REALM_ORDER[b.realm?.id] ?? 0;
@@ -62,7 +75,7 @@ export async function createTopEmbed(category = 'top_realm') {
 
     // 2. BXH Phú Hào (Linh Thạch & Nguyên Thạch)
     case 'top_wealth': {
-      const users = await User.find().lean();
+      const users = await User.find().select(OMIT_ALL_BAGS).lean();
       users.sort((a, b) => {
         const wealthA = (a.currencies?.linhThach || 0) + (a.currencies?.nguyenThach || 0) * 50;
         const wealthB = (b.currencies?.linhThach || 0) + (b.currencies?.nguyenThach || 0) * 50;
@@ -94,26 +107,20 @@ export async function createTopEmbed(category = 'top_realm') {
 
     // 3. BXH Chiến Thần & Lực Chiến Tổng Hợp
     case 'top_power': {
-      const users = await User.find().lean();
+      const users = await User.find().select(OMIT_EXCEPT_GEAR).lean();
 
-      const userPowers = users.map(u => {
-        let totalAtk = u.stats?.atk || 15;
-        let totalDef = u.stats?.def || 8;
-        let totalHp = u.stats?.maxHp || 100;
-        let totalCrit = u.stats?.critRate || 0.05;
-
-        // Cộng chỉ số trang bị đang mặc
-        const equippedGears = (u.equipments || []).filter(e => e.equipped);
-        for (const g of equippedGears) {
-          totalAtk += g.stats?.atk || 0;
-          totalDef += g.stats?.def || 0;
-          totalHp += g.stats?.maxHp || 0;
-          totalCrit += g.stats?.critRate || 0;
-        }
-
-        const battlePower = Math.floor(totalAtk * 4 + totalDef * 3 + totalHp * 0.5 + totalCrit * 1000);
-        return { user: u, battlePower, totalAtk, totalDef, totalHp, equippedGears };
-      });
+      // Lực Chiến tính bằng utils/power.js và KHÔNG cộng lại chỉ số trang bị ở
+      // đây. Lúc mặc đồ (buttonHandler) và lúc uống đan (alchemy) chỉ số đã được
+      // cộng thẳng vào user.stats rồi; cộng thêm lần nữa là tính dư đúng bằng cả
+      // bộ đồ đang mặc, ai càng nhiều pháp bảo càng leo hạng ảo.
+      const userPowers = users.map(u => ({
+        user: u,
+        battlePower: battlePower(u),
+        totalAtk: u.stats?.atk || 0,
+        totalDef: u.stats?.def || 0,
+        totalHp: u.stats?.maxHp || 0,
+        equippedGears: (u.equipments || []).filter(e => e.equipped)
+      }));
 
       userPowers.sort((a, b) => b.battlePower - a.battlePower);
       const top10 = userPowers.slice(0, 10);
@@ -126,7 +133,7 @@ export async function createTopEmbed(category = 'top_realm') {
 
         return `${medal} **${daoName}** ${fTag}\n` +
           `   • Lực Chiến: ⚡ **\`${p.battlePower.toLocaleString()} Điểm\`**\n` +
-          `   • Chỉ số: 🗡️ \`+${p.totalAtk}\` ATK | 🛡️ \`+${p.totalDef}\` DEF | ❤️ \`+${p.totalHp}\` HP\n` +
+          `   • Chỉ số: 🗡️ \`${p.totalAtk}\` ATK | 🛡️ \`${p.totalDef}\` DEF | ❤️ \`${p.totalHp}\` HP\n` +
           `   • Thần Binh: *[${bestGear}]*`;
       }).join('\n\n');
 
@@ -143,7 +150,7 @@ export async function createTopEmbed(category = 'top_realm') {
 
     // 4. BXH Tàng Kinh Các (Sưu Tầm Công Pháp)
     case 'top_skills': {
-      const users = await User.find().lean();
+      const users = await User.find().select(OMIT_EXCEPT_SKILLS).lean();
       users.sort((a, b) => {
         const countA = a.skills?.length || 0;
         const countB = b.skills?.length || 0;
@@ -203,15 +210,15 @@ export async function createTopEmbed(category = 'top_realm') {
   return embed;
 }
 
-export function createTopSelectMenu(selectedCategory = 'top_realm', userId) {
+export function createTopSelectMenu(selectedCategory = 'top_power', userId) {
   const selectMenu = new StringSelectMenuBuilder()
     .setCustomId(`top_category_select_${userId}`)
     .setPlaceholder('👉 Chọn Bảng Xếp Hạng cần xem...');
 
   const options = [
+    { label: '⚔️ Bảng Chiến Thần & Lực Chiến', value: 'top_power', desc: 'Top cao thủ có lực chiến khủng nhất', emoji: '⚔️' },
     { label: '👑 Bảng Cảnh Giới & Tu Vi', value: 'top_realm', desc: 'Top đại năng tu vi cao thâm nhất', emoji: '👑' },
     { label: '💰 Bảng Phú Hào & Tài Phú', value: 'top_wealth', desc: 'Top đại gia nhiều Linh Thạch nhất', emoji: '💰' },
-    { label: '⚔️ Bảng Chiến Thần & Lực Chiến', value: 'top_power', desc: 'Top cao thủ có lực chiến khủng nhất', emoji: '⚔️' },
     { label: '📜 Bảng Vạn Đạo & Công Pháp', value: 'top_skills', desc: 'Top người sưu tầm nhiều bí kíp nhất', emoji: '📜' },
     { label: '🏛️ Bảng Vạn Phái Tông Môn', value: 'top_sects', desc: 'Top 10 Tông Môn hùng mạnh nhất', emoji: '🏛️' }
   ];
@@ -232,10 +239,12 @@ export function createTopSelectMenu(selectedCategory = 'top_realm', userId) {
 
 // Lệnh chính: !top / !bxh
 export async function executeTop(message, args) {
-  let category = 'top_realm';
+  let category = 'top_power';
   if (args.length > 0) {
     const sub = args[0].toLowerCase();
-    if (sub.includes('tien') || sub.includes('giau') || sub.includes('phu') || sub.includes('wealth')) {
+    if (sub.includes('tuvi') || sub.includes('canh') || sub.includes('gioi') || sub.includes('realm')) {
+      category = 'top_realm';
+    } else if (sub.includes('tien') || sub.includes('giau') || sub.includes('phu') || sub.includes('wealth')) {
       category = 'top_wealth';
     } else if (sub.includes('luc') || sub.includes('chien') || sub.includes('power')) {
       category = 'top_power';

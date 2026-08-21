@@ -36,3 +36,13 @@ Tai nguyen/
 .fx*.mjs
 .t*.mjs
 .o.txt
+
+# Dau vet cua co che tu cap nhat (xem src/services/updateService.js).
+# Ghi commit da keo ve nhung khong qua duoc vong nghiem thu, de khoi thu lai
+# vo tan moi 5 phut. Rieng cua tung may chu, khong duoc day len kho chung.
+.update-quarantine
+
+# Thu muc lam viec rieng, khong lien quan toi bot (195MB). Chan lai de khoi
+# bi git add -A cuon len GitHub — repo se phinh ra va GitHub tu choi file >100MB.
+# Chi bo qua khi day len, KHONG xoa gi tren dia.
+deobf_gh/

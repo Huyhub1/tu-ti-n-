@@ -13,9 +13,9 @@ export function createHelpOverviewEmbed() {
       `Thế giới mở hoàn toàn do chính người chơi tự tay tạo dựng ân oán, lập phái, luyện đan và xưng bá.\n\n` +
       `💡 **Cách sử dụng:**\n` +
       `• Tạo nhân vật khởi đầu: \`/khoi-dau\`\n` +
+      `• **Người mới bắt đầu từ đây:** \`!tanthu\` — chuỗi 10 nhiệm vụ dẫn đạo, thưởng hơn 7.000 Linh Thạch.\n` +
 
-      `• Toàn bộ tính năng còn lại dùng lệnh Prefix — mặc định là \`!\` 
-(ví dụ \`!tuluyen\`, \`!tupan\`).\n` +
+      `• Toàn bộ tính năng còn lại dùng lệnh Prefix — mặc định là \`!\` (ví dụ \`!tuluyen\`, \`!tupan\`).\n` +
       `• Gõ \`!help\` bất cứ lúc nào để mở lại đúng bảng cẩm nang này.\n\n` +
       `👉 **Hãy chọn chuyên mục cần tra cứu ở Menu bên dưới:**`
     );

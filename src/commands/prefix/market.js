@@ -157,7 +157,7 @@ export async function listSkillForSale(user, skillIdx, price) {
 
 export async function executeBan(message, args) {
   const user = await User.findOne({ userId: message.author.id });
-  if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
+  if (!user) return message.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.` });
 
   if (args.length < 2) {
     return message.reply({
@@ -174,7 +174,7 @@ export async function executeBan(message, args) {
 // Đăng bán Đan Dược
 export async function executeBandan(message, args) {
   const user = await User.findOne({ userId: message.author.id });
-  if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
+  if (!user) return message.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.` });
 
   if (args.length < 3) {
     return message.reply({
@@ -305,7 +305,7 @@ async function returnItemToOwner(ownerId, item) {
 // Thu hồi gian hàng
 export async function executeHuyban(message, args) {
   const user = await User.findOne({ userId: message.author.id });
-  if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
+  if (!user) return message.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.` });
 
   if (args.length < 1) {
     return message.reply({ content: `❌ Cú pháp đúng: \`!huyban <mã_mặt_hàng>\`` });
@@ -466,7 +466,7 @@ export function buildPurchaseEmbed(item, result) {
 // Mua hàng trên Chợ Trời
 export async function executeMua(message, args) {
   const user = await User.findOne({ userId: message.author.id });
-  if (!user) return message.reply({ content: `❌ Hãy gõ \`/khoi-dau\` trước!` });
+  if (!user) return message.reply({ content: `🌱 Đạo hữu chưa bước chân vào tiên đồ!\nGõ \`/khoi-dau\` để thức tỉnh linh căn bẩm sinh và mở đầu hành trình tu tiên.` });
 
   if (args.length < 1) {
     return message.reply({ content: `❌ Cú pháp đúng: \`!mua <mã_mặt_hàng>\` (Ví dụ: \`!mua abc123\`)` });

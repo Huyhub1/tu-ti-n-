@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { Client, Events, GatewayIntentBits, REST, Routes } from 'discord.js';
+import { Client, Events, GatewayIntentBits, MessageFlags, REST, Routes } from 'discord.js';
 import chalk from 'chalk';
 import { connectDB } from './database/connect.js';
 import { handleSlashCommand, handlePrefixCommand } from './handlers/commandHandler.js';
@@ -8,6 +8,7 @@ import { handleSelectMenu } from './handlers/selectMenuHandler.js';
 import { handleModalSubmit } from './handlers/modalHandler.js';
 import { data as startData } from './commands/slash/start.js';
 import { data as helpData } from './commands/slash/help.js';
+import { batTuDongKiemTra } from './commands/prefix/capnhat.js';
 
 const client = new Client({
   intents: [
@@ -15,7 +16,12 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildMembers
-  ]
+  ],
+  // Chặn cứng @everyone / @here / ping role ở tầng thấp nhất: dù có chuỗi nào
+  // do người chơi đặt lọt qua khâu kiểm duyệt (tên tông môn chẳng hạn), Discord
+  // cũng sẽ không biến nó thành lời gọi toàn server. Vẫn cho phép 'users' vì
+  // chiến thư PvP cần gọi đích danh đối thủ mới có tác dụng.
+  allowedMentions: { parse: ['users'] }
 });
 
 const PREFIX = process.env.PREFIX || '!';
@@ -50,6 +56,10 @@ client.once(Events.ClientReady, async () => {
   console.log(chalk.bold.magenta(`======================================================\n`));
 
   await registerSlashCommands();
+
+  // Bật sau khi đã sẵn sàng: vòng này có thể tắt bot để cập nhật, nên đừng
+  // để nó chen vào lúc đang đăng ký slash command dở dang.
+  batTuDongKiemTra(client);
 });
 
 // Xử lý Interaction (Slash Commands, Buttons, Select Menus, Modals)
@@ -65,9 +75,25 @@ client.on('interactionCreate', async (interaction) => {
       await handleModalSubmit(interaction);
     }
   } catch (error) {
-    console.error(chalk.red(`[Interaction Error]: ${error.message}`));
-    if (interaction.isRepliable() && !interaction.replied && !interaction.deferred) {
-      await interaction.reply({ content: `❌ Có lỗi xảy ra trong quá trình xử lý: ${error.message}`, ephemeral: true });
+    console.error(chalk.red(`[Interaction Error] ${interaction.customId || interaction.commandName || "?"}:`), error);
+
+    // Ba điều bản cũ làm sai: đẩy nguyên `error.message` ra chat (có thể lộ URI
+    // database), bỏ mặc interaction đã defer nên người chơi ngồi nhìn "đang
+    // suy nghĩ..." vĩnh viễn, và bản thân lời gọi reply cũng có thể ném lỗi.
+    if (!interaction.isRepliable()) return;
+    const notice = {
+      content: `❌ Thiên cơ hỗn loạn, thao tác này chưa hoàn thành được.\n` +
+        `Đạo hữu thử lại sau giây lát; nếu vẫn lỗi xin báo quản trị tông môn.`,
+      flags: MessageFlags.Ephemeral
+    };
+    try {
+      if (interaction.deferred || interaction.replied) {
+        await interaction.followUp(notice);
+      } else {
+        await interaction.reply(notice);
+      }
+    } catch (replyErr) {
+      console.error(chalk.red(`[Interaction Error] không gửi nổi thông báo lỗi: ${replyErr.message}`));
     }
   }
 });
@@ -99,8 +125,19 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 process.on('uncaughtException', (error) => {
+  // Không thoát process: một lỗi lẻ ở một lệnh không đáng để cả server mất bot.
+  // Nhưng phải in nguyên stack, vì đây là loại lỗi không ai bắt được ở tầng dưới.
   console.error(chalk.red(`[Uncaught Exception]:`), error);
 });
+
+// connect.js đã lo đóng MongoDB khi nhận tín hiệu tắt; ở đây ngắt thêm phiên
+// Discord để bot biến mất khỏi danh sách online ngay thay vì chờ gateway timeout.
+for (const signal of ['SIGINT', 'SIGTERM']) {
+  process.once(signal, () => {
+    console.log(chalk.cyan(`\n[Shutdown] Nhận ${signal}, đang thu hồi pháp lực...`));
+    client.destroy().catch(() => { /* đang tắt máy, bỏ qua */ });
+  });
+}
 
 client.on('error', (error) => {
   console.error(chalk.red(`[Discord Client Error]:`), error);
