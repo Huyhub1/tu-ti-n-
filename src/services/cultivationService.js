@@ -150,6 +150,36 @@ export function tiLeDotPhaThucTe(user) {
 }
 
 /**
+ * Ngã rẽ Nén Khí ở Luyện Khí Đỉnh Phong có đang mở cho người chơi chọn không?
+ *
+ * v1.0 đóng nhánh này vì nó là cái bẫy khoá vĩnh viễn nhân vật, chứ không phải
+ * vì nó hỏng. Người chọn Nén Khí mang `realm.id = 'luyen_khi'` suốt đời, mà
+ * game khoá nội dung theo chính id đó:
+ *
+ *   • `powerRank` = 1*100 + tầng → tầng 50 chỉ được 150, THUA Trúc Cơ Sơ Kỳ (201).
+ *     Hệ quả: khoá vĩnh viễn 6/8 phó bản, 15/20 yêu thú, 5/10 đan phương, 15/21 công thức đúc.
+ *   • `baseExpGain` trong `cultivate.js` cũng tra theo `realm.id` → mãi mãi 45 EXP/lần,
+ *     trong khi đường Trúc Cơ lên tới 8.000. Đi hết tầng 50 tốn 205.446 lượt
+ *     `!tuluyen` (~570 giờ bấm liên tục) so với 2.872 lượt của đường Trúc Cơ.
+ *   • Đổi lại chỉ được ~45% chỉ số, và `isLuyenKhiVanTang` không hề có tác dụng
+ *     combat nào — "miễn nhiễm Thiên Kiếp", "1 đấm phá nát Kim Đan" chỉ là chữ.
+ *
+ * 20 tầng đầu đi trong vài phút nên người chơi tưởng mình chọn đúng; lúc nhận ra
+ * thì đã sâu quá và không có đường lui. Mở lại ở v1.1 khi `powerRank` biết đếm
+ * tầng nén và `baseExpGain` tăng theo tầng — đổi cờ này thành true là xong.
+ *
+ * Cố ý TÁCH khỏi `canCompress`: `canCompress` điều khiển CƠ CHẾ nén khí, tắt nó
+ * sẽ đẩy những ai đã trót ở trong nhánh sang nhánh đánh cược Trúc Cơ từ tầng 50.
+ * Cờ này chỉ khoá CỬA VÀO, người đang ở trong vẫn đi tiếp bình thường.
+ */
+export function nhanhNenKhiDangMo() {
+  const config = getRealmsConfig();
+  const luyenKhi = config.realms.find(r => r.id === 'luyen_khi');
+  // Thiếu cờ thì coi như mở: cấu hình cũ không biết đến v1.0 vẫn phải chạy đúng.
+  return luyenKhi?.compressBranchOpen !== false;
+}
+
+/**
  * `!dotpha` lần này có thật sự đánh cược cảnh giới không?
  *
  * Hầu hết các lần gõ `!dotpha` KHÔNG hề rủi ro: lên tiểu cảnh giới (Sơ Kỳ ➜

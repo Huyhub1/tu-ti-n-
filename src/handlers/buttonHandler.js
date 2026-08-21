@@ -7,7 +7,7 @@ import { buildLamcongView } from '../commands/prefix/work.js';
 import { buildDaokhoangView } from '../commands/prefix/mining.js';
 
 
-import { attemptBreakthrough, getRealmDisplayName, calculateUserMaxExp } from '../services/cultivationService.js';
+import { attemptBreakthrough, nhanhNenKhiDangMo, getRealmDisplayName, calculateUserMaxExp } from '../services/cultivationService.js';
 
 import { getUserTalentPerks } from '../services/talentService.js';
 import { spendResources } from '../services/economyService.js';
@@ -336,6 +336,17 @@ export async function handleButton(interaction) {
     }
 
     if (chonNenKhi) {
+      // Chốt chặn thứ hai cho một lượt ghi KHÔNG THỂ HOÀN TÁC. `dangDungTruocNgaRe`
+      // ở trên đã chặn khi nhánh đóng, nhưng đặt cờ này là khoá vĩnh viễn nhân
+      // vật vào một đường mà v1.0 cố ý không mở — sai một lần là hỏng cả tài
+      // khoản, không có lệnh nào gỡ lại được. Rẻ hơn nhiều so với hậu quả.
+      if (!nhanhNenKhiDangMo()) {
+        return interaction.reply({
+          content: `⚠️ Nhánh **Vạn Cổ Nén Khí** tạm đóng ở phiên bản này. Gõ \`!dotpha\` để đột phá Trúc Cơ.`,
+          flags: MessageFlags.Ephemeral
+        });
+      }
+
       // Một chiều, không có đường lui — nhưng chắc thắng, nên không cần cảnh báo
       // Hộ Mạch Đan. Lời cảnh báo "chọn rồi là vĩnh viễn" đã in trên màn hình.
       user.isLuyenKhiVanTang = true;

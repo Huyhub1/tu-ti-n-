@@ -101,13 +101,9 @@ export async function handleSelectMenu(interaction) {
             `   - Vào canh bạc mà túi rỗng, bot sẽ chặn lại nhắc một nhịp. Cố tình liều thì gõ \`!dotpha xacnhan\`.\n` +
             `• **Thiên Lôi Độ Kiếp (\`!dokiep\`):** Khi đạt Kim Đan Đỉnh Phong viên mãn, lệnh \`!dotpha\` sẽ khóa lại, tu sĩ bắt buộc phải gõ \`!dokiep\` để nghênh chiến 3 Đạo Thiên Lôi xé trời phá đan hóa Nguyên Anh! (liều tay không: \`!dokiep xacnhan\`)\n` +
             `*(⚡ Cách thức hóa giải và sinh tồn trước thiên uy là bí mật của Thiên Đạo, tu sĩ phải tự mình chuẩn bị và đúc kết kinh nghiệm sinh tử!)*\n\n` +
-            `🌟 **2 Lối Đi Cảnh Giới Độc Đáo:**\n` +
-            `1. **Lối Đi Truyền Thống:** Phàm Nhân ➜ Luyện Khí ➜ Trúc Cơ ➜ Kim Đan ➜ **Nguyên Anh Kỳ**.\n` +
-            `2. **Lối Đi Vạn Cổ Luyện Khí (Kế thừa Từ Dương - 100k Năm):**\n` +
-            `   - Tại **Luyện Khí Đỉnh Phong**, gõ \`!dotpha\` sẽ hiện **Ngã Rẽ Đại Đạo** để chọn 1 trong 2 nhánh.\n` +
-            `   - Chọn Nén Khí Hải: **chắc chắn thành công**, đi tiếp Luyện Khí Tầng 5 ➜ 50.\n` +
-            `   - **Ưu điểm:** Khí hải vô tận, tăng vọt HP và Sát Thương, **miễn nhiễm 100% Thiên Kiếp Lôi Phạt**!\n` +
-            `   - ⛔ **Nhưng là lựa chọn MỘT CHIỀU:** chọn rồi thì vĩnh viễn không quay lại đường Trúc Cơ ➜ Kim Đan ➜ Nguyên Anh được nữa.`
+            `🌟 **Lộ Trình Cảnh Giới:**\n` +
+            `Phàm Nhân ➜ Luyện Khí ➜ Trúc Cơ ➜ Kim Đan ➜ **Nguyên Anh Kỳ** (trần của phiên bản này).\n` +
+            `*(Nhánh **Vạn Cổ Nén Khí** của Từ Dương tạm đóng ở v1.0, sẽ mở lại khi cân bằng xong.)*`
           );
         break;
 
@@ -199,7 +195,7 @@ export async function handleSelectMenu(interaction) {
             `• \`!diemdanh\` / \`!daily\` : Điểm danh nhận lộc ngày (Streak 7 ngày).\n` +
             `• \`!boique\` / \`!que\` : Bói Quẻ Thiên Cơ đổi vận khí.\n` +
             `• \`!tuluyen\` : Bế quan nhận EXP (Delay 10s).\n` +
-            `• \`!dotpha\` : Đột phá cảnh giới / nén khí Từ Dương.\n` +
+            `• \`!dotpha\` : Đột phá cảnh giới.\n` +
             `• \`!dokiep\` : Nghênh chiến Thiên Lôi Kiếp (Kim Đan ➜ Nguyên Anh).\n` +
             `• \`!matna\` : *(Tán Tu)* Đeo mặt nạ ẩn danh.\n\n` +
             `**📜 Công Pháp:**\n` +

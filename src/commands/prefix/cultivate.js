@@ -3,7 +3,7 @@ import { User } from '../../database/models/User.js';
 import { Sect } from '../../database/models/Sect.js';
 
 
-import { attemptBreakthrough, calculateUserMaxExp, sapDanhCuocDotPha, tiLeDotPhaThucTe } from '../../services/cultivationService.js';
+import { attemptBreakthrough, calculateUserMaxExp, nhanhNenKhiDangMo, sapDanhCuocDotPha, tiLeDotPhaThucTe } from '../../services/cultivationService.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -184,8 +184,20 @@ export async function executeTuluyen(message) {
   await message.reply(await buildTuluyenView(message.author.id));
 }
 
-/** Người chơi có đang đứng trước ngã rẽ Trúc Cơ / Nén Khí không? */
+/**
+ * Người chơi có đang đứng trước ngã rẽ Trúc Cơ / Nén Khí không?
+ *
+ * Nhánh Nén Khí đóng ở v1.0 (lý do đầy đủ ghi tại `nhanhNenKhiDangMo`), nên câu
+ * trả lời luôn là không: `!dotpha` đi thẳng vào cửa đánh cược Trúc Cơ như mọi
+ * đại cảnh giới khác. Không cần màn hình chọn khi chỉ còn một đường để chọn.
+ *
+ * Vẫn kiểm tra ở đây thay vì xoá hẳn màn hình, vì `buttonHandler` cũng gọi hàm
+ * này: bảng nút cũ còn nằm trong kênh sẽ tự báo "ngã rẽ đã khép lại" thay vì
+ * lặng lẽ đẩy người chơi vào nhánh đã bị đóng.
+ */
 export function dangDungTruocNgaRe(user) {
+  if (!nhanhNenKhiDangMo()) return false;
+
   return user?.realm?.id === 'luyen_khi'
     && user?.realm?.layer === 4
     && !user?.isLuyenKhiVanTang

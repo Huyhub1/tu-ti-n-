@@ -22,7 +22,9 @@ import {
   attemptBreakthrough,
   sapDanhCuocDotPha,
   tiLeDotPhaThucTe,
-  calculateUserMaxExp
+  calculateUserMaxExp,
+  nhanhNenKhiDangMo,
+  getRealmById
 } from '../src/services/cultivationService.js';
 import { dangDungTruocNgaRe, buildNgaReView } from '../src/commands/prefix/cultivate.js';
 import { demHoMachDan } from '../src/utils/hoMachDan.js';
@@ -109,14 +111,52 @@ eq(tiLeDotPhaThucTe(fakeUser({ id: 'pham_nhan', layer: 1 })), 1, 'Phàm Nhân gi
   eq(u.breakthroughBuff, 0, 'Trúc Cơ Đan bị tiêu ngay cả khi đột phá THÀNH CÔNG');
 }
 
-console.log('\n[3] Ngã rẽ Luyện Khí Đỉnh Phong:');
-ok(dangDungTruocNgaRe(fakeUser({ layer: 4 })) === true, 'Đỉnh Phong đầy EXP, chưa chọn nhánh → hiện ngã rẽ');
-ok(dangDungTruocNgaRe(fakeUser({ layer: 4, vanTang: true })) === false, 'Đã chọn Nén Khí → không hiện lại');
-ok(dangDungTruocNgaRe(fakeUser({ layer: 4, day: false })) === false, 'Chưa đầy EXP → không hiện');
-ok(dangDungTruocNgaRe(fakeUser({ id: 'truc_co', layer: 4 })) === false, 'Trúc Cơ → không có ngã rẽ');
-ok(dangDungTruocNgaRe({}) === false, 'Nhân vật rỗng không làm hàm nổ');
+/**
+ * Tạm mở/đóng nhánh Nén Khí rồi trả lại nguyên trạng.
+ *
+ * `getRealmsConfig` trả về đúng đối tượng đã nạp một lần lúc import, nên sửa
+ * thẳng trên đó là đủ — không cần ghi đè file config rồi lo dọn.
+ */
+function voiNhanhNenKhi(mo, fn) {
+  const luyenKhi = getRealmById('luyen_khi');
+  const goc = luyenKhi.compressBranchOpen;
+  luyenKhi.compressBranchOpen = mo;
+  try { return fn(); } finally { luyenKhi.compressBranchOpen = goc; }
+}
+
+console.log('\n[3] Ngã rẽ Luyện Khí Đỉnh Phong — v1.0 ĐÓNG nhánh Nén Khí:');
+// Nhánh Nén Khí khoá vĩnh viễn nhân vật vào `realm.id = 'luyen_khi'`, mà cả
+// `powerRank` lẫn `baseExpGain` đều tra theo id đó — lý do đầy đủ ghi ở
+// `nhanhNenKhiDangMo`. v1.0 đóng cửa vào; mấy phép thử dưới đây canh cho nó
+// đóng thật, và canh cho người đã trót ở trong vẫn đi tiếp được.
+ok(nhanhNenKhiDangMo() === false, 'Cấu hình phát hành: nhánh Nén Khí đang ĐÓNG');
+ok(dangDungTruocNgaRe(fakeUser({ layer: 4 })) === false, 'Đỉnh Phong đầy EXP → KHÔNG hiện màn hình chọn nhánh nữa');
+ok(sapDanhCuocDotPha(fakeUser({ layer: 4 })) === true, 'Thay vào đó `!dotpha` đi thẳng vào cửa đánh cược Trúc Cơ');
 
 {
+  // Đóng cửa vào mà làm kẹt luôn người đang ở trong nhánh thì còn tệ hơn.
+  const u = fakeUser({ layer: 10, vanTang: true });
+  ok(sapDanhCuocDotPha(u) === false, 'Người đã ở trong nhánh Nén Khí: vẫn KHÔNG bị bắt đánh cược');
+  const r = attemptBreakthrough(u);
+  ok(r.success === true, 'Người đã ở trong nhánh Nén Khí: vẫn đột phá tiếp được');
+  eq(u.realm.layer, 11, 'Người đã ở trong nhánh Nén Khí: vẫn lên tầng bình thường');
+}
+
+// Thiếu cờ trong config (bản cũ, hoặc ai đó xoá tay) thì phải coi như MỞ —
+// mặc định im lặng đóng một nhánh nội dung là kiểu hỏng khó lần ra nhất.
+ok(voiNhanhNenKhi(undefined, () => nhanhNenKhiDangMo()) === true, 'Config thiếu cờ → mặc định coi như mở');
+ok(voiNhanhNenKhi(true, () => nhanhNenKhiDangMo()) === true, 'Đổi cờ thành true → mở lại được (đường ra cho v1.1)');
+
+console.log('\n[3b] Màn hình ngã rẽ vẫn đúng cho ngày v1.1 mở lại:');
+// Màn hình bị treo lại suốt một phiên bản là thứ dễ mục nhất: không ai nhìn
+// thấy nên không ai phát hiện nó hỏng. Mấy phép thử này giữ nó sống.
+voiNhanhNenKhi(true, () => {
+  ok(dangDungTruocNgaRe(fakeUser({ layer: 4 })) === true, 'Mở lại → Đỉnh Phong đầy EXP hiện ngã rẽ');
+  ok(dangDungTruocNgaRe(fakeUser({ layer: 4, vanTang: true })) === false, 'Đã chọn Nén Khí → không hiện lại');
+  ok(dangDungTruocNgaRe(fakeUser({ layer: 4, day: false })) === false, 'Chưa đầy EXP → không hiện');
+  ok(dangDungTruocNgaRe(fakeUser({ id: 'truc_co', layer: 4 })) === false, 'Trúc Cơ → không có ngã rẽ');
+  ok(dangDungTruocNgaRe({}) === false, 'Nhân vật rỗng không làm hàm nổ');
+
   const v = buildNgaReView(fakeUser({ layer: 4 }));
   const ids = v.components[0].components.map(c => c.data.custom_id);
   // Sai một ký tự trong customId là nút chết câm mà không báo lỗi gì cả.
@@ -133,7 +173,7 @@ ok(dangDungTruocNgaRe({}) === false, 'Nhân vật rỗng không làm hàm nổ')
 
   const v3 = buildNgaReView(fakeUser({ layer: 4, faction: 'CHINH_DAO' }));
   ok(v3.embeds[0].data.description.includes('75%'), 'Buff trận doanh được phản ánh vào màn hình ngã rẽ');
-}
+});
 
 console.log('\n[4] Bấm nút xong có thật sự đi tiếp không:');
 {

@@ -244,7 +244,7 @@ Buff nội tại **đúng theo `src/config/factions.json`**:
 * `!tuluyen` — bế quan hấp thụ linh khí (hồi chiêu 10s)
 * `!dotpha` — công phá cảnh giới. Lên **tiểu cảnh giới** (Sơ Kỳ ➜ Đỉnh Phong) là **chắc chắn thành công**; chỉ khi vượt sang **đại cảnh giới** mới tung xúc xắc (Luyện Khí 60% · Trúc Cơ 45% · Nguyên Anh 25%)
 * **Hộ Mạch Đan** là lưới an toàn: trượt mà có đan thì **giữ nguyên cảnh giới**, chỉ hao 15% tu vi; **trượt tay không thì tụt 1 tầng**, EXP còn 40%. Vào canh bạc với túi rỗng, bot chặn lại nhắc một nhịp — cố tình liều thì gõ `!dotpha xacnhan`
-* **Ngã Rẽ Đại Đạo:** tại **Luyện Khí Đỉnh Phong**, `!dotpha` mở màn hình chọn nhánh — đột phá Trúc Cơ, hoặc **Nén Khí Từ Dương** lên **Tầng 5 ➜ 50** (chắc chắn thành công, miễn nhiễm lôi kiếp, nhưng là lựa chọn **một chiều**)
+* **Nhánh Vạn Cổ Nén Khí tạm đóng ở v1.0** (`compressBranchOpen: false` trong `realms.json`). Cơ chế chạy đúng, nhưng người chọn nó giữ `realm.id = 'luyen_khi'` suốt đời, mà cả `powerRank` lẫn `baseExpGain` đều tra theo id đó — thành ra khoá vĩnh viễn 6/8 phó bản, 15/20 yêu thú, và cần ~205.000 lượt `!tuluyen` để đi hết tầng 50 (đường Trúc Cơ chỉ cần 2.872). Mở lại ở v1.1 sau khi cho `powerRank` đếm tầng nén và `baseExpGain` tăng theo tầng
 * `!dokiep` — tại Kim Đan Đỉnh Phong phải nghênh chiến **3 đạo Thiên Lôi**, chọn 1 trong 4 chiến thuật mỗi đạo (liều tay không: `!dokiep xacnhan`)
 * **5 phẩm Kim Đan** (Hạ ➜ Trung ➜ Thượng ➜ Cực ➜ Thiên Đạo Vô Khuyết) quyết định tiềm lực hậu Nguyên Anh
 

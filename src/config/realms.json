@@ -37,10 +37,11 @@
       "breakSuccessRate": 0.6,
       "canCompress": true,
       "compressMaxLayer": 50,
+      "compressBranchOpen": false,
       "nextRealmId": "truc_co",
       "breakMessage": "⚡ **LÔI KIẾP RÈN THÂN THÀNH CÔNG!** Đạo Cơ vững chắc như bàn thạch, đạt tới **Trúc Cơ Sơ Kỳ**!",
       "failMessage": "💥 **ĐỘT PHÁ THẤT BẠI!** Thiên lôi chấn động đan điền, bị cắn trả mất 35% tu vi tích lũy.",
-      "desc": "Dẫn khí nhập thể: Sơ Kỳ ➜ Trung Kỳ ➜ Hậu Kỳ ➜ Đỉnh Phong (Có thể đột phá Trúc Cơ hoặc Nén Khí 100k Năm)."
+      "desc": "Dẫn khí nhập thể: Sơ Kỳ ➜ Trung Kỳ ➜ Hậu Kỳ ➜ Đỉnh Phong (Đỉnh Phong thì đột phá Trúc Cơ)."
     },
     {
       "id": "truc_co",
