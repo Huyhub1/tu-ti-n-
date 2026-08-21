@@ -1,4 +1,13 @@
 import 'dotenv/config';
+import { batGhiNhatKy } from './utils/nhatKy.js';
+
+// Gọi ở dòng đầu tiên của thân module. Lưu ý: ESM nâng toàn bộ `import` lên
+// chạy TRƯỚC mọi câu lệnh, nên dòng này KHÔNG chặn được những gì discord.js hay
+// mongoose in ra lúc chính chúng được nạp — hai thư viện đó im lặng lúc nạp nên
+// hiện không mất gì. Cái cần tóm là toàn bộ giai đoạn chạy: nối DB, đăng nhập
+// gateway, mọi lệnh của người chơi, và hai cái bẫy lỗi toàn cục ở cuối file.
+batGhiNhatKy();
+
 import { Client, Events, GatewayIntentBits, MessageFlags, REST, Routes } from 'discord.js';
 import chalk from 'chalk';
 import { connectDB } from './database/connect.js';

@@ -7,7 +7,8 @@ atlas-credentials.env
 # Dependencies
 node_modules/
 
-# Logs
+# Logs (src/utils/nhatKy.js ghi vao logs/YYYY-MM-DD.log)
+logs/
 *.log
 npm-debug.log*
 
