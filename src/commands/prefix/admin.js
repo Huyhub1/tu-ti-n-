@@ -1,4 +1,4 @@
-import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, AttachmentBuilder } from 'discord.js';
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
 
 import { User } from '../../database/models/User.js';
 import { grantCurrencies } from '../../services/economyService.js';
@@ -80,7 +80,7 @@ export function createGearListButtons(page, totalPages, userId) {
   ];
 }
 
-export function createGearDetailData(gear) {
+export function createGearDetailEmbed(gear) {
   const embed = new EmbedBuilder()
     .setTitle(`🛡️ [THÔNG TIN CHI TIẾT PHÁP BẢO] - ${gear.name}`)
     .setColor(gear.color || '#9C27B0')
@@ -101,23 +101,14 @@ export function createGearDetailData(gear) {
       `• *${gear.combatSkill ? gear.combatSkill.desc : 'Không có'}*`
     );
 
-  const files = [];
-  const localImageDir = equipmentConfig.imageDirectory || path.join(__dirname, '../../../id_97_60 vũ khí pháp bảo tu tiên kiếm hiệp/id_97_60 vũ khí pháp bảo tu tiên kiếm hiệp');
-  const localImagePath = gear.imageFile ? path.join(localImageDir, gear.imageFile) : '';
+  // Ảnh trang bị lấy thẳng từ link, không đính kèm file từ đĩa nữa. Đính file
+  // buộc bot phải mang theo cả thư mục ảnh 27 MB và phải tìm đúng thư mục đó
+  // trên mọi máy — lệch đường dẫn một cái là mất ảnh mà không kêu tiếng nào.
+  // Link thì máy nào cũng như nhau, và Discord tự nhớ ảnh nên lần hiện sau
+  // còn nhanh hơn.
+  if (gear.imageUrl) embed.setImage(gear.imageUrl);
 
-  if (localImagePath && fs.existsSync(localImagePath)) {
-    const attachment = new AttachmentBuilder(localImagePath, { name: 'gear_banner.jpg' });
-    files.push(attachment);
-    embed.setImage('attachment://gear_banner.jpg');
-  } else if (gear.imageUrl) {
-    embed.setImage(gear.imageUrl);
-  }
-
-  return { embed, files };
-}
-
-export function createGearDetailEmbed(gear) {
-  return createGearDetailData(gear).embed;
+  return embed;
 }
 
 export async function executeAdmin(message, args) {
@@ -182,8 +173,8 @@ export async function executeAdmin(message, args) {
       return message.reply({ content: `❌ Không tìm thấy pháp bảo nào khớp với: \`${gearQuery}\`! Hãy gõ \`!admin listgear\` để xem danh sách.` });
     }
 
-    const { embed, files } = createGearDetailData(gear);
-    return message.reply({ embeds: [embed], files });
+    const embed = createGearDetailEmbed(gear);
+    return message.reply({ embeds: [embed] });
   }
 
   // Lấy target user cho các lệnh can thiệp
